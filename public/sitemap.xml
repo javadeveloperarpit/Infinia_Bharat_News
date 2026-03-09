@@ -1,19 +1,49 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+import fs from "fs";
+import path from "path";
+import { db } from "./firebase"; // your Firestore instance
 
-<url>
-<loc>https://infinia-bharat-news.vercel.app/</loc>
-<priority>1.0</priority>
-</url>
+async function generateSitemap() {
+  const base = "https://infinia-bharat-news.vercel.app";
 
-<url>
-<loc>https://infinia-bharat-news.vercel.app/articles</loc>
-<priority>0.9</priority>
-</url>
+  const [articlesSnap, videosSnap] = await Promise.all([
+    db.collection("articles").get(),
+    db.collection("videos").get()
+  ]);
 
-<url>
-<loc>https://infinia-bharat-news.vercel.app/videos</loc>
-<priority>0.9</priority>
-</url>
+  const articleUrls = articlesSnap.docs.map(doc => `
+    <url>
+      <loc>${base}/article/${doc.id}</loc>
+      <changefreq>daily</changefreq>
+      <priority>0.9</priority>
+    </url>`);
 
-</urlset>
+  const videoUrls = videosSnap.docs.map(doc => `
+    <url>
+      <loc>${base}/video/${doc.id}</loc>
+      <changefreq>daily</changefreq>
+      <priority>0.8</priority>
+    </url>`);
+
+  const staticUrls = `
+    <url>
+      <loc>${base}</loc>
+      <changefreq>hourly</changefreq>
+      <priority>1.0</priority>
+    </url>
+  `;
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+  <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    ${staticUrls}
+    ${articleUrls.join("")}
+    ${videoUrls.join("")}
+  </urlset>`;
+
+  const filePath = path.join(process.cwd(), "public", "sitemap.xml");
+
+  fs.writeFileSync(filePath, xml, "utf8");
+  console.log("Sitemap generated at:", filePath);
+}
+
+// Run once or schedule it
+generateSitemap();
