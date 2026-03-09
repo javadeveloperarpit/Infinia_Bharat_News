@@ -21,7 +21,7 @@ async function sendPushNotification(title, message, url) {
   method: "POST",
   headers: {
    "Content-Type": "application/json",
-   "Authorization": "os_v2_app_bnrmcrpmcnbfdbbtisehoqqw6bnjkrneyaduamndr3imbwdfnaqjeyngxizwlbgqblfrsrv3kfn7uat6i7ccxlgpynsga5kaqvyqvba"
+   "Authorization": "os_v2_app_bnrmcrpmcnbfdbbtisehoqqw6dfuv5ihvzreqlvmsausv7kwuvxshlmhx4zgxl6r2gpgt6kflf7kumquacj4424mzrisxwmn5pr3qfi"
   },
   body: JSON.stringify({
    app_id: "0b62c145-ec13-4251-8433-4488774216f0",
