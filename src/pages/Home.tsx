@@ -22,11 +22,11 @@ export default function Home() {
     const fetchData = async () => {
       try {
         const [artRes, vidRes, newsRes, adsRes, setRes] = await Promise.all([
-          fetch('/api/articles'),
-          fetch('/api/videos'),
-          fetch('/api/breaking-news'),
-          fetch('/api/ads'),
-          fetch('/api/settings')
+          fetch('https://infinia-bharat-news-rf52.onrender.com/api/articles'),
+          fetch('https://infinia-bharat-news-rf52.onrender.com/api/videos'),
+          fetch('https://infinia-bharat-news-rf52.onrender.com/api/breaking-news'),
+          fetch('https://infinia-bharat-news-rf52.onrender.com/api/ads'),
+          fetch('https://infinia-bharat-news-rf52.onrender.com/api/settings')
         ]);
         
         setArticles(await artRes.json());
