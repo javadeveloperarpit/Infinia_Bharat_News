@@ -1,49 +1,53 @@
 import fs from "fs";
 import path from "path";
-import { db } from "./firebase"; // your Firestore instance
+import { db } from "./firebase"; // Your Firestore instance
 
 async function generateSitemap() {
-  const base = "https://infinia-bharat-news.vercel.app";
+  try {
+    const base = "https://infinia-bharat-news.vercel.app";
 
-  const [articlesSnap, videosSnap] = await Promise.all([
-    db.collection("articles").get(),
-    db.collection("videos").get()
-  ]);
+    // Fetch all articles and videos
+    const [articlesSnap, videosSnap] = await Promise.all([
+      db.collection("articles").get(),
+      db.collection("videos").get()
+    ]);
 
-  const articleUrls = articlesSnap.docs.map(doc => `
-    <url>
-      <loc>${base}/article/${doc.id}</loc>
-      <changefreq>daily</changefreq>
-      <priority>0.9</priority>
-    </url>`);
+    // Generate URL entries, trimmed to remove unwanted spaces
+    const staticUrls = `<url>
+  <loc>${base}</loc>
+  <changefreq>hourly</changefreq>
+  <priority>1.0</priority>
+</url>`;
 
-  const videoUrls = videosSnap.docs.map(doc => `
-    <url>
-      <loc>${base}/video/${doc.id}</loc>
-      <changefreq>daily</changefreq>
-      <priority>0.8</priority>
-    </url>`);
+    const articleUrls = articlesSnap.docs.map(doc => `<url>
+  <loc>${base}/article/${doc.id}</loc>
+  <changefreq>daily</changefreq>
+  <priority>0.9</priority>
+</url>`).join("");
 
-  const staticUrls = `
-    <url>
-      <loc>${base}</loc>
-      <changefreq>hourly</changefreq>
-      <priority>1.0</priority>
-    </url>
-  `;
+    const videoUrls = videosSnap.docs.map(doc => `<url>
+  <loc>${base}/video/${doc.id}</loc>
+  <changefreq>daily</changefreq>
+  <priority>0.8</priority>
+</url>`).join("");
 
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-  <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    ${staticUrls}
-    ${articleUrls.join("")}
-    ${videoUrls.join("")}
-  </urlset>`;
+    // Build final XML without extra spaces or newlines before <?xml
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${staticUrls}
+${articleUrls}
+${videoUrls}
+</urlset>`;
 
-  const filePath = path.join(process.cwd(), "public", "sitemap.xml");
+    // Save to public folder
+    const filePath = path.join(process.cwd(), "public", "sitemap.xml");
+    fs.writeFileSync(filePath, xml, "utf8");
 
-  fs.writeFileSync(filePath, xml, "utf8");
-  console.log("Sitemap generated at:", filePath);
+    console.log("✅ Sitemap generated at:", filePath);
+  } catch (error) {
+    console.error("❌ Error generating sitemap:", error);
+  }
 }
 
-// Run once or schedule it
+// Run it once or call after adding new content
 generateSitemap();
