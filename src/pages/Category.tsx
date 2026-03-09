@@ -20,10 +20,10 @@ export default function Category() {
     const fetchData = async () => {
       try {
         const [artRes, vidRes, newsRes, adsRes] = await Promise.all([
-          fetch('/api/articles'),
-          fetch('/api/videos'),
-          fetch('/api/breaking-news'),
-          fetch('/api/ads')
+          fetch('https://infinia-bharat-news-rf52.onrender.com/api/articles'),
+          fetch('https://infinia-bharat-news-rf52.onrender.com/api/videos'),
+          fetch('https://infinia-bharat-news-rf52.onrender.com/api/breaking-news'),
+          fetch('https://infinia-bharat-news-rf52.onrender.com/api/ads')
         ]);
         
         setArticles(await artRes.json());
