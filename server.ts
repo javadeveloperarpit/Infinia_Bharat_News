@@ -5,7 +5,7 @@ import fs from "fs"
 import multer from "multer"
 import dotenv from "dotenv"
 import cloudinary from "./cloudinary"
-import { db } from "./firebase.ts"
+import { db } from "./firebase"
 
 dotenv.config()
 
@@ -36,7 +36,11 @@ async function sendPushNotification(title, message, url) {
 
 app.post("/api/upload", upload.single("image"), async (req, res) => {
 
- const result = await cloudinary.uploader.upload_stream(
+ if (!req.file) {
+  return res.status(400).json({ error: "No file uploaded" })
+ }
+
+ const stream = cloudinary.uploader.upload_stream(
   { folder: "news" },
   (error, result) => {
 
@@ -45,7 +49,9 @@ app.post("/api/upload", upload.single("image"), async (req, res) => {
    res.json({ url: result.secure_url })
 
   }
- ).end(req.file.buffer)
+ )
+
+ stream.end(req.file.buffer)
 
 })
 
@@ -78,7 +84,7 @@ app.post("/api/articles", async (req,res)=>{
  await sendPushNotification(
   body.title_en,
   "New article published on Infinia Bharat News",
-  "https://infinia-bharat-news.onrender.com/article/"+ref.id
+  "https://infinia-bharat-news.vercel.app/article/"+ref.id
  )
 
  res.json({id:ref.id})
@@ -125,7 +131,7 @@ app.post("/api/videos", async(req,res)=>{
  await sendPushNotification(
   body.title_en,
   "New video uploaded",
-  "https://infinia-bharat-news.onrender.com/video/"+ref.id
+  "https://infinia-bharat-news.vercel.app/video/"+ref.id
  )
 
  res.json({id:ref.id})
