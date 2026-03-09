@@ -72,10 +72,15 @@ app.get("/api/articles", async (req, res) => {
  .orderBy("created_at","desc")
  .get()
 
- const data = snapshot.docs.map(doc => ({
+ const data = snapshot.docs.map(doc => {
+ const d = doc.data()
+
+ return {
   id: doc.id,
-  ...doc.data()
- }))
+  ...d,
+  created_at: d.created_at?.toDate ? d.created_at.toDate() : d.created_at
+ }
+})
 
  res.json(data)
 
