@@ -19,9 +19,9 @@ export default function SingleArticle() {
     const fetchData = async () => {
       try {
         const [artRes, allArtRes, adsRes] = await Promise.all([
-          fetch(`/api/articles`), // In a real app, fetch by ID
-          fetch('/api/articles'),
-          fetch('/api/ads')
+          fetch(`https://infinia-bharat-news-rf52.onrender.com/api/articles`), 
+          fetch('https://infinia-bharat-news-rf52.onrender.com/api/articles'),
+          fetch('https://infinia-bharat-news-rf52.onrender.com/api/ads')
         ]);
         
         const allArticles = await allArtRes.json();
