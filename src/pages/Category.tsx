@@ -16,29 +16,33 @@ export default function Category() {
   const [articlePage, setArticlePage] = useState(1);
   const [videoPage, setVideoPage] = useState(1);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [artRes, vidRes, newsRes, adsRes] = await Promise.all([
-          fetch('https://infinia-bharat-news-rf52.onrender.com/api/articles'),
-          fetch('https://infinia-bharat-news-rf52.onrender.com/api/videos'),
-          fetch('https://infinia-bharat-news-rf52.onrender.com/api/breaking-news'),
-          fetch('https://infinia-bharat-news-rf52.onrender.com/api/ads')
-        ]);
-        
-        setArticles(await artRes.json());
-        setVideos(await vidRes.json());
-        setBreakingNews(await newsRes.json());
-        setAds(await adsRes.json());
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-    window.scrollTo(0, 0);
-  }, [category]);
+useEffect(() => {
+
+  const fetchData = async () => {
+    try {
+
+      const res = await fetch(
+        "https://infinia-bharat-news-rf52.onrender.com/api/home"
+      )
+
+      const data = await res.json()
+
+      setArticles(data.articles)
+      setVideos(data.videos)
+      setBreakingNews(data.breakingNews)
+      setAds(data.ads)
+
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+  window.scrollTo(0, 0);
+
+}, [category]);
 
   const categoryMap: Record<string, { hi: string, en: string }> = {
     'politics-&-government': { hi: 'राजनीति और सरकार', en: 'Politics & Government' },
