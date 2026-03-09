@@ -216,6 +216,25 @@ app.delete("/api/ads/:id", async(req,res)=>{
  res.json({success:true})
 
 })
+/* HOME DATA (ALL IN ONE API) */
+
+app.get("/api/home", async (req, res) => {
+
+ const [articlesSnap, videosSnap, newsSnap, adsSnap] = await Promise.all([
+  db.collection("articles").orderBy("created_at","desc").get(),
+  db.collection("videos").orderBy("created_at","desc").get(),
+  db.collection("breaking_news").orderBy("created_at","desc").get(),
+  db.collection("ads").orderBy("created_at","desc").get()
+ ])
+
+ res.json({
+  articles: articlesSnap.docs.map(d=>({id:d.id,...d.data()})),
+  videos: videosSnap.docs.map(d=>({id:d.id,...d.data()})),
+  breakingNews: newsSnap.docs.map(d=>({id:d.id,...d.data()})),
+  ads: adsSnap.docs.map(d=>({id:d.id,...d.data()}))
+ })
+
+})
 
 /* SETTINGS */
 
