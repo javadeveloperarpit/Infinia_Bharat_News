@@ -60,6 +60,9 @@ app.post("/api/upload", upload.single("image"), async (req, res) => {
  stream.end(req.file.buffer)
 
 })
+app.get("/ping",(req,res)=>{
+ res.send("alive")
+})
 
 /* ARTICLES */
 
