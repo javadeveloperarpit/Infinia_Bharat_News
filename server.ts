@@ -6,12 +6,16 @@ import multer from "multer"
 import dotenv from "dotenv"
 import cloudinary from "./cloudinary"
 import { db } from "./firebase"
+import cors from "cors"
 
 dotenv.config()
 
 const upload = multer({ storage: multer.memoryStorage() })
 
 const app = express()
+app.use(cors({
+  origin: "https://infinia-bharat-news.vercel.app"
+}))
 
 app.use(express.json())
 
