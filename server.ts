@@ -14,7 +14,9 @@ const upload = multer({ storage: multer.memoryStorage() })
 
 const app = express()
 app.use(cors({
-  origin: "https://infinia-bharat-news.vercel.app"
+  origin: "https://infinia-bharat-news.vercel.app",
+  methods: ["GET","POST","PUT","DELETE"],
+  allowedHeaders: ["Content-Type","Authorization"]
 }))
 
 app.use(express.json())
