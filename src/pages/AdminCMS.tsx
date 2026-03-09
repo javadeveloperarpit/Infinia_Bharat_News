@@ -10,7 +10,7 @@ export default function AdminCMS() {
   const [passcode, setPasscode] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [data, setData] = useState<any>({ articles: [], videos: [], breaking: [], ads: [], settings: {} });
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
   // Form States
@@ -23,11 +23,11 @@ export default function AdminCMS() {
 
   const fetchData = async () => {
     const [art, vid, news, ads, set] = await Promise.all([
-      fetch('/api/articles').then(r => r.json()),
-      fetch('/api/videos').then(r => r.json()),
-      fetch('/api/breaking-news').then(r => r.json()),
-      fetch('/api/ads').then(r => r.json()),
-      fetch('/api/settings').then(r => r.json())
+      fetch('https://infinia-bharat-news-rf52.onrender.com/api/articles').then(r => r.json()),
+      fetch('https://infinia-bharat-news-rf52.onrender.com/api/videos').then(r => r.json()),
+      fetch('https://infinia-bharat-news-rf52.onrender.com/api/breaking-news').then(r => r.json()),
+      fetch('https://infinia-bharat-news-rf52.onrender.com/api/ads').then(r => r.json()),
+      fetch('https://infinia-bharat-news-rf52.onrender.com/api/settings').then(r => r.json())
     ]);
     setData({ articles: art, videos: vid, breaking: news, ads: ads, settings: set });
   };
@@ -45,7 +45,7 @@ export default function AdminCMS() {
     formData.append('image', file);
 
     try {
-      const res = await fetch('/api/upload', {
+      const res = await fetch('https://infinia-bharat-news-rf52.onrender.com/api/upload', {
         method: 'POST',
         body: formData
       });
@@ -74,14 +74,14 @@ export default function AdminCMS() {
   };
 
   const handleSubmit = async (type: string, body: any) => {
-    let endpoint = type === 'articles' ? '/api/articles' : 
-                   type === 'videos' ? '/api/videos' : 
-                   type === 'breaking' ? '/api/breaking-news' : 
-                   type === 'ads' ? '/api/ads' : '/api/settings';
+    let endpoint = type === 'articles' ? 'https://infinia-bharat-news-rf52.onrender.com/api/articles' : 
+                   type === 'videos' ? 'https://infinia-bharat-news-rf52.onrender.com/api/videos' : 
+                   type === 'breaking' ? 'https://infinia-bharat-news-rf52.onrender.com/api/breaking-news' : 
+                   type === 'ads' ? 'https://infinia-bharat-news-rf52.onrender.com/api/ads' : 'https://infinia-bharat-news-rf52.onrender.com/api/settings';
     
     let method = 'POST';
     if (type === 'articles' && editingId) {
-      endpoint = `/api/articles/${editingId}`;
+      endpoint = `https://infinia-bharat-news-rf52.onrender.com/api/articles/${editingId}`;
       method = 'PUT';
     }
 
@@ -97,10 +97,10 @@ export default function AdminCMS() {
     alert(method === 'PUT' ? 'Updated Successfully!' : 'Published Successfully!');
   };
 
-  const handleDelete = async (type: string, id: number) => {
-    const endpoint = type === 'articles' ? `/api/articles/${id}` : 
-                     type === 'videos' ? `/api/videos/${id}` : 
-                     type === 'breaking' ? `/api/breaking-news/${id}` : `/api/ads/${id}`;
+  const handleDelete = async (type: string, id: string) => {
+    const endpoint = type === 'articles' ? `https://infinia-bharat-news-rf52.onrender.com/api/articles/${id}` : 
+                     type === 'videos' ? `https://infinia-bharat-news-rf52.onrender.com/api/videos/${id}` : 
+                     type === 'breaking' ? `https://infinia-bharat-news-rf52.onrender.com/api/breaking-news/${id}` : `https://infinia-bharat-news-rf52.onrender.com/api/ads/${id}`;
     await fetch(endpoint, { method: 'DELETE' });
     fetchData();
   };
