@@ -7,6 +7,7 @@ import dotenv from "dotenv"
 import cloudinary from "./cloudinary"
 import { db } from "./firebase"
 import cors from "cors"
+import fetch from "node-fetch";
 
 dotenv.config()
 
@@ -22,22 +23,24 @@ app.use(cors({
 app.use(express.json())
 
 async function sendPushNotification(title, message, url) {
-
- await fetch("https://onesignal.com/api/v1/notifications", {
-  method: "POST",
-  headers: {
-   "Content-Type": "application/json",
-   "Authorization": "os_v2_app_bnrmcrpmcnbfdbbtisehoqqw6dfuv5ihvzreqlvmsausv7kwuvxshlmhx4zgxl6r2gpgt6kflf7kumquacj4424mzrisxwmn5pr3qfi"
-  },
-  body: JSON.stringify({
-   app_id: "0b62c145-ec13-4251-8433-4488774216f0",
-   included_segments: ["All"],
-   headings: { en: title },
-   contents: { en: message },
-   url
-  })
- })
-
+  try {
+    await fetch("https://onesignal.com/api/v1/notifications", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": process.env.ONESIGNAL_API_KEY
+      },
+      body: JSON.stringify({
+        app_id: process.env.ONESIGNAL_APP_ID,
+        included_segments: ["All"],
+        headings: { en: title },
+        contents: { en: message },
+        url
+      })
+    });
+  } catch (err) {
+    console.error("Push notification error:", err);
+  }
 }
 
 
@@ -320,22 +323,25 @@ app.delete("/api/ads/:id", async(req,res)=>{
 /* HOME DATA (ALL IN ONE API) */
 
 app.get("/api/home", async (req, res) => {
+  try {
+    const [articlesSnap, videosSnap, newsSnap, adsSnap] = await Promise.all([
+      db.collection("articles").orderBy("created_at", "desc").get(),
+      db.collection("videos").orderBy("created_at", "desc").get(),
+      db.collection("breaking_news").orderBy("created_at", "desc").get(),
+      db.collection("ads").orderBy("created_at", "desc").get()
+    ]);
 
- const [articlesSnap, videosSnap, newsSnap, adsSnap] = await Promise.all([
-  db.collection("articles").orderBy("created_at","desc").get(),
-  db.collection("videos").orderBy("created_at","desc").get(),
-  db.collection("breaking_news").orderBy("created_at","desc").get(),
-  db.collection("ads").orderBy("created_at","desc").get()
- ])
-
- res.json({
-  articles: articlesSnap.docs.map(d=>({id:d.id,...d.data()})),
-  videos: videosSnap.docs.map(d=>({id:d.id,...d.data()})),
-  breakingNews: newsSnap.docs.map(d=>({id:d.id,...d.data()})),
-  ads: adsSnap.docs.map(d=>({id:d.id,...d.data()}))
- })
-
-})
+    res.json({
+      articles: articlesSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+      videos: videosSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+      breakingNews: newsSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+      ads: adsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+    });
+  } catch (err) {
+    console.error("Error fetching /api/home:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 /* SETTINGS */
 
