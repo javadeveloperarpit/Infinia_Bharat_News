@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://infinia-bharat-news-rf52.onrender.com/sitemap.xml"
+    },
+    {
+      "source": "/news-sitemap.xml",
+      "destination": "https://infinia-bharat-news-rf52.onrender.com/news-sitemap.xml"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "https://infinia-bharat-news-rf52.onrender.com/robots.txt"
+    }
+  ]
+}
