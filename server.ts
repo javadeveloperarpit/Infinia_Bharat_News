@@ -40,6 +40,103 @@ async function sendPushNotification(title, message, url) {
 
 }
 
+
+
+/*sitemap*/
+async function generateSitemapXML() {
+  const base = "https://infinia-bharat-news.vercel.app";
+
+  const [articlesSnap, videosSnap] = await Promise.all([
+    db.collection("articles").get(),
+    db.collection("videos").get()
+  ]);
+
+  const staticUrls = `<url>
+  <loc>${base}</loc>
+  <changefreq>hourly</changefreq>
+  <priority>1.0</priority>
+</url>`;
+
+  const articleUrls = articlesSnap.docs.map(doc => `<url>
+  <loc>${base}/article/${doc.id}</loc>
+  <changefreq>daily</changefreq>
+  <priority>0.9</priority>
+</url>`).join("");
+
+  const videoUrls = videosSnap.docs.map(doc => `<url>
+  <loc>${base}/video/${doc.id}</loc>
+  <changefreq>daily</changefreq>
+  <priority>0.8</priority>
+</url>`).join("");
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${staticUrls}
+${articleUrls}
+${videoUrls}
+</urlset>`;
+
+  return xml;
+}
+
+app.get("/ping",(req,res)=>{
+ res.send("alive")
+})
+app.get("/robots.txt", (req, res) => {
+  const content = `
+User-agent: *
+Disallow:
+
+Sitemap: https://infinia-bharat-news.vercel.app/sitemap.xml
+`.trim();
+  res.header("Content-Type", "text/plain");
+  res.send(content);
+});
+
+// Main sitemap route
+app.get("/sitemap.xml", async (req, res) => {
+  try {
+    const xml = await generateSitemapXML();
+    res.header("Content-Type", "application/xml");
+    res.send(xml);
+  } catch (error) {
+    console.error("Error generating sitemap:", error);
+    res.status(500).send("Error generating sitemap");
+  }
+});
+app.get("/news-sitemap.xml", async (req, res) => {
+  try {
+    const base = "https://infinia-bharat-news.vercel.app";
+    const [articlesSnap, videosSnap] = await Promise.all([
+      db.collection("articles").get(),
+      db.collection("videos").get()
+    ]);
+
+    const articleUrls = articlesSnap.docs.map(doc => `<url>
+  <loc>${base}/article/${doc.id}</loc>
+  <changefreq>daily</changefreq>
+  <priority>0.9</priority>
+</url>`).join("");
+
+    const videoUrls = videosSnap.docs.map(doc => `<url>
+  <loc>${base}/video/${doc.id}</loc>
+  <changefreq>daily</changefreq>
+  <priority>0.8</priority>
+</url>`).join("");
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${articleUrls}
+${videoUrls}
+</urlset>`;
+
+    res.header("Content-Type", "application/xml");
+    res.send(xml);
+  } catch (error) {
+    console.error("Error generating news sitemap:", error);
+    res.status(500).send("Error generating news sitemap");
+  }
+});
 app.post("/api/upload", upload.single("image"), async (req, res) => {
 
  if (!req.file) {
@@ -60,9 +157,8 @@ app.post("/api/upload", upload.single("image"), async (req, res) => {
  stream.end(req.file.buffer)
 
 })
-app.get("/ping",(req,res)=>{
- res.send("alive")
-})
+
+
 
 /* ARTICLES */
 
@@ -266,6 +362,7 @@ app.post("/api/settings", async(req,res)=>{
  res.json({success:true})
 
 })
+
 
 const PORT = process.env.PORT || 3000
 
