@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+<meta name="google-adsense-account" content="ca-pub-6155856047825271">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" href="./favicon.jpg" type="image/x-icon">
+    <title>Infinia Bharat News - Latest Hindi News, Breaking News</title>
+<meta name="theme-color" content="#dc2626" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="infinia Bharat News" />
+<meta name="mobile-web-app-capable" content="yes">
+
+<meta name="description" content="infinia Bharat News par payein desh duniya ki sabhi badi khabrein, live tv aur video updates hindi mein." />
+
+<meta name="robots" content="index, follow" />
+
+<meta name="keywords" content="infinia Bharat News, Hindi News, Breaking News Hindi, Latest News India, Samachar, Today Headlines, UP News in Hindi, Bihar News Live, Lucknow Petrol Crisis, Bihar Board 12th Result , BSEB Inter Result , T20 World Cup 2026 Live, India vs New Zealand Final, Sanju Samson 89, Abhishek Sharma 52, Gold Rate Today, Silver Price Drop India, S Jaishankar West Asia Statement, Iran Israel War Updates Hindi, Khamenei Successor News, CM Yogi Mother Controversy, Ravi Kishan Statement, Monalisa Mahakumbh Girl Marriage, LPG Cylinder 10kg Rumor Fact Check, PM Modi Jewar Airport Inauguration, Chandra Grahan 2026 Time, Kharmas 2026 Significance, Arvind Kejriwal Release News, KGMU Lucknow News, HPV Vaccination Ajmer, Bollywood News Hindi, Shahrukh Khan Arjun Tendulkar Wedding, Viral Video Today, Arpit Mishra Journalist, REC Sonbhadra News, Top Hindi News Portal, Online News Paper Hindi, Desktop News Live, Mobile News India, Google News Hindi,Hindi News, Breaking News, Latest News in Hindi, Samachar, News Headlines, India News, Aaj Ki Taza Khabar, Khabar Live, News Updates, Mainstream Media India, Digital News Portal, Hindi Samachar, Top Stories Hindi,Politics News, Election Updates,
+ Government Schemes 2026, PM Modi News,
+ Yogi Adityanath Updates,
+ Cabinet Decisions,
+ State Policy News,
+ Political Analysis,
+ Vidhansabha Updates,
+ Current Affairs Hindi,
+ Gold Price Today,
+ Silver Rate India,
+ Petrol Diesel Price Today,
+ Share Market Update Hindi,
+ LPG Gas Rate,
+ Weather Forecast Today,
+ Mausam Vibhag Update,
+ Rashifal Today,
+ Daily Horoscope,
+ Health Tips Hindi,
+ Vastu Tips,
+ Sarkari Result,
+ Exam Notifications,
+ UP Board Result Updates,
+ Bihar Board.News,
+ University.News.Hindi,
+ Entrance.Exam.2026,
+ Career.Guidance,
+ Job.Alert.Hindi,
+ Scholarship.Updates,Bollywood.News,
+ Upcoming.Movies,
+ Cricket.Score.Live,
+ T20.World.Cup.Highlights,
+ Celebrity.Gossip,
+ OTT.Release.Today,
+ Viral.Video.News,
+ Social.Media.Trends." />
+<meta name="google-site-verification" content="MR7wXn8H6cYnmzBhtZfyY6YBUEcg4swImDYuPpUyMko" />
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6155856047825271"
+     crossorigin="anonymous"></script>
+     <script>
+  (function () {
+    if (window.location.pathname === "/ads.txt") {
+  return;
+}
+    var host = window.location.hostname;
+    var fullPath = window.location.pathname + window.location.search;
+
+    if (host.startsWith("www.")) {
+      var newHost = host.replace("www.", "");
+      window.location.replace("https://" + newHost + fullPath);
+      return;
+    }
+    
+
+    // FIX 1: %23 ko handle karo
+    if (fullPath.startsWith("/%23/article/")) {
+      var cleanPath = fullPath.replace("/%23", "");
+      window.location.replace(window.location.origin + "/#" + cleanPath);
+      return;
+    }
+
+    // FIX 2: normal article route
+    if (fullPath.startsWith("/article/")) {
+      window.location.replace(window.location.origin + "/#" + fullPath);
+      return;
+    }
+
+    // 🔥 FIX 3: privacy, terms, cookie pages
+    if (
+      fullPath === "/privacy-policy" ||
+      fullPath === "/terms-of-service" ||
+      fullPath === "/cookie-policy"
+    ) {
+      window.location.replace(window.location.origin + "/#" + fullPath);
+      return;
+    }
+  })();
+</script> 
+     
+<style>
+  /* Base Reset - Only for body to remove outer white borders */
+  body, html {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* SEO Content Fix - Removing the background/padding that caused the gap */
+  #seo-content {
+    display: none;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+    margin: 0;
+    padding: 0;
+  }
+
+  .seo-hidden {
+    display: none;
+  }
+
+  /* TOP BAR - Black Background, White Text */
+  .tb-p { 
+    background: #000; 
+    color: #fff; 
+    padding: 8px 16px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    font-family: sans-serif; 
+    font-size: 14px; 
+  }
+
+  /* Social Icons Fix: Forcing them to be white */
+  .tb-s { display: flex; gap: 16px; }
+  .tb-s a { color: #fff !important; display: flex; text-decoration: none; }
+  .tb-s svg { stroke: #ffffff; fill: none; width: 16px; height: 16px; }
+
+  /* Right Side: Phone & Date */
+  .tb-r { display: flex; gap: 20px; align-items: center; }
+  .tb-ph { display: flex; align-items: center; gap: 5px; }
+  
+  /* New Date Styling */
+  .tb-date { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    color: white; 
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    min-width: 160px; /* Prevents layout jump */
+  }
+
+  /* HEADER - White Background, No Gap */
+  .h-main { 
+    background: #fff; 
+    padding: 24px 24px; 
+    border-bottom: 1px solid #e5e7eb; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    font-family: sans-serif;
+    margin: 0 !important; 
+  }
+
+  .h-b { display: flex; align-items: center; gap: 16px; }
+  .h-l { width: 52px; height: 52px; border-radius: 4px; object-fit: cover; }
+  @media (min-width:768px) { .h-l { width: 72px; height: 72px; } }
+
+  .h-t { margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.05em; color: #dc2626; font-style: italic; line-height: 1; }
+  @media (min-width:768px) { .h-t { font-size: 36px; } }
+
+  .h-tg { margin: 6px 0 0 0; font-size: 9px; letter-spacing: 0.2em; font-weight: 700; color: #71717a; text-transform: uppercase; }
+  @media (min-width:768px) { .h-tg { font-size: 11px; } }
+
+  /* Keep your original Article Styles untouched here */
+  #seo-content article { margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+  .news-article { background: #fff; border: 1px solid #eee; padding: 20px; border-radius: 8px; transition: all 0.3s ease; cursor: pointer; }
+  .news-article:hover { box-shadow: 0 10px 20px rgba(0,0,0,0.1); transform: translateY(-5px); border-color: #dc2626; }
+  .category-tag { background: #dc2626; color: #fff; padding: 3px 10px; font-size: 12px; font-weight: bold; display: inline-block; margin-bottom: 10px; }
+  .news-title { font-size: 22px; line-height: 1.3; margin: 10px 0; color: #111; }
+
+  /* Utility */
+  .i-14 { width: 14px; height: 14px; }
+
+  @media (max-width: 767px) { 
+    .tb-p, .h-main, .h-b { flex-direction: column; text-align: center; gap: 10px; } 
+  }
+/* Full Screen Overlay */
+#pbn-loader {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: radial-gradient(circle, #ffffff 0%, #f0f0f0 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+/* Container for the Circle */
+.royal-loader-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* The Logo - Central Piece */
+.loader-logo {
+  width: 75px;
+  height: 75px;
+  border-radius: 50%;
+
+  object-fit: contain;   /* ✅ FIX: no crop */
+  background: #3c050a;   /* ✅ same as brand */
+  padding: 8px;          /* ✅ spacing for proper fit */
+
+  z-index: 10;
+  border: 2px solid rgba(255,255,255,0.7);
+
+  box-shadow: 0 0 20px rgba(255,255,255,0.3);
+
+  animation: logo-zoom 2s ease-in-out infinite;
+}
+
+/* Outer Spinning Ring - Aaj Tak Style Red & Gold */
+.outer-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: #dc2626; /* infinia Red */
+  border-bottom-color: #fbbf24; /* Golden Yellow */
+  animation: spin-royal 1s linear infinite;
+}
+
+/* Inner Pulsing Glow */
+.inner-glow {
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: rgba(220, 38, 38, 0.05);
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+/* Brand Text Below Loader */
+.loader-brand-text {
+  margin-top: 20px;
+  font-family: 'Segoe UI', Roboto, sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 2px;
+  color: #111;
+  text-transform: uppercase;
+}
+
+.loader-brand-text span {
+  color: #dc2626;
+}
+
+/* Animations */
+@keyframes spin-royal {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes logo-zoom {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@keyframes pulse-glow {
+  0% { transform: scale(0.8); opacity: 0.3; }
+  50% { transform: scale(1.2); opacity: 0.6; }
+  100% { transform: scale(0.8); opacity: 0.3; }
+}
+
+/* Smooth Hide */
+.loader-hidden {
+  opacity: 0;
+  transform: scale(1.1);
+  transition: all 0.5s ease-out;
+  pointer-events: none;
+}
+</style>
+ 
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "NewsMediaOrganization",
+  "name": "infinia Bharat News",
+  "url": "http://infiniabharatnews.vercel.app/",
+  "logo": "http://infiniabharatnews.vercel.app/favicon.jpg",
+  "description": "infinia Bharat News ek trusted Hindi news platform hai jahan aapko milti hai desh duniya ki taza khabrein, breaking news, live updates aur video news Hindi mein.",
+  
+  "founder": {
+    "@type": "Person",
+    "name": "Secret Man"
+  },
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "telephone": "+91-7355308358",
+    "contactType": "customer support",
+    "areaServed": "IN",
+    "availableLanguage": ["Hindi", "English"]
+  },
+  "address": {
+    "@type": "PostalAddress",
+    "addressCountry": "IN"
+  },
+  "areaServed": {
+    "@type": "Country",
+    "name": "India"
+  },
+  "publishingPrinciples": "http://infiniabharatnews.vercel.app/privacy-policy",
+  "knowsAbout": [
+    "Hindi News",
+    "Breaking News India",
+    "Latest News India",
+    "Politics News",
+    "Crime News",
+    "Entertainment News",
+    "Sports News",
+    "Business News",
+    "Technology News",
+    "Live TV News",
+    "Video News",
+    "National News India",
+    "International News",
+    "UP News",
+    "Delhi News"
+  ]
+}
+</script>
+
+    <script type="module" crossorigin src="./assets/index-B77nVBcl.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-RFrhLuQP.css">
+  <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="./registerSW.js"></script></head>
+  <body>
+    <div id="seo-content" aria-hidden="false" >
+        <div class="tb-p">
+    <div class="tb-s">
+      <a href="https://youtube.com/@Infinia_Bharat_News">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+      </a>
+      <a href="https://youtube.com/@Infinia_Bharat_News">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.42a2.78 2.78 0 0 0-1.94 2C1 8.12 1 12 1 12s0 3.88.42 5.58a2.78 2.78 0 0 0 1.94 2c1.72.42 8.6.42 8.6.42s6.88 0 8.6-.42a2.78 2.78 0 0 0 1.94-2C23 15.88 23 12 23 12s0-3.88-.42-5.58z"></path><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"></polygon></svg>
+      </a>
+    </div>
+    
+    <div class="tb-r">
+      <div class="tb-ph">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" class="i-14"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+        <span>+91 7355308358</span>
+      </div>
+      
+      <div class="tb-date">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="i-14"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        <span id="live-date"></span>
+        <script>
+          document.getElementById('live-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        </script>
+      </div>
+    </div>
+  </div>
+
+  <header class="h-main">
+    <div class="h-b">
+      <img src="./favicon.jpg" class="h-l" alt="Logo">
+      <div>
+        <h1 class="h-t">INFINIA <span style="color:#dc2626">भारत</span> NEWS</h1>
+        <p class="h-tg">TRUTH • INTEGRITY • EXCELLENCE</p>
+      </div>
+    </div>
+  </header>
+
+    <section style="max-width: 1100px; margin: 50px auto; padding: 40px; background: #fff; border: 1px solid #e0e0e0; display: flex; flex-wrap: wrap; gap: 40px; align-items: center;">
+        <div style="flex: 0 0 280px; text-align: center;">
+            <div style="padding: 10px; border: 1px solid #ddd; display: inline-block;">
+                <img src="./favicon.jpg" style="width: 250px; height: 300px; object-fit: contain; filter: sepia(0.2);">
+            </div>
+        </div>
+        <div style="flex: 1; min-width: 300px;">
+            <h4 style="color: #dc2626; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; margin-bottom: 10px;">The Editorial Desk</h4>
+            <h2 style="font-size: 36px; margin: 0 0 20px 0; font-family: 'Times New Roman', serif;">Message from Head</h2>
+            <p style="font-size: 18px; color: #444; font-style: italic; border-left: 4px solid #dc2626; padding-left: 20px;">
+                "उद्देश्य केवल खबर देना नहीं, बल्कि समाज के अंतिम व्यक्ति की आवाज़ बनना है। हम आधुनिक तकनीक और पारंपरिक पत्रकारिता के मूल्यों का संगम हैं।"
+            </p>
+            <p style="color: #555; margin-top: 20px;">
+                हमारी टीम गहन शोध और तथ्यों की जांच के बाद ही समाचार प्रकाशित करती है। हम न्यूज़ रूम में निष्पक्षता और तेज़ी के बीच संतुलन बनाए रखने के लिए प्रतिबद्ध हैं।
+            </p>
+            <div style="margin-top: 20px; font-size: 14px; font-weight: bold; color: #111;">
+                📧 infiniabharatnews@gmail.com | 📍 Main Bureau: Uttar Pradesh
+            </div>
+        </div>
+    </section>
+
+    <section style="max-width: 1100px; margin: 60px auto; padding: 0 20px;">
+        <h2 style="background: #dc2626; color: white; display: inline-block; padding: 5px 20px; margin-bottom: 30px;"> While the website is rendering, check out our old articles. </h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr; gap: 40px;">
+<article class="news-article">
+                <span class="category-tag">International / Geopolitics</span>
+                <h3 class="news-title">मिडिल ईस्ट में नई चाल: अमेरिका-इजरायल को अलग-थलग करने में जुटा ईरान</h3>
+                <p class="news-text">तेहरान ने खाड़ी क्षेत्र में नई क्षेत्रीय व्यवस्था बनाने की कोशिश शुरू कर दी है। ईरान का फोकस अब सऊदी अरब, कतर, यूएई और ओमान जैसे देशों के साथ रिश्तों को मजबूत करना है, ताकि अमेरिका और इजरायल के रणनीतिक प्रभाव को कम किया जा सके। विशेषज्ञों का मानना है कि यह शक्ति संतुलन बदलने की एक बड़ी कोशिश है, हालांकि बाहरी शक्तियों के गहरे प्रभाव के चलते यह एक बड़ी चुनौती बनी हुई है।</p>
+            </article>
+
+            <article class="news-article">
+                <span class="category-tag">UP News / Lucknow</span>
+                <h3 class="news-title">LPG संकट का असर: लखनऊ के KGMU में मरीजों की थाली से गायब हुई 2 रोटियां</h3>
+                <p class="news-text">किंग जॉर्ज मेडिकल यूनिवर्सिटी (KGMU) में एलपीजी गैस की कमी के कारण मरीजों के भोजन में कटौती की गई है। जहां मरीजों को चार रोटियां मिलती थीं, वहां अब केवल दो रोटियां दी जा रही हैं। अस्पताल प्रशासन का कहना है कि गैस आपूर्ति सुचारु होते ही स्थिति सामान्य कर दी जाएगी, लेकिन फिलहाल मरीजों और परिजनों में काफी नाराजगी देखी जा रही है।</p>
+            </article>
+
+            <article class="news-article">
+                <span class="category-tag">Politics / Legal Update</span>
+                <h3 class="news-title">सबसे बड़ी राजनीतिक साज़िश’ — रिहाई के बाद अरविंद केजरीवाल का तीखा बयान</h3>
+                <p class="news-text">दिल्ली आबकारी मामले में राहत मिलने के बाद अरविंद केजरीवाल ने अपनी चुप्पी तोड़ी है। उन्होंने इसे एक राजनीतिक साजिश करार देते हुए कहा कि सत्य की जीत हुई है। मनीष सिसोदिया और अन्य नेताओं को आरोपमुक्त किए जाने के बाद आम आदमी पार्टी इसे अपनी बड़ी नैतिक और कानूनी जीत मान रही है।</p>
+            </article>
+
+            <article class="news-article">
+                <span class="category-tag">Science / Astrology</span>
+                <h3 class="news-title">Chandra Grahan 2026: होली पर लगने जा रहा साल का पहला चंद्र ग्रहण, 'Blood Moon' का समय</h3>
+                <p class="news-text">3 मार्च को साल 2026 का पहला चंद्र ग्रहण लगेगा। यह ग्रहण दोपहर 3 बजकर 20 मिनट से शाम 6 बजकर 47 मिनट तक रहेगा। उज्जैन के ज्योतिषाचार्यों के अनुसार, सूतक काल 9 घंटे पहले ही शुरू हो जाएगा। इस दौरान धार्मिक मान्यताओं के अनुसार मूर्ति स्पर्श और भोजन पकाने की मनाही रहेगी।</p>
+            </article>
+
+            <article class="news-article">
+                <span class="category-tag">Sports / Cricket</span>
+                <h3 class="news-title">जिम्बाब्वे बनाम साउथ अफ्रीका: रोमांचक मुकाबले के लिए तैयार क्रिकेट प्रेमी</h3>
+                <p class="news-text">साउथ अफ्रीका और जिम्बाब्वे के बीच अहम मुकाबला खेला जा रहा है। जहां साउथ अफ्रीका अपनी मजबूती के साथ मैदान में है, वहीं जिम्बाब्वे उलटफेर की तैयारी में है। पिच रिपोर्ट के अनुसार शुरुआत में तेज गेंदबाजों को मदद मिलने की उम्मीद है, जिससे मुकाबला और भी दिलचस्प हो गया है।</p>
+            </article>
+            <article class="news-article">
+                <span class="category-tag">Development / National</span>
+                <h3 class="news-title">जेवर एयरपोर्ट का भव्य शुभारंभ: पीएम मोदी ने NCR को दिया दूसरा इंटरनेशनल एयरपोर्ट</h3>
+                <p class="news-text">प्रधानमंत्री नरेंद्र मोदी ने शनिवार को उत्तर प्रदेश के जेवर में नोएडा इंटरनेशनल एयरपोर्ट के पहले चरण का उद्घाटन किया। यह दिल्ली-एनसीआर का दूसरा बड़ा अंतरराष्ट्रीय हवाई अड्डा है, जो न सिर्फ यात्रा को सुगम बनाएगा बल्कि उत्तर प्रदेश को एक ग्लोबल एविएशन हब के रूप में स्थापित करेगा।</p>
+            </article>
+
+            <article class="news-article">
+                <span class="category-tag">Health / Policy</span>
+                <h3 class="news-title">अजमेर से बेटियों के स्वास्थ्य को नई दिशा: HPV वैक्सीनेशन अभियान शुरू</h3>
+                <p class="news-text">पीएम मोदी ने राजस्थान के अजमेर में ₹16,680 करोड़ की विकास परियोजनाओं का लोकार्पण किया। इस कार्यक्रम का मुख्य केंद्र 14 वर्ष की बेटियों के लिए HPV वैक्सीनेशन अभियान की शुरुआत रही, जिसे महिलाओं की स्वास्थ्य सुरक्षा की दिशा में एक क्रांतिकारी कदम माना जा रहा है।</p>
+            </article>
+
+            <article class="news-article">
+                <span class="category-tag">Sports / World Cup</span>
+                <h3 class="news-title">टी20 वर्ल्ड कप 2026: सुपर 8 का रोमांच चरम पर, वेस्टइंडीज से भिड़ेगा भारत</h3>
+                <p class="news-text">ICC Men's T20 World Cup के सुपर 8 चरण में जंग तेज हो गई है। पाकिस्तान ने श्रीलंका पर जीत दर्ज की है, वहीं भारत के लिए वेस्टइंडीज के खिलाफ होने वाला अगला मुकाबला सेमीफाइनल की राह तय करने के लिए बेहद महत्वपूर्ण है।</p>
+            </article>
+
+            <article class="news-article">
+                <span class="category-tag">Entertainment / Bollywood</span>
+                <h3 class="news-title">‘धुरंधर: द रिवेंज’ ट्रेलर आउट: रणवीर सिंह और अर्जुन रामपाल की जोरदार टक्कर</h3>
+                <p class="news-text">आदित्य धर की अगली फिल्म 'धुरंधर 2' का ट्रेलर रिलीज होते ही सोशल मीडिया पर छा गया है। हमजा अली मजारी के रूप में रणवीर सिंह का एक्शन और मेजर इकबाल के किरदार में अर्जुन रामपाल का खौफ दर्शकों के बीच चर्चा का विषय बना हुआ है। फिल्म 19 मार्च को रिलीज होगी।</p>
+            </article>
+
+            <article class="news-article">
+                <span class="category-tag">National / Protest</span>
+                <h3 class="news-title">जंतर-मंतर पर शिया काउंसिल का प्रदर्शन: खामेनेई की हत्या पर आक्रोश</h3>
+                <p class="news-text">दिल्ली के जंतर-मंतर पर ऑल इंडिया शिया काउंसिल ने विरोध प्रदर्शन किया। प्रदर्शनकारियों ने ईरान के सुप्रीम लीडर अयातुल्ला अली खामेनेई की हत्या की निंदा करते हुए अंतरराष्ट्रीय कानून के उल्लंघन का आरोप लगाया और संयुक्त राष्ट्र से हस्तक्षेप की मांग की।</p>
+            </article>
+
+            <article class="news-article">
+                <span class="category-tag">Celebrity / Lifestyle</span>
+                <h3 class="news-title">शाहरुख खान ने फैमिली संग की स्टाइलिश एंट्री, अर्जुन तेंदुलकर की शादी का बढ़ा ग्लैमर</h3>
+                <p class="news-text">मुंबई में आयोजित अर्जुन तेंदुलकर की शादी में बॉलीवुड किंग शाहरुख खान अपने पूरे परिवार के साथ पहुंचे। उनके एलिगेंट लुक और ग्रैंड एंट्री ने सोशल मीडिया पर खूब सुर्खियां बटोरीं, जिससे समारोह की रौनक और बढ़ गई।</p>
+            </article>
+            <article class="news-article">
+                <div class="category-tag">Education / Bihar Board 2026</div>
+                <h3 class="news-title">Bihar Board 12th Result 2026 LIVE: जिला वार रिजल्ट और टॉपर्स लिस्ट जारी</h3>
+                <p class="news-text">बिहार स्कूल एग्जामिनेशन बोर्ड (BSEB) ने 12वीं की परीक्षा का परिणाम आधिकारिक तौर पर घोषित कर दिया है। छात्र अपना स्कोरकार्ड biharboardonline.com पर देख सकते हैं। इस साल 2 फरवरी से 13 फरवरी तक आयोजित परीक्षाओं में लाखों छात्रों ने भाग लिया था। बोर्ड ने पास प्रतिशत और मेरिट लिस्ट भी जारी कर दी है।</p>
+                <div class="highlight-box">
+                    <strong>Note:</strong> रोल कोड और रोल नंबर के जरिए छात्र अपना रिजल्ट तुरंत डाउनलोड कर सकते हैं।
+                </div>
+            </article>
+
+            <article class="news-article">
+                <div class="category-tag">National / UP News</div>
+                <h3 class="news-title">लखनऊ की सड़कों पर सवर्ण समाज का उबाल, UGC रेगुलेशन के खिलाफ जोरदार प्रदर्शन</h3>
+                <p class="news-text">राष्ट्रीय सवर्ण मंच ने लखनऊ के हजरतगंज में UGC रेगुलेशन 2026 के खिलाफ प्रदर्शन किया। अतुल कुमार दुबे के नेतृत्व में कार्यकर्ताओं ने विधानसभा कूच का प्रयास किया। प्रदर्शनकारियों की मुख्य मांगें UGC रेगुलेशन वापस लेने, सवर्ण आयोग के गठन और जातिगत आरक्षण को समाप्त करने से जुड़ी हैं।</p>
+            </article>
+
+            <article class="news-article">
+                <div class="category-tag">Religion / Lifestyle</div>
+                <h3 class="news-title">खरमास 2026: जानिए क्यों टाल दिए जाते हैं मांगलिक कार्य और क्या है ज्योतिषीय कारण</h3>
+                <p class="news-text">15 मार्च 2026 से खरमास की शुरुआत हो रही है। जब सूर्य मीन राशि में प्रवेश करते हैं, तो उनकी ऊर्जा कमजोर मानी जाती है, जिससे विवाह और गृह प्रवेश जैसे शुभ कार्य 14 अप्रैल तक वर्जित रहेंगे। ज्योतिष मान्यताओं के अनुसार, इस अवधि में पूजा-पाठ और आध्यात्मिक कार्यों का विशेष महत्व होता है।</p>
+            </article>
+
+            <article class="news-article">
+                <div class="category-tag">National / International Conflict</div>
+                <h3 class="news-title">छोटा इमामबाड़ा में रात 8 बजे शोकसभा, अयातुल्ला ख़ामेनई की शहादत पर 3 दिन का शोक</h3>
+                <p class="news-text">मौलाना कल्बे जवाद की अपील पर लखनऊ में तीन दिन के शोक का ऐलान किया गया है। ईरान के सुप्रीम लीडर की शहादत के विरोध में छोटे इमामबाड़े में शोकसभा और कैंडल मार्च निकाला जाएगा। सभी घरों और इमामबारगाहों पर काले परचम लगाकर आक्रोश व्यक्त किया जा रहा है।</p>
+            </article>
+            <article class="news-article">
+                <div class="category-tag">Business & Finance</div>
+                <h3 class="news-title">गोल्ड-सिल्वर में बड़ी गिरावट, हाई से हजारों रुपये सस्ता हुआ सोना-चांदी</h3>
+                <p class="news-text">वैश्विक तनाव के बावजूद सर्राफा बाजार में उलट ट्रेंड देखने को मिला है। MCX के आंकड़ों के अनुसार, चांदी की कीमतों में पिछले हफ्ते 14,000 रुपये प्रति किलो की गिरावट आई है। विशेषज्ञों का मानना है कि निवेशक अब मुनाफावसूली (profit booking) कर रहे हैं। वर्तमान में 24 कैरेट सोना 1,61,675 रुपये प्रति 10 ग्राम के स्तर पर बना हुआ है, जो पिछले उच्च स्तरों से काफी कम है।</p>
+            </article>
+
+            <article class="news-article">
+                <div class="category-tag">Diplomacy / National</div>
+                <h3 class="news-title">West Asia Conflict: भारत ने शांति और संवाद पर दिया जोर, संसद में बोले एस. जयशंकर</h3>
+                <p class="news-text">विदेश मंत्री डॉ. एस. जयशंकर ने संसद में पश्चिम एशिया के बिगड़ते हालात पर चिंता व्यक्त की। उन्होंने कहा कि करीब 1 करोड़ भारतीय नागरिकों की सुरक्षा सरकार की सर्वोच्च प्राथमिकता है। भारत ने सभी पक्षों से संयम बरतने और कूटनीति के जरिए विवाद सुलझाने की अपील की है, ताकि वैश्विक अर्थव्यवस्था और समुद्री व्यापार पर बुरा असर न पड़े।</p>
+            </article>
+
+            <article class="news-article">
+                <div class="category-tag">Uttar Pradesh / Local</div>
+                <h3 class="news-title">लखनऊ में पेट्रोल को लेकर हड़कंप, पंपों पर लगीं किलोमीटर लंबी कतारें</h3>
+                <p class="news-text">उत्तर प्रदेश की राजधानी लखनऊ के हजरतगंज और चौक जैसे इलाकों में पेट्रोल की कमी की अफवाह के बाद अफरा-तफरी मच गई। हालांकि प्रशासन और पेट्रोलियम कंपनियों ने स्पष्ट किया है कि स्टॉक पर्याप्त है, लेकिन पश्चिम एशिया में युद्ध की खबरों के कारण लोग घबराहट में (panic buying) तेल का स्टॉक जमा कर रहे हैं।</p>
+            </article>
+
+            <article class="news-article">
+                <div class="category-tag">Global Politics</div>
+                <h3 class="news-title">खामेनेई के बाद कौन? ईरान में नए सुप्रीम लीडर के चयन की प्रक्रिया पूरी</h3>
+                <p class="news-text">ईरान की 'असेंबली ऑफ एक्सपर्ट्स' ने नए सर्वोच्च नेता के लिए मतदान प्रक्रिया पूरी कर ली है। मशहद के इमाम अहमद आलमोलहोदा ने दावा किया है कि फैसला लिया जा चुका है और जल्द ही आधिकारिक घोषणा की जाएगी। यह घटनाक्रम ऐसे समय में आया है जब इजरायल ने तेहरान के ऊर्जा ठिकानों पर हवाई हमले तेज कर दिए हैं।</p>
+            </article>
+
+            <article class="news-article">
+                <div class="category-tag">Political Controversy</div>
+                <h3 class="news-title">मौलाना के बयान पर भाजपा का पलटवार, रवि किशन बोले – मां का अपमान अस्वीकार्य</h3>
+                <p class="news-text">गोरखपुर सांसद रवि किशन ने सीएम योगी आदित्यनाथ की मां पर की गई आपत्तिजनक टिप्पणी की कड़ी निंदा की है। उन्होंने कहा कि भारतीय संस्कृति में मां का दर्जा सर्वोच्च है और ऐसी भाषा का उपयोग करने वाले अपनी घटिया सोच का परिचय दे रहे हैं। लखनऊ में समर्थकों ने मौलाना के खिलाफ कार्रवाई की मांग को लेकर विरोध प्रदर्शन भी किया।</p>
+            </article>
+
+            <article class="news-article">
+                <div class="category-tag">Governance / UP</div>
+                <h3 class="news-title">कालाबाजारी पर सीएम योगी सख्त: अधिकारियों को दिए कड़े निर्देश</h3>
+                <p class="news-text">मुख्यमंत्री योगी आदित्यनाथ ने राज्य में तेल और गैस की जमाखोरी रोकने के लिए विशेष अभियान चलाने के निर्देश दिए हैं। उन्होंने स्पष्ट किया कि आम जनता को असुविधा होने पर संबंधित जिले के डीएम और पुलिस कप्तानों की जवाबदेही तय की जाएगी।</p>
+            </article>
+            <div style="background: #f4f4f4; padding: 20px; border-radius: 5px;">
+                <h4 style="margin: 0 0 10px 0;">More Highlights:</h4>
+                <ul style="font-size: 14px; color: #555;">
+                    <li><strong>Entertainment:</strong> अर्जुन तेंदुलकर की शादी में शाह रुख खान की स्टाइलिश एंट्री।</li>
+                    <li><strong>UP News:</strong> लखनऊ की सड़कों पर सवर्ण समाज का UGC रेगुलेशन के खिलाफ प्रदर्शन।</li>
+                    <li><strong>Astro:</strong> खरमास 15 मार्च से शुरू, एक महीने तक मांगलिक कार्यों पर रोक।</li>
+                    <li><strong>International:</strong> ईरान में नए सुप्रीम लीडर के चयन की प्रक्रिया पूरी, जल्द होगी घोषणा।</li>
+                    <li><strong>Crime:</strong> दिल्ली के जंतर-मंतर पर शिया काउंसिल का इजरायल के खिलाफ विरोध प्रदर्शन।</li>
+                    <li><strong>Petrol Crisis:</strong> लखनऊ के पेट्रोल पंपों पर लंबी कतारें, सरकार ने कहा स्टॉक पर्याप्त है।</li>
+                    <li><strong>Education:</strong> बिहार बोर्ड 12वीं का रिजल्ट जारी, छात्राओं ने टॉप लिस्ट में जगह बनाई।</li>
+                    <li><strong>Weather:</strong> उत्तर प्रदेश के पूर्वी जिलों में भारी बारिश का अलर्ट जारी।</li>
+                    <li><strong>Politics:</strong> अरविंद केजरीवाल का बयान - मेरे खिलाफ रची गई सबसे बड़ी साजिश।</li>
+                    <li><strong>Health:</strong> अजमेर से शुरू हुआ देश का सबसे बड़ा HPV वैक्सीनेशन अभियान।</li>
+                </ul>
+            </div>
+
+        </div>
+    </section>
+
+    
+
+</div>
+<div id="pbn-loader" style="display: none;">
+  <div class="royal-loader-container">
+    <div class="inner-glow"></div>
+    
+    <img src="./favicon.jpg" class="loader-logo" alt="PBN">
+    
+    <div class="outer-ring"></div>
+  </div>
+  
+  <div class="loader-brand-text">
+   INFINIA<span>भारत</span> NEWS
+  </div>
+</div>
+<script>
+  (function() {
+    const seo = document.getElementById('seo-content');
+    const loader = document.getElementById('pbn-loader');
+    const hasVisited = localStorage.getItem('pbn_visited');
+
+    if (!hasVisited) {
+      seo.style.display = 'block'; 
+      
+      window.addEventListener("load", () => {
+        setTimeout(() => {
+          
+          seo.style.transition = "opacity 0.5s ease";
+          seo.style.opacity = "0";
+          
+          setTimeout(() => {
+            seo.style.display = 'none';
+            localStorage.setItem('pbn_visited', 'true'); 
+          }, 500);
+        }, 2000);
+      });
+    } 
+    
+    // 2. अगर यूजर पुराना है
+    else {
+      seo.style.display = 'none';
+      loader.style.display = 'flex'; 
+      
+      window.addEventListener("load", () => {
+        
+        setTimeout(() => {
+          loader.classList.add('loader-hidden');
+          setTimeout(() => { 
+            loader.style.display = 'none'; 
+          }, 300);
+        }, 500); 
+      });
+    }
+  })();
+</script>
+
+    <div id="root"></div>
+  </body>
+</html>
+
