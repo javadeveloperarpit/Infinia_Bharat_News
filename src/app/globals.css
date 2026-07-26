@@ -1,26 +1,352 @@
 @import "tailwindcss";
 
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+
+  --background:#FDF8F8;
+
+  --foreground:#1A1A1A;
+
+
+  /* INFINIA BRAND */
+
+  --brand-maroon:#730708;
+
+  --brand-maroon-dark:#4A0405;
+
+  --brand-gold:#ECCA6D;
+
+  --brand-white:#FDF8F8;
+
+
+  --card:#ffffff;
+
+  --border:rgba(115,7,8,0.15);
+
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+
+/* RESET */
+
+* {
+
+  box-sizing:border-box;
+
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+
+
+html {
+
+  scroll-behavior:smooth;
+
 }
+
+
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+
+  background:var(--background);
+
+  color:var(--foreground);
+
+  font-family:
+  Arial,
+  Helvetica,
+  sans-serif;
+
+}
+
+
+
+
+
+
+/* MAIN CONTAINER */
+
+.container-news {
+
+  width:100%;
+
+  max-width:1500px;
+
+  margin:auto;
+
+  padding-left:32px;
+
+  padding-right:32px;
+
+}
+
+
+
+
+
+/* PREMIUM NEWS CARD */
+
+.news-card {
+
+  background:var(--card);
+
+  border:1px solid var(--border);
+
+  border-radius:16px;
+
+  overflow:hidden;
+
+  transition:.35s ease;
+
+}
+
+
+
+
+
+.news-card:hover {
+
+  transform:translateY(-6px);
+
+  box-shadow:
+  0 15px 40px rgba(115,7,8,.18);
+
+}
+
+
+
+
+
+
+/* IMAGE ZOOM */
+
+.image-hover {
+
+  transition:.45s ease;
+
+}
+
+
+
+.news-card:hover .image-hover {
+
+  transform:scale(1.06);
+
+}
+
+
+
+
+
+
+/* SECTION TITLE */
+
+.section-title {
+
+font-size:24px;
+
+font-weight:800;
+
+display:flex;
+
+align-items:center;
+
+gap:12px;
+
+color:var(--brand-maroon);
+
+}
+
+
+
+.section-title::before{
+
+content:"";
+
+width:6px;
+
+height:28px;
+
+background:var(--brand-gold);
+
+border-radius:10px;
+
+}
+
+
+
+
+
+
+
+/* GOLD BORDER EFFECT */
+
+.gold-border {
+
+border:1px solid var(--brand-gold);
+
+}
+
+
+
+
+
+
+
+/* PREMIUM BUTTON */
+
+.brand-button {
+
+background:
+linear-gradient(
+135deg,
+#ECCA6D,
+#D8A93A
+);
+
+color:#730708;
+
+font-weight:700;
+
+border-radius:999px;
+
+padding:10px 22px;
+
+transition:.3s ease;
+
+}
+
+
+
+.brand-button:hover {
+
+transform:scale(1.05);
+
+}
+
+
+
+
+
+
+
+/* BRAND HEADER */
+
+.brand-header {
+
+background:
+linear-gradient(
+135deg,
+#730708,
+#4A0405
+);
+
+color:white;
+
+}
+
+
+
+
+
+
+
+/* BREAKING BAR */
+
+.breaking-bar {
+
+background:#730708;
+
+color:#FDF8F8;
+
+border-top:
+1px solid rgba(236,202,109,.3);
+
+border-bottom:
+1px solid rgba(236,202,109,.3);
+
+}
+
+
+
+
+
+.breaking-label {
+
+background:#ECCA6D;
+
+color:#730708;
+
+font-weight:800;
+
+}
+
+
+
+
+
+
+
+/* TICKER */
+
+@keyframes ticker {
+
+
+from{
+
+transform:translateX(100%);
+
+}
+
+
+
+to{
+
+transform:translateX(-100%);
+
+}
+
+
+}
+
+
+
+
+
+
+.ticker-animation {
+
+animation:
+ticker 25s linear infinite;
+
+}
+
+
+
+
+
+
+
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+
+.container-news{
+
+padding-left:16px;
+
+padding-right:16px;
+
+}
+
+
+
+.section-title{
+
+font-size:20px;
+
+}
+
+
 }
