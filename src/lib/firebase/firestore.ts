@@ -6,6 +6,7 @@ import {
   getDocs,
   updateDoc,
   deleteDoc,
+  setDoc,
   query,
   where,
   orderBy,
@@ -61,7 +62,22 @@ export async function getDocument<T>(
 
 }
 
+export async function setDocument(
+  collectionName:string,
+  id:string,
+  data:DocumentData
+){
 
+  await setDoc(
+    doc(
+      db,
+      collectionName,
+      id
+    ),
+    data
+  );
+
+}
 
 // Get Collection
 export async function getCollection(

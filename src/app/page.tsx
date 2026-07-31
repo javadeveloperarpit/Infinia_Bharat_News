@@ -22,9 +22,6 @@ const featured =
 await getFeaturedArticles();
 
 
-
-
-
 return (
 
 <main>

@@ -2604,25 +2604,17 @@ src\app\admin\page.tsx
 ================================================
 
 
-import AdminGuard from "@/components/common/admin-guard";
-
 import DashboardContent 
 from "@/features/admin/dashboard/dashboard-content";
 
 
 export default function AdminPage(){
 
-
 return (
-
-<AdminGuard>
 
 <DashboardContent/>
 
-</AdminGuard>
-
 );
-
 
 }
 
@@ -2783,6 +2775,62 @@ loading
 
 </div>
 
+
+
+</div>
+
+);
+
+}
+
+
+
+================================================
+FILE PATH:
+src\app\admin\settings\page.tsx
+================================================
+
+
+import Link from "next/link";
+
+
+export default function SettingsPage(){
+
+return (
+
+<div className="space-y-5">
+
+
+<h1 className="text-3xl font-bold">
+Settings
+</h1>
+
+
+<div className="bg-white p-5 rounded-xl border">
+
+<p className="text-zinc-600 mb-4">
+Manage website settings
+</p>
+
+
+<Link
+href="/admin/settings/categories"
+className="
+bg-red-600
+text-white
+px-5
+py-3
+rounded-lg
+inline-block
+"
+>
+
+Manage Categories
+
+</Link>
+
+
+</div>
 
 
 </div>
@@ -3755,21 +3803,12 @@ export default function LoginPage(){
 
 
     const result = await signInWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
+ auth,
+ email,
+ password
+);
 
-
-    console.log(
-      "LOGIN SUCCESS:",
-      result.user.uid
-    );
-
-
-    setTimeout(()=>{
-  window.location.href="/admin";
-},500);
+router.replace("/admin");
 
 
   }
@@ -4030,7 +4069,12 @@ children:React.ReactNode
 
 const router = useRouter();
 
-const {user,loading:authLoading}=useAuth();
+
+const {
+user,
+loading:authLoading
+}=useAuth();
+
 
 const {
 role,
@@ -4039,15 +4083,15 @@ loading:roleLoading
 
 
 
-const loading =
-authLoading || roleLoading;
-
-
-
 useEffect(()=>{
 
 
-if(loading) return;
+
+if(authLoading || roleLoading){
+
+return;
+
+}
 
 
 
@@ -4062,6 +4106,7 @@ return;
 
 
 if(
+role &&
 role !== "admin" &&
 role !== "editor"
 ){
@@ -4074,21 +4119,28 @@ return;
 
 
 },[
-loading,
 user,
 role,
-router
+authLoading,
+roleLoading
 ]);
 
 
 
 
-if(loading){
+if(
+authLoading ||
+roleLoading
+){
 
 return (
+
 <div className="p-10">
+
 Checking permissions...
+
 </div>
+
 );
 
 }
@@ -5335,12 +5387,6 @@ try{
 
 
 const data = await getCategories();
-
-
-console.log(
-"Navbar Categories:",
-data
-);
 
 
 
@@ -7130,11 +7176,6 @@ export function AuthProvider(
   auth,
   (currentUser)=>{
 
-    console.log(
-      "AUTH STATE:",
-      currentUser
-    );
-
 
     setUser(currentUser);
 
@@ -7252,23 +7293,14 @@ export function useUserRole(){
 
 
 
-        console.log(
-          "USER PROFILE:",
-          profile
-        );
-
-
-
         if(profile){
-
- console.log("ROLE FOUND:", profile.role);
 
  setRole(profile.role);
 
 }
 else{
 
- console.log("NO PROFILE FOUND");
+setRole(null);
 
 }
 

@@ -9,9 +9,9 @@ import {
   Bell,
   Image,
   Users,
-  Settings
+  Settings,
+  X
 } from "lucide-react";
-
 
 const menu = [
 
@@ -59,93 +59,164 @@ const menu = [
 
 ];
 
+export default function AdminSidebar({
+  open,
+  setOpen,
+  collapsed
+}:{
+  open:boolean;
+  setOpen:(value:boolean)=>void;
+  collapsed:boolean;
+}){
 
-export default function AdminSidebar(){
+  return (
 
-return (
+    <>
 
-<aside
-className="
-w-64
-min-h-screen
-bg-zinc-950
-text-white
-p-5
-"
->
+      {/* Mobile Overlay */}
 
+      {
+        open &&
 
-<h2
-className="
-text-xl
-font-bold
-mb-8
-text-red-500
-"
->
-INFINIA CMS
-</h2>
+        <div
+          onClick={()=>setOpen(false)}
+          className="
+          fixed
+          inset-0
+          bg-black/50
+          z-40
+          md:hidden
+          "
+        />
 
+      }
 
+      <aside
 
-<nav
-className="
-space-y-2
-"
->
+        className={`
+        fixed
+        top-0
+        left-0
+        z-50
 
+        h-screen
+        overflow-y-auto
 
-{
-menu.map((item)=>{
+        bg-zinc-950
+        text-white
 
+        transition-all
+        duration-300
 
-const Icon=item.icon;
+        ${collapsed ? "md:w-20" : "md:w-64"}
 
+        w-64
 
-return (
+        ${open ? "translate-x-0":"-translate-x-full"}
 
-<Link
+        md:translate-x-0
+        `}
 
-key={item.name}
+      >
 
-href={item.href}
+        <div
+          className="
+          h-16
+          flex
+          items-center
+          justify-between
+          px-5
+          border-b
+          border-zinc-800
+          "
+        >
 
-className="
-flex
-items-center
-gap-3
-p-3
-rounded-lg
-hover:bg-zinc-800
-transition
-"
+          {
 
->
+            !collapsed &&
 
+            <h2
+              className="
+              text-xl
+              font-bold
+              text-red-500
+              "
+            >
+              INFINIA CMS
+            </h2>
 
-<Icon size={20}/>
+          }
 
+          <button
+            className="md:hidden"
+            onClick={()=>setOpen(false)}
+          >
+            <X/>
+          </button>
 
-<span>
-{item.name}
+        </div>
+
+        <nav
+          className="
+          p-3
+          space-y-2
+          "
+        >
+
+          {
+
+            menu.map((item)=>{
+
+              const Icon=item.icon;
+
+              return (
+
+                <Link
+
+                  key={item.name}
+
+                  href={item.href}
+
+                  onClick={()=>setOpen(false)}
+
+                  className={`
+                  flex
+                  items-center
+
+                  ${
+                    collapsed
+                    ? "justify-center"
+                    : "gap-3"
+                  }
+
+                  p-3
+                  rounded-lg
+                  hover:bg-zinc-800
+                  transition
+                  `}
+
+                >
+
+                  <Icon size={20}/>
+
+                  &nbsp;<span className={collapsed ? "md:hidden" : ""}>
+  { item.name}
 </span>
 
+                </Link>
 
-</Link>
+              )
 
-);
+            })
 
+          }
 
-})
-}
+        </nav>
 
+      </aside>
 
-</nav>
+    </>
 
-
-</aside>
-
-);
-
+  )
 
 }
