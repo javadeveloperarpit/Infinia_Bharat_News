@@ -19,6 +19,10 @@ getCategories
 } from "@/services/category.service";
 
 
+import {
+useLanguageStore
+} from "@/store/language-store";
+
 
 
 
@@ -28,7 +32,15 @@ export default function Navbar(){
 const pathname = usePathname();
 
 
-const [categories,setCategories] = useState<any[]>([]);
+const [categories,setCategories] =
+useState<any[]>([]);
+
+
+
+const language =
+useLanguageStore(
+(state)=>state.language
+);
 
 
 
@@ -41,35 +53,29 @@ async function loadCategories(){
 try{
 
 
-const data = await getCategories();
-
+const data =
+await getCategories();
 
 
 setCategories(data);
-
 
 
 }
 
 catch(error){
 
-
 console.error(
 "Category Load Error:",
 error
 );
 
-
 }
 
 
-
 }
-
 
 
 loadCategories();
-
 
 
 },[]);
@@ -78,11 +84,7 @@ loadCategories();
 
 
 
-
-
-
 return (
-
 
 <nav
 
@@ -96,14 +98,10 @@ border-[#ECCA6D]/20
 >
 
 
-<div
-
-className="
+<div className="
 container-news
 overflow-x-auto
-"
-
->
+">
 
 
 <div
@@ -119,45 +117,36 @@ min-w-max
 >
 
 
-
-
-
-{/* HOME */}
-
-
 <Link
 
 href="/"
 
 className={`
-
 text-sm
 font-semibold
 transition
 
 ${
 pathname === "/"
-
 ?
-
 "text-[#ECCA6D]"
-
 :
-
 "text-white/80 hover:text-[#ECCA6D]"
-
 }
 
 `}
 
 >
 
-HOME
+{
+language==="hi"
+?
+"होम"
+:
+"HOME"
+}
 
 </Link>
-
-
-
 
 
 
@@ -170,39 +159,36 @@ categories.map((category)=>(
 
 <Link
 
-
 key={category.id}
-
 
 href={`/category/${category.slug}`}
 
 
 className={`
-
 text-sm
 font-semibold
 transition
 
 ${
 pathname === `/category/${category.slug}`
-
 ?
-
 "text-[#ECCA6D]"
-
 :
-
 "text-white/80 hover:text-[#ECCA6D]"
-
 }
 
 `}
 
-
 >
 
 
-{category.name}
+{
+language==="hi"
+?
+category.nameHi
+:
+category.name
+}
 
 
 </Link>
@@ -212,8 +198,6 @@ pathname === `/category/${category.slug}`
 
 
 }
-
-
 
 
 
@@ -227,6 +211,5 @@ pathname === `/category/${category.slug}`
 
 
 );
-
 
 }

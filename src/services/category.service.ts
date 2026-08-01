@@ -28,6 +28,8 @@ id?:string;
 
 name:string;
 
+nameHi:string; 
+
 
 slug:string;
 

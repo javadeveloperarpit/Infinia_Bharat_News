@@ -9,11 +9,12 @@ import {
 } from "@/services/category.service";
 
 
-
 export default function CategoriesPage(){
 
 
 const [name,setName] = useState("");
+
+const [nameHi,setNameHi] = useState("");
 
 const [loading,setLoading] = useState(false);
 
@@ -22,7 +23,7 @@ const [loading,setLoading] = useState(false);
 async function handleCreate(){
 
 
-if(!name.trim())
+if(!name.trim() || !nameHi.trim())
 return;
 
 
@@ -36,8 +37,11 @@ await createCategory({
 
 name,
 
+nameHi,
+
 slug:name
 .toLowerCase()
+.trim()
 .replaceAll(" ","-"),
 
 status:"active"
@@ -49,6 +53,8 @@ alert("Category Created");
 
 
 setName("");
+
+setNameHi("");
 
 
 }
@@ -97,6 +103,7 @@ space-y-4
 ">
 
 
+
 <input
 
 value={name}
@@ -105,7 +112,7 @@ onChange={
 (e)=>setName(e.target.value)
 }
 
-placeholder="Category name"
+placeholder="Category name (English)"
 
 className="
 w-full
@@ -115,6 +122,29 @@ p-3
 "
 
 />
+
+
+
+<input
+
+value={nameHi}
+
+onChange={
+(e)=>setNameHi(e.target.value)
+}
+
+placeholder="Category name (Hindi)"
+
+className="
+w-full
+border
+rounded-lg
+p-3
+"
+
+/>
+
+
 
 
 

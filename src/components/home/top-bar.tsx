@@ -5,6 +5,9 @@ import {
   useEffect,
   useState
 } from "react";
+import {
+  useLanguageStore
+} from "@/store/language-store";
 
 
 import {
@@ -31,6 +34,10 @@ const [date,setDate] = useState("");
 
 const [location,setLocation] = useState("India");
 
+const {
+  language,
+  setLanguage
+} = useLanguageStore();
 
 
 const texts = [
@@ -529,28 +536,45 @@ gap-3
 
 
 
+{/* LANGUAGE SWITCH */}
+
 <button
 
+onClick={()=>{
+
+setLanguage(
+language==="hi"
+?
+"en"
+:
+"hi"
+);
+
+}}
+
 className="
-hidden
-md:flex
-items-center
-gap-2
 text-xs
-text-white/70
-hover:text-[#ECCA6D]
+font-semibold
+text-[#ECCA6D]
+border
+border-[#ECCA6D]/30
+px-3
+py-1
+rounded-full
+hover:bg-[#ECCA6D]
+hover:text-black
 transition
 "
 
-
 >
 
-
-<Radio size={15}/>
-
-
-Live
-
+{
+language==="hi"
+?
+"English"
+:
+"हिंदी"
+}
 
 </button>
 
