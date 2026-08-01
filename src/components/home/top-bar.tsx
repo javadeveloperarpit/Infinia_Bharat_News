@@ -1,10 +1,10 @@
 "use client";
 
-
 import {
   useEffect,
   useState
 } from "react";
+
 import {
   useLanguageStore
 } from "@/store/language-store";
@@ -25,19 +25,19 @@ import {
 
 
 
-
 export default function TopBar(){
-
 
 
 const [date,setDate] = useState("");
 
 const [location,setLocation] = useState("India");
 
+
 const {
   language,
   setLanguage
 } = useLanguageStore();
+
 
 
 const texts = [
@@ -62,8 +62,7 @@ const [char,setChar] = useState(0);
 
 
 
-
-/* REAL TIME DATE */
+/* DATE */
 
 useEffect(()=>{
 
@@ -81,13 +80,9 @@ now.toLocaleDateString(
 "en-IN",
 
 {
-
 day:"numeric",
-
 month:"short",
-
 year:"numeric"
-
 }
 
 )
@@ -103,17 +98,13 @@ updateDate();
 
 
 const timer = setInterval(
-
 updateDate,
-
 60000
-
 );
 
 
 
 return ()=>clearInterval(timer);
-
 
 
 },[]);
@@ -124,8 +115,7 @@ return ()=>clearInterval(timer);
 
 
 
-
-/* USER LOCATION */
+/* LOCATION */
 
 useEffect(()=>{
 
@@ -167,11 +157,13 @@ const response = await fetch(
 
 
 
-const data = await response.json();
+const data =
+await response.json();
 
 
 
-const address = data.address || {};
+const address =
+data.address || {};
 
 
 
@@ -197,15 +189,11 @@ address.state ||
 
 
 
-
-
 if(city && state){
 
 
 setLocation(
-
 `${city}, ${state}`
-
 );
 
 
@@ -216,8 +204,8 @@ else{
 
 setLocation("India");
 
-}
 
+}
 
 
 }
@@ -244,9 +232,7 @@ setLocation("India");
 
 ()=>{
 
-
 setLocation("India");
-
 
 },
 
@@ -267,7 +253,6 @@ maximumAge:600000
 );
 
 
-
 },[]);
 
 
@@ -276,15 +261,13 @@ maximumAge:600000
 
 
 
-
-
-/* HINDI TYPEWRITER */
-
+/* TYPE WRITER */
 
 useEffect(()=>{
 
 
-const text = texts[index];
+const text =
+texts[index];
 
 
 
@@ -295,19 +278,14 @@ if(char < text.length){
 const timer = setTimeout(()=>{
 
 
-
 setTyping(
-
 prev=>prev + text[char]
-
 );
 
 
 
 setChar(
-
 prev=>prev+1
-
 );
 
 
@@ -317,7 +295,6 @@ prev=>prev+1
 
 
 return ()=>clearTimeout(timer);
-
 
 
 }
@@ -334,9 +311,8 @@ setChar(0);
 
 
 setIndex(
-
-prev=>(prev+1)%texts.length
-
+prev=>
+(prev+1)%texts.length
 );
 
 
@@ -346,7 +322,6 @@ prev=>(prev+1)%texts.length
 
 
 return ()=>clearTimeout(timer);
-
 
 
 }
@@ -361,11 +336,7 @@ return ()=>clearTimeout(timer);
 
 
 
-
-
-
 return (
-
 
 <div
 
@@ -376,7 +347,6 @@ border-b
 border-[#ECCA6D]/20
 "
 
-
 >
 
 
@@ -384,14 +354,17 @@ border-[#ECCA6D]/20
 
 className="
 container-news
-h-10
+min-h-10
 flex
+flex-wrap
 items-center
 justify-between
+gap-2
+py-2
 "
 
-
 >
+
 
 
 
@@ -403,11 +376,11 @@ justify-between
 className="
 flex
 items-center
-gap-3
-text-xs
+gap-2
+text-[11px]
+sm:text-xs
 text-white/70
 "
-
 
 >
 
@@ -418,8 +391,9 @@ className="
 flex
 items-center
 gap-2
+max-w-[120px]
+sm:max-w-none
 "
-
 
 >
 
@@ -430,12 +404,15 @@ size={14}
 
 className="
 text-[#ECCA6D]
+shrink-0
 "
 
 />
 
 
-<span>
+<span className="
+truncate
+">
 
 {location}
 
@@ -446,17 +423,15 @@ text-[#ECCA6D]
 
 
 
-
-
 <span className="
 text-white/30
+hidden
+sm:block
 ">
 
 |
 
 </span>
-
-
 
 
 
@@ -491,7 +466,6 @@ tracking-wide
 text-[#ECCA6D]
 "
 
-
 >
 
 
@@ -515,12 +489,6 @@ animate-pulse
 
 
 
-
-
-
-
-
-
 {/* RIGHT */}
 
 <div
@@ -528,12 +496,10 @@ animate-pulse
 className="
 flex
 items-center
-gap-3
+gap-2
 "
 
-
 >
-
 
 
 {/* LANGUAGE SWITCH */}
@@ -582,6 +548,7 @@ language==="hi"
 
 
 
+
 <div
 
 className="
@@ -598,7 +565,7 @@ md:block
 
 
 
-
+{/* SOCIAL */}
 
 <a
 
@@ -610,7 +577,7 @@ transition
 
 >
 
-<FaFacebookF size={15}/>
+<FaFacebookF size={13}/>
 
 </a>
 
@@ -628,7 +595,7 @@ transition
 
 >
 
-<FaXTwitter size={15}/>
+<FaXTwitter size={13}/>
 
 </a>
 
@@ -646,7 +613,7 @@ transition
 
 >
 
-<FaYoutube size={15}/>
+<FaYoutube size={13}/>
 
 </a>
 
@@ -657,8 +624,6 @@ transition
 <a
 
 className="
-hidden
-sm:block
 text-white/60
 hover:text-[#ECCA6D]
 transition
@@ -666,10 +631,9 @@ transition
 
 >
 
-<FaInstagram size={15}/>
+<FaInstagram size={13}/>
 
 </a>
-
 
 
 
@@ -687,6 +651,5 @@ transition
 
 
 );
-
 
 }
