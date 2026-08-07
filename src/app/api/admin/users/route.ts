@@ -1,324 +1,149 @@
 export const runtime = "nodejs";
+
 import { NextRequest, NextResponse } from "next/server";
 
 import { adminAuth, adminDb } from "@/lib/firebase/firebase-admin";
-
 import { FieldValue } from "firebase-admin/firestore";
-import { verifyRole } from "@/lib/auth/verify-role";
 
+function createSlug(text: string) {
+  const base = text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
 
-export async function POST(
-  request: NextRequest
-) {
+  const now = new Date();
 
+  const suffix =
+    now.getFullYear().toString() +
+    String(now.getMonth() + 1).padStart(2, "0") +
+    String(now.getDate()).padStart(2, "0") +
+    "-" +
+    String(now.getHours()).padStart(2, "0") +
+    String(now.getMinutes()).padStart(2, "0") +
+    String(now.getSeconds()).padStart(2, "0");
+
+  return `${base}-${suffix}`;
+}
+
+export async function POST(request: NextRequest) {
   try {
+    const authHeader = request.headers.get("authorization");
+
+    if (!authHeader) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+
+    const decoded = await adminAuth.verifyIdToken(token);
+
+    const userDoc = await adminDb
+      .collection("users")
+      .doc(decoded.uid)
+      .get();
+
+    if (!userDoc.exists) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "User not found",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    const user = userDoc.data();
+
+    if (
+      user?.role !== "admin" &&
+      user?.role !== "editor" &&
+      user?.role !== "superAdmin"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Permission denied",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
 
     const body = await request.json();
 
-    const {
-      name,
-      email,
-      password
-    } = body;
+    const slug = createSlug(
+      body.seoTitle || body.title
+    );
 
+    const ref = await adminDb
+      .collection("articles")
+      .add({
 
+        title: body.title,
 
-    if(
-      !name ||
-      !email ||
-      !password
-    ){
+        categoryId: body.categoryId,
 
-      return NextResponse.json(
-        {
-          success:false,
-          message:"All fields are required."
+        thumbnail: body.thumbnail,
+
+        shortDescription: body.shortDescription,
+
+        content: body.content,
+
+        seoTitle: body.seoTitle,
+
+        seoDescription: body.seoDescription,
+
+        slug,
+
+        featured: body.featured || false,
+
+        breaking: body.breaking || false,
+
+        priority: body.priority || 0,
+
+        status: body.status || "draft",
+
+        author: {
+          uid: decoded.uid,
+          name: user?.name || "",
+          email: user?.email || "",
+          role: user?.role || "editor",
         },
-        {
-          status:400
-        }
-      );
 
-    }
+        createdAt: FieldValue.serverTimestamp(),
 
-
-
-    const user =
-      await adminAuth.createUser({
-
-        displayName:name,
-
-        email,
-
-        password
-
+        updatedAt: FieldValue.serverTimestamp(),
       });
-
-
-
-    await adminDb
-      .collection("users")
-      .doc(user.uid)
-      .set({
-
-        uid:user.uid,
-
-        name,
-
-        email,
-
-        role:"editor",
-
-        status:"active",
-
-        createdAt:FieldValue.serverTimestamp(),
-
-        updatedAt:FieldValue.serverTimestamp()
-
-      });
-
-
 
     return NextResponse.json({
-
-      success:true,
-
-      message:"Editor created successfully."
-
+      success: true,
+      id: ref.id,
+      slug,
     });
-
-  }
-
-  catch(error:any){
-
-    return NextResponse.json(
-
-      {
-
-        success:false,
-
-        message:error.message
-
-      },
-
-      {
-
-        status:500
-
-      }
-
-    );
-
-  }
-
-}
-export async function GET(){
-
-  try{
-
-    const snapshot =
-      await adminDb
-      .collection("users")
-      .get();
-
-
-    const users =
-      snapshot.docs.map(
-        (doc)=>({
-
-          id:doc.id,
-
-          ...doc.data()
-
-        })
-      );
-
-
-    console.log(
-      "USERS:",
-      users
-    );
-
-
-    return NextResponse.json(users);
-
-
-  }
-
-  catch(error:any){
-
-    console.error(
-      "FIREBASE ERROR:",
-      error
-    );
-
+  } catch (error: any) {
+    console.error(error);
 
     return NextResponse.json(
       {
-        success:false,
-        message:error.message,
-        code:error.code
+        success: false,
+        message: error.message,
       },
       {
-        status:500
+        status: 500,
       }
     );
-
   }
-
-}
-export async function DELETE(
-request:NextRequest
-){
-
-try{
-
-
-const authHeader =
-request.headers.get(
-"authorization"
-);
-
-
-if(!authHeader){
-
-return NextResponse.json(
-{
-success:false,
-message:"Unauthorized"
-},
-{
-status:401
-}
-);
-
-}
-
-
-const token =
-authHeader.replace(
-"Bearer ",
-"");
-
-
-
-const currentUser = await verifyRole(
- token,
- [
- "admin",
- "superAdmin"
- ]
-) as {
- uid: string;
- role: "admin" | "superAdmin";
-};
-
-
-
-const {uid}=await request.json();
-
-
-
-const target =
-await adminDb
-.collection("users")
-.doc(uid)
-.get();
-
-
-
-const targetData =
-target.data();
-
-
-
-if(
-uid === currentUser.uid
-){
-
-return NextResponse.json(
-{
-success:false,
-message:"Cannot delete yourself"
-},
-{
-status:400
-}
-);
-
-}
-
-
-
-if(
-targetData?.role==="superAdmin"
-){
-
-return NextResponse.json(
-{
-success:false,
-message:"Cannot delete super admin"
-},
-{
-status:403
-}
-);
-
-}
-
-
-
-if(
-currentUser.role==="admin" &&
-targetData?.role==="admin"
-){
-
-return NextResponse.json(
-{
-success:false,
-message:"Admin cannot delete admin"
-},
-{
-status:403
-}
-);
-
-}
-
-
-
-await adminAuth.deleteUser(uid);
-
-
-await adminDb
-.collection("users")
-.doc(uid)
-.delete();
-
-
-
-return NextResponse.json(
-{
-success:true,
-message:"User deleted"
-}
-);
-
-
-
-}
-catch(error:any){
-
-return NextResponse.json(
-{
-success:false,
-message:error.message
-},
-{
-status:403
-}
-);
-
-}
-
 }

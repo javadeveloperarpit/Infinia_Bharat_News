@@ -22,23 +22,17 @@ import {
 
 export interface CategoryData {
 
-
-id?:string;
-
+id:string;
 
 name:string;
 
-nameHi:string; 
-
+nameHi:string;
 
 slug:string;
 
-
 status:"active"|"inactive";
 
-
 }
-
 
 
 
@@ -105,7 +99,7 @@ return null;
 // CREATE CATEGORY
 
 export async function createCategory(
-data:CategoryData
+data:Omit<CategoryData,"id">
 ){
 
 

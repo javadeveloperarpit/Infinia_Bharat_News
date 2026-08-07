@@ -44,8 +44,6 @@ new Date(item.expiry) > new Date()
 
 setNews(activeNews);
 
-setNews(data);
-
 
 }
 

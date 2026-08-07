@@ -15,14 +15,11 @@ import {
 
 
 
-export interface VideoData {
-
+export interface VideoData{
 
 title:string;
 
-youtubeId:string;
-
-thumbnail:string;
+youtubeUrl:string;
 
 categoryId:string;
 
@@ -30,6 +27,7 @@ description:string;
 
 status:"draft"|"published";
 
+featured?:boolean;
 
 }
 

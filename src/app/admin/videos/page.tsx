@@ -14,6 +14,8 @@ import {
 getVideos,
 deleteVideo
 } from "@/services/video.service";
+import { getYoutubeThumbnail } from "@/utils/youtube";
+import Image from "next/image";
 
 
 
@@ -84,15 +86,23 @@ className="bg-red-600 text-white px-5 py-3 rounded"
 
 <tr>
 
-<th className="p-4">
+<th className="p-4 text-left">
+Thumbnail
+</th>
+
+<th className="text-left">
 Title
 </th>
 
-<th>
-Youtube
+<th className="text-left">
+YouTube
 </th>
 
-<th>
+<th className="text-left">
+Status
+</th>
+
+<th className="text-left">
 Action
 </th>
 
@@ -101,34 +111,88 @@ Action
 </thead>
 
 
-
 <tbody>
 
+{videos.map((video) => (
 
-{
-videos.map(video=>(
-
-
-<tr key={video.id}
-className="border-t"
+<tr
+key={video.id}
+className="border-t hover:bg-zinc-50"
 >
 
+<td className="p-3">
 
-<td className="p-4">
+<div
+className="
+relative
+w-40
+h-24
+rounded-lg
+overflow-hidden
+border
+"
+>
+
+<Image
+src={getYoutubeThumbnail(video.youtubeUrl)}
+alt={video.title}
+fill
+className="object-cover"
+/>
+
+</div>
+
+</td>
+
+<td className="font-medium max-w-sm">
 
 {video.title}
 
 </td>
 
-
-
 <td>
 
-{video.youtubeId}
+<a
+
+href={video.youtubeUrl}
+
+target="_blank"
+
+className="
+text-blue-600
+underline
+"
+
+>
+
+Open Video
+
+</a>
 
 </td>
 
+<td>
 
+<span
+className={`
+px-3
+py-1
+rounded-full
+text-xs
+font-semibold
+${
+video.status === "published"
+? "bg-green-100 text-green-700"
+: "bg-yellow-100 text-yellow-700"
+}
+`}
+>
+
+{video.status}
+
+</span>
+
+</td>
 
 <td>
 
@@ -142,7 +206,11 @@ load();
 
 }}
 
-className="text-red-600"
+className="
+text-red-600
+font-semibold
+hover:underline
+"
 
 >
 
@@ -150,21 +218,13 @@ Delete
 
 </button>
 
-
 </td>
-
 
 </tr>
 
-
-))
-
-}
-
-
+))}
 
 </tbody>
-
 
 </table>
 

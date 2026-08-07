@@ -1,181 +1,146 @@
 import {
   collection,
-  addDoc,
   getDocs,
+  getDoc,
   deleteDoc,
   doc,
   updateDoc,
-  serverTimestamp
+  serverTimestamp,
 } from "firebase/firestore";
-
-
 import {
-  db
-} from "@/lib/firebase/firebase";
+  createSlug
+} from "@/lib/utils/create-slug";
 
 
+import { auth, db } from "@/lib/firebase/firebase";
 
 export interface ArticleData {
+  title: string;
+  categoryId: string;
+  thumbnail: string;
+  shortDescription: string;
+  content: string;
+  seoTitle: string;
+  seoDescription: string;
 
+  slug?: string;
 
-  title:string;
+  author?: {
+    uid: string;
+    name: string;
+    email: string;
+    role: string;
+  };
 
-  categoryId:string;
+  featured?: boolean;
+  breaking?: boolean;
+  priority?: number;
 
-  thumbnail:string;
-
-  shortDescription:string;
-
-  content:string;
-
-  seoTitle:string;
-
-  seoDescription:string;
-
-
-  featured?:boolean;
-
-  breaking?:boolean;
-
-  priority?:number;
-
-
-  status:"draft"|"published";
-
-
+  status: "draft" | "published";
 }
 
+// =========================
+// GET ARTICLES
+// =========================
 
+export async function getArticles() {
+  const snapshot = await getDocs(collection(db, "articles"));
 
+  return snapshot.docs.map((item) => ({
+    id: item.id,
+    ...item.data(),
+  })) as (ArticleData & { id: string })[];
+}
 
+// =========================
+// GET SINGLE ARTICLE
+// =========================
 
-// CREATE ARTICLE
-
-export async function createArticle(
-data:ArticleData
-){
-
+export async function getArticleById(
+  id:string
+):Promise<(ArticleData & {id:string}) | null> {
 
 const ref =
-await addDoc(
-
-collection(
-db,
-"articles"
-),
-
-{
-
-...data,
-
-createdAt:
-serverTimestamp(),
-
-updatedAt:
-serverTimestamp()
-
-}
-
-);
+doc(db,"articles",id);
 
 
-return ref.id;
+const snap =
+await getDoc(ref);
 
 
+if(!snap.exists()){
+ return null;
 }
 
 
-
-
-
-
-// GET ARTICLES
-
-export async function getArticles(){
-
-
-const snapshot =
-await getDocs(
-collection(
-db,
-"articles"
-)
-);
-
-
-
-return snapshot.docs.map(
-(item)=>({
-
-
-id:item.id,
-
-...item.data()
-
-
-} as ArticleData & {id:string})
-
-);
-
+return {
+ id:snap.id,
+ ...snap.data()
+} as ArticleData & {id:string};
 
 }
 
-
-
-
-
-
-// DELETE ARTICLE
-
-export async function deleteArticle(
-id:string
-){
-
-
-await deleteDoc(
-
-doc(
-db,
-"articles",
-id
-)
-
-);
-
-
-}
-
-
-
-
-
-
+// =========================
 // UPDATE ARTICLE
+// =========================
 
 export async function updateArticle(
 id:string,
-data:Partial<ArticleData>
+data:any
 ){
 
+const user = auth.currentUser;
 
-await updateDoc(
 
-doc(
-db,
-"articles",
-id
-),
-
-{
-
-...data,
-
-updatedAt:
-serverTimestamp()
-
+if(!user){
+throw new Error("Not logged in");
 }
 
+
+const token =
+await user.getIdToken();
+
+
+
+const res =
+await fetch(
+`/api/admin/articles/${id}`,
+{
+method:"PUT",
+
+headers:{
+"Content-Type":"application/json",
+Authorization:`Bearer ${token}`
+},
+
+body:JSON.stringify(data)
+
+}
 );
 
 
+
+const result =
+await res.json();
+
+
+
+if(!res.ok){
+
+throw new Error(
+result.message || "Update failed"
+);
+
+}
+
+
+return result;
+
+}
+// =========================
+// DELETE ARTICLE
+// =========================
+
+export async function deleteArticle(id: string) {
+  await deleteDoc(doc(db, "articles", id));
 }

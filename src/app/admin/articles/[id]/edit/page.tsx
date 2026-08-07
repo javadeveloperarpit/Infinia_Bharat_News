@@ -1,48 +1,39 @@
 "use client";
 
 import {
-  useEffect,
-  useState
+useEffect,
+useState
 } from "react";
 
 import {
-  useParams,
-  useRouter
+useParams,
+useRouter
 } from "next/navigation";
 
-
 import {
-  getArticles,
-  updateArticle
+getArticleById
 } from "@/services/article.service";
-
+import { auth } from "@/lib/firebase/firebase";
 
 import {
-  getCategories
+getCategories
 } from "@/services/category.service";
 
+import Editor from "@/components/editor/NewsEditor";
 
 
 export default function EditArticlePage(){
 
+const router = useRouter();
 
 const params = useParams();
 
-const router = useRouter();
+const id = String(params.id);
 
 
-const id =
-params.id as string;
+const [loading,setLoading] = useState(true);
 
-
-
-const [loading,setLoading] =
-useState(true);
-
-
-const [saving,setSaving] =
-useState(false);
-
+const [saving,setSaving] = useState(false);
 
 
 const [categories,setCategories] =
@@ -50,35 +41,54 @@ useState<any[]>([]);
 
 
 
-const [form,setForm] = useState<any>({});
+const [form,setForm] = useState<any>({
+
+title:"",
+
+categoryId:"",
+
+thumbnail:"",
+
+shortDescription:"",
+
+content:"",
+
+seoTitle:"",
+
+seoDescription:"",
+
+featured:false,
+
+breaking:false,
+
+priority:0,
+
+status:"draft"
+
+});
+
 
 
 useEffect(()=>{
 
+if(id){
+
 loadData();
 
-},[]);
+}
 
+},[id]);
 
 
 
 
 async function loadData(){
 
-
 try{
 
 
-const articles =
-await getArticles();
-
-
-
 const article =
-articles.find(
-(item:any)=>item.id===id
-);
-
+await getArticleById(id);
 
 
 const cats =
@@ -92,9 +102,23 @@ setCategories(cats);
 
 if(article){
 
-setForm(article);
+setForm({
+
+...article,
+
+author:
+article.author ||
+{
+ uid:"",
+ name:"INFINIA BHARAT NEWS",
+ email:"",
+ role:"admin"
+}
+
+});
 
 }
+
 
 
 }
@@ -109,16 +133,12 @@ setLoading(false);
 
 }
 
-
 }
 
 
 
 
-
-
 function handleChange(e:any){
-
 
 const {
 name,
@@ -133,17 +153,27 @@ setForm({
 
 ...form,
 
+
 [name]:
 
 type==="checkbox"
+
 ?
+
 checked
+
 :
+
 name==="priority"
+
 ?
+
 Number(value)
+
 :
+
 value
+
 
 });
 
@@ -153,32 +183,81 @@ value
 
 
 
+function handleEditorChange(value:string){
+
+
+setForm({
+
+...form,
+
+content:value
+
+});
+
+
+}
+
+
 
 
 async function handleUpdate(){
 
-
 try{
-
 
 setSaving(true);
 
 
+const user = auth.currentUser;
 
-await updateArticle(
 
-id,
+if(!user){
 
-form
+alert("Please login again");
 
+return;
+
+}
+
+
+const token =
+await user.getIdToken();
+
+
+
+const res =
+await fetch(
+`/api/admin/articles/${id}`,
+{
+method:"PUT",
+
+headers:{
+"Content-Type":"application/json",
+
+Authorization:
+`Bearer ${token}`
+},
+
+body:JSON.stringify(form)
+
+});
+
+
+const data =
+await res.json();
+
+
+if(!res.ok){
+
+throw new Error(
+data.message
 );
 
+}
 
 
 alert(
-"Article Updated"
+"Article Updated Successfully"
 );
-
 
 
 router.push(
@@ -186,17 +265,12 @@ router.push(
 );
 
 
-
 }
-catch(error){
-
+catch(error:any){
 
 console.error(error);
 
-alert(
-"Update Failed"
-);
-
+alert(error.message);
 
 }
 finally{
@@ -205,10 +279,7 @@ setSaving(false);
 
 }
 
-
 }
-
-
 
 
 
@@ -217,9 +288,9 @@ if(loading){
 
 return (
 
-<div className="p-6">
+<div className="p-10">
 
-Loading...
+Loading Article...
 
 </div>
 
@@ -230,14 +301,20 @@ Loading...
 
 
 
-
-
 return (
 
-<div className="space-y-6">
+<div className="
+max-w-5xl
+mx-auto
+p-6
+space-y-5
+">
 
 
-<h1 className="text-3xl font-bold text-zinc-900">
+<h1 className="
+text-3xl
+font-bold
+">
 
 Edit Article
 
@@ -245,20 +322,11 @@ Edit Article
 
 
 
-
-<div className="
-bg-white
-border
-rounded-xl
-p-6
-space-y-5
-">
-
-
-
 <input
 
 name="title"
+
+placeholder="Article Title"
 
 value={form.title || ""}
 
@@ -272,7 +340,6 @@ rounded-lg
 "
 
 />
-
 
 
 
@@ -294,15 +361,13 @@ rounded-lg
 
 >
 
-
 <option value="">
-
 Select Category
-
 </option>
 
 
 {
+
 categories.map((cat)=>(
 
 <option
@@ -317,6 +382,7 @@ value={cat.id}
 
 </option>
 
+
 ))
 
 }
@@ -327,18 +393,15 @@ value={cat.id}
 
 
 
-
-
-
 <input
 
 name="thumbnail"
 
+placeholder="Thumbnail URL"
+
 value={form.thumbnail || ""}
 
 onChange={handleChange}
-
-placeholder="Thumbnail URL"
 
 className="
 w-full
@@ -348,10 +411,6 @@ rounded-lg
 "
 
 />
-
-
-
-
 
 
 
@@ -360,11 +419,45 @@ rounded-lg
 
 name="shortDescription"
 
+placeholder="Short Description"
+
 value={form.shortDescription || ""}
 
 onChange={handleChange}
 
-rows={3}
+className="
+w-full
+border
+p-3
+rounded-lg
+h-28
+"
+
+/>
+
+
+
+
+<Editor
+
+value={form.content || ""}
+
+onChange={handleEditorChange}
+
+/>
+
+
+
+
+<input
+
+name="seoTitle"
+
+placeholder="SEO Title"
+
+value={form.seoTitle || ""}
+
+onChange={handleChange}
 
 className="
 w-full
@@ -374,28 +467,26 @@ rounded-lg
 "
 
 />
-
-
-
 
 
 
 
 <textarea
 
-name="content"
+name="seoDescription"
 
-value={form.content || ""}
+placeholder="SEO Description"
+
+value={form.seoDescription || ""}
 
 onChange={handleChange}
-
-rows={8}
 
 className="
 w-full
 border
 p-3
 rounded-lg
+h-24
 "
 
 />
@@ -404,9 +495,10 @@ rounded-lg
 
 
 
-
-
-<div className="flex gap-6">
+<div className="
+flex
+gap-6
+">
 
 
 <label>
@@ -426,7 +518,6 @@ onChange={handleChange}
  Featured
 
 </label>
-
 
 
 
@@ -455,8 +546,6 @@ onChange={handleChange}
 
 
 
-
-
 <input
 
 type="number"
@@ -474,59 +563,9 @@ p-3
 rounded-lg
 "
 
-/>
-
-
-
-
-
-
-
-<input
-
-name="seoTitle"
-
-value={form.seoTitle || ""}
-
-onChange={handleChange}
-
-placeholder="SEO Title"
-
-className="
-w-full
-border
-p-3
-rounded-lg
-"
+placeholder="Priority"
 
 />
-
-
-
-
-
-
-
-<textarea
-
-name="seoDescription"
-
-value={form.seoDescription || ""}
-
-onChange={handleChange}
-
-rows={3}
-
-className="
-w-full
-border
-p-3
-rounded-lg
-"
-
-/>
-
-
 
 
 
@@ -570,9 +609,6 @@ Published
 
 
 
-
-
-
 <button
 
 onClick={handleUpdate}
@@ -585,18 +621,27 @@ text-white
 px-6
 py-3
 rounded-lg
-font-semibold
+font-bold
 "
 
 >
 
+
 {
+
 saving
+
 ?
+
 "Updating..."
+
 :
+
 "Update Article"
+
 }
+
+
 
 </button>
 
@@ -604,8 +649,6 @@ saving
 
 </div>
 
-
-</div>
 
 );
 

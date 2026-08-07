@@ -1,115 +1,215 @@
+"use client";
+
 import Link from "next/link";
+import Image from "next/image";
+
+import {
+  Clock3,
+  Eye
+} from "lucide-react";
+
+
+interface HeroArticle {
+
+  id: string;
+  slug?: string;
+  title: string;
+  thumbnail: string;
+  shortDescription?: string;
+  category?: string;
+  views?: number;
+
+}
+
+
+interface HeroProps {
+
+  featured:HeroArticle[];
+
+}
+
 
 
 export default function HeroSection({
 
 featured
 
-}:{
-
-featured:any[]
-
-}){
+}:HeroProps){
 
 
-if(!featured || featured.length===0){
+const hero = featured?.[0];
 
-return null;
-
-}
+const sideStories = featured?.slice(1,5) || [];
 
 
 
-const main =
-featured[0];
-
-
-
-const side =
-featured.slice(1,5);
-
-
+if(!hero) return null;
 
 
 
 return (
 
-<section className="
-max-w-7xl
-mx-auto
-px-6
-py-8
-">
-
-
-<div className="
-grid
-grid-cols-1
-lg:grid-cols-3
-gap-5
-">
-
-
-
-{/* MAIN NEWS */}
-
-<Link
-
-href={`/news/${main.id}`}
-
+<section
 className="
-lg:col-span-2
-bg-white
-rounded-xl
-overflow-hidden
-border
+w-full
+pt-1
+mb-10
 "
-
 >
 
 
-<img
+<div
+className="
+grid
+grid-cols-1
+lg:grid-cols-12
+gap-4
+"
+>
 
-src={main.thumbnail}
+
+{/* MAIN BANNER */}
+
+
+<Link
+  href={`/news/${hero.slug || hero.id}`}
+  className="lg:col-span-8 group"
+>
+
+
+<article
+className="
+relative
+overflow-hidden
+h-[420px]
+sm:h-[520px]
+lg:h-[560px]
+"
+>
+
+
+<Image
+
+src={hero.thumbnail}
+
+alt={hero.title}
+
+fill
+
+priority
+
+sizes="(max-width:1024px)100vw,70vw"
 
 className="
-w-full
-h-[420px]
 object-cover
+transition
+duration-700
+group-hover:scale-105
 "
 
 />
 
 
 
-<div className="
+
+<div
+className="
+absolute
+inset-0
+bg-gradient-to-t
+from-black
+via-black/40
+to-transparent
+"
+/>
+
+
+
+
+<div
+className="
+absolute
+bottom-0
 p-5
-">
+sm:p-8
+lg:p-10
+text-white
+"
+>
 
 
-<h1 className="
-text-3xl
+<span
+className="
+bg-[#AD0000]
+px-3
+py-1
+rounded-md
+text-xs
 font-bold
-text-zinc-900
-">
+"
+>
 
-{main.title}
+{hero.category || "News"}
+
+</span>
+
+
+
+<h1
+className="
+mt-4
+text-2xl
+sm:text-4xl
+lg:text-5xl
+font-black
+leading-tight
+line-clamp-3
+"
+>
+
+{hero.title}
 
 </h1>
 
 
 
-<p className="
-mt-3
-text-zinc-500
-">
+<div
+className="
+mt-5
+flex
+gap-5
+text-sm
+text-zinc-200
+"
+>
 
-{main.shortDescription}
 
-</p>
+<span className="flex gap-1 items-center">
+
+<Clock3 size={15}/>
+
+Just Now
+
+</span>
+
+
+<span className="flex gap-1 items-center">
+
+<Eye size={15}/>
+
+{hero.views || "12K"}
+
+</span>
 
 
 </div>
+
+
+</div>
+
+
+
+</article>
 
 
 </Link>
@@ -120,68 +220,123 @@ text-zinc-500
 
 
 
-{/* SIDE NEWS */}
+{/* RIGHT STORIES */}
 
 
-<div className="
-space-y-5
-">
+<div
+className="
+lg:col-span-4
+flex
+flex-col
+gap-3
+"
+>
 
 
 {
 
-side.map(
-(item)=>(
+sideStories.map((story)=>(
 
 
 <Link
+  key={story.id}
+  href={`/news/${story.slug || story.id}`}
+  className="group"
+>
 
-key={item.id}
-
-href={`/news/${item.id}`}
-
+<article
 className="
 flex
 gap-3
+border-b
+border-zinc-200
 bg-white
-border
-rounded-xl
-p-3
+py-3
+transition
+hover:border-[#AD0000]
 "
-
 >
 
 
-<img
 
-src={item.thumbnail}
-
+<div
 className="
+relative
 w-32
 h-24
-object-cover
+shrink-0
+overflow-hidden
 rounded-lg
+"
+>
+
+
+<Image
+
+src={story.thumbnail}
+
+alt={story.title}
+
+fill
+
+className="
+object-cover
+group-hover:scale-110
+transition
 "
 
 />
 
 
+</div>
 
-<div>
 
-<h2 className="
+
+
+<div
+className="
+flex
+flex-col
+justify-center
+"
+>
+
+
+<span
+className="
+text-xs
 font-bold
+text-[#AD0000]
+"
+>
+
+{story.category || "News"}
+
+</span>
+
+
+
+<h3
+className="
+mt-1
 text-sm
-text-zinc-900
-">
+font-bold
+leading-5
+line-clamp-3
+"
+>
 
-{item.title}
+{story.title}
 
-</h2>
+</h3>
+
 
 
 </div>
 
+
+
+</article>
 
 
 </Link>
@@ -189,6 +344,7 @@ text-zinc-900
 
 ))
 
+
 }
 
 
@@ -198,7 +354,6 @@ text-zinc-900
 
 
 </div>
-
 
 
 </section>

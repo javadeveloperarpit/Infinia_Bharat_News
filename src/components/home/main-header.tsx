@@ -1,25 +1,55 @@
 "use client";
 
+import {
+  useState
+} from "react";
 
 import Image from "next/image";
 import Link from "next/link";
 
-
 import {
   Search,
+  X,
   Radio
 } from "lucide-react";
-
-
 
 
 
 export default function MainHeader(){
 
 
+const [searchOpen,setSearchOpen] =
+useState(false);
+
+
+const [query,setQuery] =
+useState("");
+
+
+
+function handleSearch(e:any){
+
+if(e.key==="Enter" && query.trim()){
+
+window.location.href =
+`/search?q=${encodeURIComponent(query)}`;
+
+}
+
+
+if(e.key==="Escape"){
+
+setSearchOpen(false);
+
+}
+
+}
+
+
 
 return (
 
+<>
 
 <header
 
@@ -38,11 +68,9 @@ border-[#ECCA6D]/20
 
 
 <div
-
 className="
 container-news
 "
-
 >
 
 
@@ -59,13 +87,7 @@ gap-5
 >
 
 
-
-
-
-
-
 {/* LOGO */}
-
 
 
 <Link
@@ -81,21 +103,15 @@ shrink-0
 
 <Image
 
-
 src="/logo.png"
-
 
 alt="INFINIA Bharat News"
 
-
 width={220}
-
 
 height={70}
 
-
 priority
-
 
 className="
 w-[150px]
@@ -105,8 +121,7 @@ h-auto
 object-contain
 "
 
- />
-
+/>
 
 
 </Link>
@@ -115,34 +130,19 @@ object-contain
 
 
 
-
-
-
-
 {/* SPACE */}
 
-
-
 <div
-
 className="
 flex-1
 "
-
->
-
-</div>
-
-
-
-
+/>
 
 
 
 
 
 {/* ACTIONS */}
-
 
 
 <div
@@ -158,9 +158,14 @@ gap-3
 
 
 
+
 {/* SEARCH */}
 
+
 <button
+
+
+onClick={()=>setSearchOpen(true)}
 
 
 className="
@@ -183,12 +188,10 @@ transition-all
 duration-300
 "
 
-
 >
 
 
 <Search size={18}/>
-
 
 
 <span
@@ -196,7 +199,6 @@ duration-300
 className="
 hidden
 sm:block
-lg:block
 text-sm
 font-medium
 "
@@ -208,11 +210,7 @@ Search
 </span>
 
 
-
 </button>
-
-
-
 
 
 
@@ -223,7 +221,6 @@ Search
 
 
 <Link
-
 
 href="/live-tv"
 
@@ -251,8 +248,8 @@ duration-300
 group
 "
 
-
 >
+
 
 
 <span
@@ -281,6 +278,7 @@ w-2.5
 "
 
 >
+
 
 <span
 
@@ -328,52 +326,166 @@ text-[#ECCA6D]
 
 
 
-<span>
-
-LIVE
-
-<span className="
-hidden
-sm:inline
-">
-
- TV
-
-</span>
-
-</span>
-
+LIVE TV
 
 
 </Link>
 
 
 
-
-
-
-
-
 </div>
-
-
-
-
-
-
 
 
 </div>
 
 
 </div>
-
 
 
 </header>
 
 
-);
 
+
+
+{/* SEARCH OVERLAY */}
+
+
+{
+
+searchOpen && (
+
+
+<div
+
+className="
+fixed
+inset-0
+z-[100]
+bg-black/80
+backdrop-blur-xl
+flex
+items-start
+justify-center
+pt-28
+px-5
+"
+
+>
+
+
+<div
+
+className="
+w-full
+max-w-2xl
+bg-[#111]
+border
+border-[#ECCA6D]/30
+rounded-2xl
+p-5
+shadow-2xl
+"
+
+>
+
+
+<div
+
+className="
+flex
+items-center
+gap-4
+"
+
+>
+
+
+<Search
+
+size={22}
+
+className="
+text-[#ECCA6D]
+"
+
+/>
+
+
+
+<input
+
+
+autoFocus
+
+
+value={query}
+
+
+onChange={
+(e)=>setQuery(e.target.value)
+}
+
+
+onKeyDown={handleSearch}
+
+
+placeholder="Search latest news..."
+
+
+className="
+flex-1
+bg-transparent
+outline-none
+text-white
+text-lg
+placeholder:text-zinc-500
+"
+
+/>
+
+
+
+<button
+
+onClick={
+()=>setSearchOpen(false)
+}
+
+>
+
+
+<X
+
+size={22}
+
+className="
+text-white
+"
+
+/>
+
+
+</button>
+
+
+
+</div>
+
+
+</div>
+
+
+</div>
+
+
+)
+
+}
+
+
+</>
+
+);
 
 }

@@ -15,19 +15,6 @@ import {
 
 
 
-export interface BreakingNewsData {
-
- text:string;
-
- active:boolean;
-
- expiry:string;
-
-}
-
-
-
-
 
 export async function createBreakingNews(
 data:BreakingNewsData
@@ -61,7 +48,26 @@ return ref.id;
 
 
 
-export async function getBreakingNews(){
+export interface BreakingNewsData {
+
+id:string;
+
+text:string;
+
+active:boolean;
+
+expiry:string;
+
+createdAt?:any;
+
+updatedAt?:any;
+
+}
+
+
+
+export async function getBreakingNews()
+:Promise<BreakingNewsData[]>{
 
 
 const snapshot =
@@ -72,13 +78,20 @@ collection(db,"breakingNews")
 
 
 return snapshot.docs.map(
-item=>({
+(item)=>(
+
+
+{
 
 id:item.id,
 
 ...item.data()
 
-})
+} as BreakingNewsData
+
+
+)
+
 );
 
 

@@ -1,0 +1,3656 @@
+
+
+================================================
+FILE PATH:
+src\components\ui\button\Button.tsx
+FILE SIZE:
+1758 bytes
+================================================
+
+
+"use client";
+
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/utils/cn";
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center rounded-xl font-semibold transition-all duration-300 focus:outline-none disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
+  {
+    variants: {
+      variant: {
+        primary:
+          "bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)] shadow-md",
+
+        secondary:
+          "bg-[var(--accent)] text-[var(--primary)] hover:opacity-90 shadow",
+
+        outline:
+          "border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white",
+
+        ghost:
+          "hover:bg-neutral-100 dark:hover:bg-neutral-800",
+
+        danger:
+          "bg-red-600 text-white hover:bg-red-700",
+
+        link:
+          "underline underline-offset-4 hover:text-[var(--primary)]",
+      },
+
+      size: {
+        sm: "h-9 px-4 text-sm",
+
+        md: "h-11 px-6 text-base",
+
+        lg: "h-12 px-8 text-lg",
+
+        icon: "h-10 w-10 p-0",
+      },
+
+      fullWidth: {
+        true: "w-full",
+
+        false: "",
+      },
+    },
+
+    defaultVariants: {
+      variant: "primary",
+      size: "md",
+      fullWidth: false,
+    },
+  }
+);
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {}
+
+export function Button({
+  className,
+  variant,
+  size,
+  fullWidth,
+  ...props
+}: ButtonProps) {
+  return (
+    <button
+      className={cn(
+        buttonVariants({
+          variant,
+          size,
+          fullWidth,
+        }),
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+export default Button;
+
+
+================================================
+FILE PATH:
+src\components\ui\button\index.ts
+FILE SIZE:
+34 bytes
+================================================
+
+
+export { Button } from "./Button";
+
+
+================================================
+FILE PATH:
+src\components\ui\card\Card.tsx
+FILE SIZE:
+83 bytes
+================================================
+
+
+export default function Card() {
+  return (
+    <div>
+      Card
+    </div>
+  );
+}
+
+
+
+================================================
+FILE PATH:
+src\components\ui\card\index.ts
+FILE SIZE:
+34 bytes
+================================================
+
+
+export { default } from "./Card";
+
+
+
+================================================
+FILE PATH:
+src\components\ui\container\Container.tsx
+FILE SIZE:
+93 bytes
+================================================
+
+
+export default function Container() {
+  return (
+    <div>
+      Container
+    </div>
+  );
+}
+
+
+
+================================================
+FILE PATH:
+src\components\ui\container\index.ts
+FILE SIZE:
+39 bytes
+================================================
+
+
+export { default } from "./Container";
+
+
+
+================================================
+FILE PATH:
+src\components\ui\heading\Heading.tsx
+FILE SIZE:
+89 bytes
+================================================
+
+
+export default function Heading() {
+  return (
+    <div>
+      Heading
+    </div>
+  );
+}
+
+
+
+================================================
+FILE PATH:
+src\components\ui\heading\index.ts
+FILE SIZE:
+37 bytes
+================================================
+
+
+export { default } from "./Heading";
+
+
+
+================================================
+FILE PATH:
+src\components\ui\input\index.ts
+FILE SIZE:
+35 bytes
+================================================
+
+
+export { default } from "./Input";
+
+
+
+================================================
+FILE PATH:
+src\components\ui\input\Input.tsx
+FILE SIZE:
+85 bytes
+================================================
+
+
+export default function Input() {
+  return (
+    <div>
+      Input
+    </div>
+  );
+}
+
+
+
+================================================
+FILE PATH:
+src\components\ui\section\index.ts
+FILE SIZE:
+37 bytes
+================================================
+
+
+export { default } from "./Section";
+
+
+
+================================================
+FILE PATH:
+src\components\ui\section\Section.tsx
+FILE SIZE:
+89 bytes
+================================================
+
+
+export default function Section() {
+  return (
+    <div>
+      Section
+    </div>
+  );
+}
+
+
+
+================================================
+FILE PATH:
+src\config\site.ts
+FILE SIZE:
+648 bytes
+================================================
+
+
+export const siteConfig = {
+  name: "INFINIA BHARAT NEWS",
+
+  shortName: "IBN",
+
+  slogan: "सच सबसे पहले",
+
+  description:
+    "भारत की ताज़ा खबरें, ब्रेकिंग न्यूज़, राजनीति, खेल, बिजनेस, टेक्नोलॉजी, मनोरंजन, दुनिया और अन्य महत्वपूर्ण समाचार।",
+
+  url: "https://infiniabharatnews.vercel.app",
+
+  logo: "/logos/logo-light.png",
+
+  logoDark: "/logos/logo-dark.png",
+
+  themeColor: "#C8102E",
+
+  language: "hi-IN",
+
+  locale: "hi_IN",
+
+} as const;
+
+
+================================================
+FILE PATH:
+src\constants\categories.ts
+FILE SIZE:
+349 bytes
+================================================
+
+
+export const categories = [
+
+  {
+    name:"India",
+    slug:"india"
+  },
+
+  {
+    name:"Politics",
+    slug:"politics"
+  },
+
+  {
+    name:"Business",
+    slug:"business"
+  },
+
+  {
+    name:"Technology",
+    slug:"technology"
+  },
+
+  {
+    name:"Sports",
+    slug:"sports"
+  },
+
+  {
+    name:"Entertainment",
+    slug:"entertainment"
+  }
+
+] as const;
+
+
+================================================
+FILE PATH:
+src\constants\routes.ts
+FILE SIZE:
+11 bytes
+================================================
+
+
+export {};
+
+
+
+================================================
+FILE PATH:
+src\features\admin\components\admin-header.tsx
+FILE SIZE:
+1323 bytes
+================================================
+
+
+"use client";
+
+import {
+  Bell,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen
+} from "lucide-react";
+
+export default function AdminHeader({
+  setSidebarOpen,
+  collapsed,
+  setCollapsed,
+}: {
+  setSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  collapsed: boolean;
+  setCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
+
+  return (
+
+    <header
+      className="
+      sticky
+      top-0
+      z-30
+      h-16
+      border-b
+      bg-white
+      flex
+      items-center
+      justify-between
+      px-6
+      "
+    >
+
+      <div className="flex items-center gap-3">
+
+        {/* Mobile */}
+
+        <button
+          className="md:hidden"
+          onClick={() => setSidebarOpen(true)}
+        >
+          <Menu size={24}/>
+        </button>
+
+        {/* Desktop */}
+
+        <button
+          className="hidden md:block"
+          onClick={() => setCollapsed(!collapsed)}
+        >
+          {
+            collapsed
+            ? <PanelLeftOpen size={22}/>
+            : <PanelLeftClose size={22}/>
+          }
+        </button>
+
+        <h1 className="font-semibold">
+          Admin Dashboard
+        </h1>
+
+      </div>
+
+      <button className="relative">
+        <Bell size={22}/>
+      </button>
+
+    </header>
+
+  );
+
+}
+
+
+================================================
+FILE PATH:
+src\features\admin\components\admin-shell.tsx
+FILE SIZE:
+1026 bytes
+================================================
+
+
+"use client";
+
+import { useState } from "react";
+
+import AdminSidebar from "./admin-sidebar";
+import AdminHeader from "./admin-header";
+
+export default function AdminShell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+
+    <div className="min-h-screen bg-zinc-100">
+
+      <AdminSidebar
+        open={sidebarOpen}
+        setOpen={setSidebarOpen}
+        collapsed={collapsed}
+      />
+
+      <div
+        className={`
+          transition-all
+          duration-300
+          ${collapsed ? "md:ml-20" : "md:ml-64"}
+        `}
+      >
+
+        <AdminHeader
+          setSidebarOpen={setSidebarOpen}
+          collapsed={collapsed}
+          setCollapsed={setCollapsed}
+        />
+
+        <main
+          className="
+          p-4
+          md:p-6
+          "
+        >
+          {children}
+        </main>
+
+      </div>
+
+    </div>
+
+  );
+
+}
+
+
+================================================
+FILE PATH:
+src\features\admin\components\admin-sidebar.tsx
+FILE SIZE:
+3292 bytes
+================================================
+
+
+"use client";
+
+import Link from "next/link";
+
+import {
+  LayoutDashboard,
+  FileText,
+  Video,
+  Bell,
+  Image,
+  Users,
+  Settings,
+  X
+} from "lucide-react";
+
+const menu = [
+
+  {
+    name:"Dashboard",
+    href:"/admin",
+    icon:LayoutDashboard
+  },
+
+  {
+    name:"Articles",
+    href:"/admin/articles",
+    icon:FileText
+  },
+
+  {
+    name:"Videos",
+    href:"/admin/videos",
+    icon:Video
+  },
+
+  {
+    name:"Breaking News",
+    href:"/admin/breaking-news",
+    icon:Bell
+  },
+
+  {
+    name:"Ads",
+    href:"/admin/ads",
+    icon:Image
+  },
+
+  {
+    name:"Users",
+    href:"/admin/users",
+    icon:Users
+  },
+
+  {
+    name:"Settings",
+    href:"/admin/settings",
+    icon:Settings
+  }
+
+];
+
+export default function AdminSidebar({
+  open,
+  setOpen,
+  collapsed
+}:{
+  open:boolean;
+  setOpen:(value:boolean)=>void;
+  collapsed:boolean;
+}){
+
+  return (
+
+    <>
+
+      {/* Mobile Overlay */}
+
+      {
+        open &&
+
+        <div
+          onClick={()=>setOpen(false)}
+          className="
+          fixed
+          inset-0
+          bg-black/50
+          z-40
+          md:hidden
+          "
+        />
+
+      }
+
+      <aside
+
+        className={`
+        fixed
+        top-0
+        left-0
+        z-50
+
+        h-screen
+        overflow-y-auto
+
+        bg-zinc-950
+        text-white
+
+        transition-all
+        duration-300
+
+        ${collapsed ? "md:w-20" : "md:w-64"}
+
+        w-64
+
+        ${open ? "translate-x-0":"-translate-x-full"}
+
+        md:translate-x-0
+        `}
+
+      >
+
+        <div
+          className="
+          h-16
+          flex
+          items-center
+          justify-between
+          px-5
+          border-b
+          border-zinc-800
+          "
+        >
+
+          {
+
+            !collapsed &&
+
+            <h2
+              className="
+              text-xl
+              font-bold
+              text-red-500
+              "
+            >
+              INFINIA CMS
+            </h2>
+
+          }
+
+          <button
+            className="md:hidden"
+            onClick={()=>setOpen(false)}
+          >
+            <X/>
+          </button>
+
+        </div>
+
+        <nav
+          className="
+          p-3
+          space-y-2
+          "
+        >
+
+          {
+
+            menu.map((item)=>{
+
+              const Icon=item.icon;
+
+              return (
+
+                <Link
+
+                  key={item.name}
+
+                  href={item.href}
+
+                  onClick={()=>setOpen(false)}
+
+                  className={`
+                  flex
+                  items-center
+
+                  ${
+                    collapsed
+                    ? "justify-center"
+                    : "gap-3"
+                  }
+
+                  p-3
+                  rounded-lg
+                  hover:bg-zinc-800
+                  transition
+                  `}
+
+                >
+
+                  <Icon size={20}/>
+
+                  &nbsp;<span className={collapsed ? "md:hidden" : ""}>
+  { item.name}
+</span>
+
+                </Link>
+
+              )
+
+            })
+
+          }
+
+        </nav>
+
+      </aside>
+
+    </>
+
+  )
+
+}
+
+
+================================================
+FILE PATH:
+src\features\admin\components\stat-card.tsx
+FILE SIZE:
+531 bytes
+================================================
+
+
+interface StatCardProps {
+
+title:string;
+
+value:string;
+
+description:string;
+
+}
+
+
+export default function StatCard({
+
+title,
+
+value,
+
+description
+
+}:StatCardProps){
+
+
+return (
+
+<div
+className="
+bg-white
+rounded-xl
+p-5
+shadow-sm
+border
+"
+>
+
+
+<p
+className="
+text-sm
+text-zinc-500
+"
+>
+{title}
+</p>
+
+
+
+<h2
+className="
+text-3xl
+font-bold
+mt-2
+text-zinc-900
+"
+>
+{value}
+</h2>
+
+
+
+<p
+className="
+text-xs
+text-zinc-500
+mt-2
+"
+>
+{description}
+</p>
+
+
+
+</div>
+
+);
+
+
+}
+
+
+================================================
+FILE PATH:
+src\features\admin\dashboard\dashboard-content.tsx
+FILE SIZE:
+1576 bytes
+================================================
+
+
+"use client";
+
+import {
+  useEffect,
+  useState
+} from "react";
+
+
+import StatCard 
+from "../components/stat-card";
+
+
+import {
+  getDashboardStats
+} from "@/services/dashboard.service";
+
+
+
+export default function DashboardContent(){
+
+
+const [stats,setStats] = useState({
+
+articles:0,
+
+videos:0,
+
+users:0,
+
+breakingNews:0,
+
+liveTv:0,
+
+ads:0
+
+});
+
+
+useEffect(()=>{
+
+
+async function loadStats(){
+
+
+try{
+
+
+const data =
+await getDashboardStats();
+
+
+setStats(data);
+
+
+}
+catch(error){
+
+console.error(
+"Dashboard Stats Error:",
+error
+);
+
+}
+
+
+}
+
+
+
+loadStats();
+
+
+},[]);
+
+
+
+
+return (
+
+<div
+className="
+space-y-6
+"
+>
+
+
+<h1
+className="
+text-3xl
+font-bold
+text-zinc-900
+"
+>
+Dashboard
+</h1>
+
+
+
+
+<div
+className="
+grid
+grid-cols-1
+md:grid-cols-2
+xl:grid-cols-4
+gap-5
+"
+>
+
+
+<StatCard
+
+title="Total Articles"
+
+value={String(stats.articles)}
+
+description="Published news articles"
+
+/>
+
+
+
+<StatCard
+
+title="Videos"
+
+value={String(stats.videos)}
+
+description="Uploaded videos"
+
+/>
+
+
+
+<StatCard
+
+title="Users"
+
+value={String(stats.users)}
+
+description="Registered users"
+
+/>
+
+
+
+<StatCard
+
+title="Business Ads"
+
+value={String(stats.ads)}
+
+description="Active advertisements"
+
+/>
+
+
+
+</div>
+
+
+
+
+
+<div
+className="
+bg-white
+rounded-xl
+border
+p-6
+"
+>
+
+
+<h2
+className="
+font-bold
+text-xl
+mb-4
+"
+>
+Recent Activity
+</h2>
+
+
+<p
+className="
+text-zinc-500
+"
+>
+No activity yet
+</p>
+
+
+
+</div>
+
+
+
+</div>
+
+);
+
+
+}
+
+
+================================================
+FILE PATH:
+src\features\admin\users\add-user-modal.tsx
+FILE SIZE:
+4000 bytes
+================================================
+
+
+"use client";
+
+import { useState } from "react";
+
+interface Props {
+  open:boolean;
+  setOpen:(value:boolean)=>void;
+  reload:()=>void;
+}
+
+export default function AddUserModal({
+  open,
+  setOpen,
+  reload
+}:Props){
+
+  const [name,setName]=useState("");
+  const [email,setEmail]=useState("");
+  const [password,setPassword]=useState("");
+
+  const [loading,setLoading]=useState(false);
+  const [message,setMessage]=useState("");
+
+
+
+  async function createUser(){
+
+    try{
+
+      setLoading(true);
+      setMessage("");
+
+      const res =
+        await fetch(
+          "/api/admin/users",
+          {
+            method:"POST",
+            headers:{
+              "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+              name,
+              email,
+              password
+            })
+          }
+        );
+
+
+      const data =
+        await res.json();
+
+
+      if(!data.success){
+
+        setMessage(
+          data.message ||
+          "Something went wrong"
+        );
+
+        return;
+
+      }
+
+
+      setMessage(
+        "Editor created successfully"
+      );
+
+
+      setName("");
+      setEmail("");
+      setPassword("");
+
+
+      reload();
+
+
+      setTimeout(()=>{
+
+        setOpen(false);
+
+        setMessage("");
+
+      },1000);
+
+
+    }
+    catch(error:any){
+
+      setMessage(
+        error.message
+      );
+
+    }
+    finally{
+
+      setLoading(false);
+
+    }
+
+  }
+
+
+
+  if(!open) return null;
+
+
+
+  return (
+
+    <div
+      className="
+      fixed
+      inset-0
+      bg-black/50
+      flex
+      items-center
+      justify-center
+      z-50
+      "
+    >
+
+      <div
+        className="
+       bg-white
+text-black
+        w-full
+        max-w-md
+        rounded-xl
+        p-6
+        space-y-5
+        "
+      >
+
+
+        <div className="flex justify-between items-center">
+
+          <h2 className="text-xl font-bold">
+
+            Add Editor
+
+          </h2>
+
+
+          <button
+
+            onClick={()=>setOpen(false)}
+
+            className="text-zinc-500"
+
+          >
+
+            ✕
+
+
+          </button>
+
+
+        </div>
+
+
+
+        <input
+
+          placeholder="Full Name"
+
+          value={name}
+
+          onChange={
+            e=>setName(e.target.value)
+          }
+
+          className="
+          w-full
+          border
+          rounded-lg
+          px-3
+          py-2
+          "
+
+        />
+
+
+
+        <input
+
+          placeholder="Email Address"
+
+          type="email"
+
+          value={email}
+
+          onChange={
+            e=>setEmail(e.target.value)
+          }
+
+          className="
+          w-full
+          border
+          rounded-lg
+          px-3
+          py-2
+          "
+
+        />
+
+
+
+        <input
+
+          placeholder="Password"
+
+          type="password"
+
+          value={password}
+
+          onChange={
+            e=>setPassword(e.target.value)
+          }
+
+          className="
+          w-full
+          border
+          rounded-lg
+          px-3
+          py-2
+          "
+
+        />
+
+
+
+        {
+          message && (
+
+            <div
+              className="
+              text-sm
+              text-center
+              text-red-600
+              "
+            >
+
+              {message}
+
+            </div>
+
+          )
+        }
+
+
+
+        <button
+
+          onClick={createUser}
+
+          disabled={loading}
+
+          className="
+          w-full
+          bg-red-600
+          text-white
+          py-2
+          rounded-lg
+          hover:bg-red-700
+          disabled:opacity-50
+          "
+
+        >
+
+          {
+            loading
+            ?
+            "Creating..."
+            :
+            "Create Editor"
+          }
+
+
+        </button>
+
+
+      </div>
+
+
+    </div>
+
+  );
+
+}
+
+
+================================================
+FILE PATH:
+src\features\admin\users\users-content.tsx
+FILE SIZE:
+7867 bytes
+================================================
+
+
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+
+import { Search, UserPlus } from "lucide-react";
+
+import { getCollection } from "@/lib/firebase/firestore";
+
+type UserType = {
+  id: string;
+  uid: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+};
+
+export default function UsersContent() {
+
+  const [users, setUsers] = useState<UserType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  async function loadUsers() {
+
+    setLoading(true);
+
+    try {
+
+      const data = await getCollection("users");
+
+      setUsers(data as UserType[]);
+
+    } catch (error) {
+
+      console.log(error);
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
+  }
+
+  useEffect(() => {
+
+    loadUsers();
+
+  }, []);
+
+  const filteredUsers = useMemo(() => {
+
+    return users.filter((user) => {
+
+      return (
+
+        user.name
+          ?.toLowerCase()
+          .includes(search.toLowerCase())
+
+        ||
+
+        user.email
+          ?.toLowerCase()
+          .includes(search.toLowerCase())
+
+      );
+
+    });
+
+  }, [users, search]);
+
+  return (
+
+    <div className="space-y-6">
+
+      {/* Top */}
+
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+        <div>
+
+          <h1 className="text-2xl font-bold">
+            Users
+          </h1>
+
+          <p className="text-zinc-500">
+            Manage Editors
+          </p>
+
+        </div>
+
+        <button
+          className="
+          flex
+          items-center
+          gap-2
+          bg-red-600
+          hover:bg-red-700
+          text-white
+          px-5
+          py-3
+          rounded-lg
+          "
+        >
+          <UserPlus size={18} />
+
+          Add Editor
+
+        </button>
+
+      </div>
+
+      {/* Cards */}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+        <div className="bg-white rounded-xl shadow p-5">
+
+          <p className="text-zinc-500">
+            Total Users
+          </p>
+
+          <h2 className="text-3xl font-bold mt-2">
+
+            {users.length}
+
+          </h2>
+
+        </div>
+
+        <div className="bg-white rounded-xl shadow p-5">
+
+          <p className="text-zinc-500">
+            Editors
+          </p>
+
+          <h2 className="text-3xl font-bold mt-2">
+
+            {
+              users.filter(
+                (u) => u.role === "editor"
+              ).length
+            }
+
+          </h2>
+
+        </div>
+
+        <div className="bg-white rounded-xl shadow p-5">
+
+          <p className="text-zinc-500">
+            Active
+          </p>
+
+          <h2 className="text-3xl font-bold mt-2">
+
+            {
+              users.filter(
+                (u) => u.status === "active"
+              ).length
+            }
+
+          </h2>
+
+        </div>
+
+      </div>
+
+      {/* Search */}
+
+      <div className="relative">
+
+        <Search
+          size={18}
+          className="
+          absolute
+          left-3
+          top-3.5
+          text-zinc-400
+          "
+        />
+
+        <input
+
+          value={search}
+
+          onChange={(e) =>
+            setSearch(e.target.value)
+          }
+
+          placeholder="Search name or email..."
+
+          className="
+          w-full
+          rounded-lg
+          border
+          bg-white
+          pl-10
+          pr-4
+          py-3
+          outline-none
+          focus:ring-2
+          focus:ring-red-500
+          "
+
+        />
+
+      </div>
+
+      {/* Table */}
+
+      <div className="bg-white rounded-xl shadow overflow-x-auto">
+
+        <table className="w-full">
+
+          <thead className="bg-zinc-100">
+
+            <tr>
+
+              <th className="text-left p-4">
+                Name
+              </th>
+
+              <th className="text-left p-4">
+                Email
+              </th>
+
+              <th className="text-left p-4">
+                Role
+              </th>
+
+              <th className="text-left p-4">
+                Status
+              </th>
+
+              <th className="text-left p-4">
+                Action
+              </th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            {
+
+              loading ?
+
+                (
+
+                  <tr>
+
+                    <td
+                      colSpan={5}
+                      className="
+                      text-center
+                      p-10
+                      "
+                    >
+
+                      Loading...
+
+                    </td>
+
+                  </tr>
+
+                )
+
+                :
+
+                filteredUsers.length === 0 ?
+
+                  (
+
+                    <tr>
+
+                      <td
+                        colSpan={5}
+                        className="
+                        text-center
+                        p-10
+                        "
+                      >
+
+                        No Users Found
+
+                      </td>
+
+                    </tr>
+
+                  )
+
+                  :
+
+                  filteredUsers.map((user) => (
+
+                    <tr
+                      key={user.id}
+                      className="border-t"
+                    >
+
+                      <td className="p-4 font-medium">
+
+                        {user.name}
+
+                      </td>
+
+                      <td className="p-4">
+
+                        {user.email}
+
+                      </td>
+
+                      <td className="p-4">
+
+                        <span
+                          className={`
+                          px-3
+                          py-1
+                          rounded-full
+                          text-sm
+
+                          ${user.role === "admin"
+
+                              ? "bg-red-100 text-red-700"
+
+                              : "bg-blue-100 text-blue-700"
+
+                            }
+
+                          `}
+                        >
+
+                          {user.role}
+
+                        </span>
+
+                      </td>
+
+                      <td className="p-4">
+
+                        <span
+                          className={`
+                          px-3
+                          py-1
+                          rounded-full
+                          text-sm
+
+                          ${user.status === "active"
+
+                              ? "bg-green-100 text-green-700"
+
+                              : "bg-zinc-200 text-zinc-700"
+
+                            }
+
+                          `}
+                        >
+
+                          {user.status}
+
+                        </span>
+
+                      </td>
+
+                      <td className="p-4">
+
+                        {
+
+                          user.role === "admin"
+
+                            ?
+
+                            <span className="text-zinc-400">
+
+                              Owner
+
+                            </span>
+
+                            :
+
+                            <button
+                              className="
+                              text-red-600
+                              hover:underline
+                              "
+                            >
+
+                              Delete
+
+                            </button>
+
+                        }
+
+                      </td>
+
+                    </tr>
+
+                  ))
+
+            }
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+  );
+
+}
+
+
+================================================
+FILE PATH:
+src\features\admin\users\users-page.tsx
+FILE SIZE:
+2012 bytes
+================================================
+
+
+"use client";
+
+import { useEffect, useState } from "react";
+
+import AddUserModal from "./add-user-modal";
+import UsersTable from "./users-table";
+
+export interface UserType{
+
+  id:string;
+
+  uid:string;
+
+  name:string;
+
+  email:string;
+
+  role:string;
+
+  status:string;
+
+}
+
+export default function UsersPage(){
+
+  const [users,setUsers]=
+    useState<UserType[]>([]);
+
+  const [loading,setLoading]=
+    useState(true);
+
+  const [open,setOpen]=
+    useState(false);
+
+  async function loadUsers(){
+
+  try{
+
+    setLoading(true);
+
+
+    const res =
+      await fetch(
+        "/api/admin/users"
+      );
+
+
+    const data =
+      await res.json();
+
+
+    if(Array.isArray(data)){
+
+      setUsers(data);
+
+    }
+    else{
+
+      console.error(
+        "API ERROR:",
+        data
+      );
+
+      setUsers([]);
+
+    }
+
+
+  }
+  catch(error){
+
+    console.error(error);
+
+    setUsers([]);
+
+  }
+  finally{
+
+    setLoading(false);
+
+  }
+
+}
+
+  useEffect(()=>{
+
+    loadUsers();
+
+  },[]);
+
+  return(
+  <div className="
+    min-h-screen
+    bg-zinc-100
+    text-zinc-900
+    p-6
+    space-y-6
+  ">
+
+      <div className="flex items-center justify-between">
+
+        <div>
+
+          <h1 className="text-2xl font-bold">
+
+            Users
+
+          </h1>
+
+          <p className="text-zinc-500">
+
+            Manage Editors
+
+          </p>
+
+        </div>
+
+        <button
+
+          onClick={()=>setOpen(true)}
+
+          className="
+          bg-red-600
+          text-white
+          px-4
+          py-2
+          rounded-lg
+          hover:bg-red-700
+          "
+
+        >
+
+          + Add Editor
+
+        </button>
+
+      </div>
+
+      <UsersTable
+
+        users={users}
+
+        loading={loading}
+
+        reload={loadUsers}
+
+      />
+
+      <AddUserModal
+
+        open={open}
+
+        setOpen={setOpen}
+
+        reload={loadUsers}
+
+      />
+
+    </div>
+
+  );
+
+}
+
+
+================================================
+FILE PATH:
+src\features\admin\users\users-table.tsx
+FILE SIZE:
+5556 bytes
+================================================
+
+
+"use client";
+
+import { useState } from "react";
+
+import type { UserType } from "./users-page";
+import { auth } from "@/lib/firebase/firebase";
+
+
+interface Props{
+
+  users:UserType[];
+
+  loading:boolean;
+
+  reload:()=>void;
+
+}
+
+
+
+export default function UsersTable({
+
+  users,
+
+  loading,
+
+  reload
+
+}:Props){
+
+
+  const [search,setSearch]=useState("");
+
+  const [deleting,setDeleting]=useState("");
+
+
+
+  async function deleteUser(uid:string){
+
+
+    const confirmDelete =
+      confirm(
+        "Are you sure you want to delete this editor?"
+      );
+
+
+    if(!confirmDelete) return;
+
+
+
+    try{
+
+
+      setDeleting(uid);
+
+
+      const currentUser = auth.currentUser;
+
+
+if(!currentUser){
+
+  alert(
+    "Please login again"
+  );
+
+  return;
+
+}
+
+
+const token =
+await currentUser.getIdToken();
+
+
+
+await fetch(
+"/api/admin/users",
+{
+
+method:"DELETE",
+
+headers:{
+
+"Content-Type":"application/json",
+
+"Authorization":
+`Bearer ${token}`
+
+},
+
+body:JSON.stringify({
+
+uid
+
+})
+
+}
+);
+
+
+      reload();
+
+
+    }
+    catch(error){
+
+      console.log(error);
+
+    }
+    finally{
+
+      setDeleting("");
+
+    }
+
+
+  }
+
+
+
+  const filteredUsers =
+    users.filter(
+      (user)=>
+
+        user.name
+        .toLowerCase()
+        .includes(
+          search.toLowerCase()
+        )
+
+        ||
+
+        user.email
+        .toLowerCase()
+        .includes(
+          search.toLowerCase()
+        )
+
+    );
+
+
+
+  return(
+
+    <div
+className="
+bg-white
+text-zinc-900
+rounded-xl
+shadow-lg
+p-5
+space-y-5
+border
+border-zinc-200
+"
+>
+
+
+      <div>
+
+
+        <input
+
+          placeholder="Search users..."
+
+          value={search}
+
+          onChange={
+            e=>setSearch(e.target.value)
+          }
+
+          className="
+w-full
+border
+rounded-lg
+px-3
+py-2
+bg-white
+text-black
+placeholder:text-zinc-400
+"
+
+        />
+
+
+      </div>
+
+
+
+      {
+
+        loading ?
+
+
+        (
+
+          <div className="text-center py-10">
+
+            Loading users...
+
+          </div>
+
+        )
+
+
+        :
+
+
+        filteredUsers.length===0 ?
+
+
+        (
+
+          <div className="text-center py-10 text-zinc-500">
+
+            No users found
+
+          </div>
+
+        )
+
+
+        :
+
+
+        (
+
+        <div className="overflow-x-auto">
+
+
+          <table className="w-full">
+
+
+            <thead>
+
+
+              <tr
+className="
+border-b
+text-left
+text-sm
+text-zinc-700
+"
+>
+
+                <th className="py-3">
+                  Name
+                </th>
+
+                <th>
+                  Email
+                </th>
+
+                <th>
+                  Role
+                </th>
+
+                <th>
+                  Status
+                </th>
+
+                <th>
+                  Action
+                </th>
+
+
+              </tr>
+
+
+            </thead>
+
+
+
+            <tbody>
+
+
+            {
+
+              filteredUsers.map(
+                (user)=>(
+
+
+                <tr
+
+                  key={user.id}
+
+                  className="
+                  border-b
+                  hover:bg-zinc-50
+                  dark:hover:bg-zinc-800
+                  "
+
+                >
+
+
+                  <td className="py-4 font-medium">
+
+                    {user.name}
+
+                  </td>
+
+
+
+                  <td>
+
+                    {user.email}
+
+                  </td>
+
+
+
+                  <td>
+
+
+                    <span
+
+                      className="
+                      bg-blue-100
+                      text-blue-700
+                      px-3
+                      py-1
+                      rounded-full
+                      text-xs
+                      "
+
+                    >
+
+                      {user.role}
+
+                    </span>
+
+
+                  </td>
+
+
+
+                  <td>
+
+
+                    <span
+
+                      className="
+                      bg-green-100
+                      text-green-700
+                      px-3
+                      py-1
+                      rounded-full
+                      text-xs
+                      "
+
+                    >
+
+                      {user.status}
+
+                    </span>
+
+
+                  </td>
+
+
+
+                  <td>
+
+
+                    <button
+
+                      onClick={()=>
+                        deleteUser(user.uid)
+                      }
+
+                      disabled={
+                        deleting===user.uid
+                      }
+
+                      className="
+                      bg-red-600
+                      text-white
+                      px-3
+                      py-1
+                      rounded-lg
+                      text-sm
+                      disabled:opacity-50
+                      "
+
+                    >
+
+                      {
+                        deleting===user.uid
+                        ?
+                        "Deleting..."
+                        :
+                        "Delete"
+                      }
+
+
+                    </button>
+
+
+                  </td>
+
+
+
+                </tr>
+
+
+                )
+
+              )
+
+            }
+
+
+            </tbody>
+
+
+          </table>
+
+
+        </div>
+
+        )
+
+      }
+
+
+
+    </div>
+
+  );
+
+}
+
+
+================================================
+FILE PATH:
+src\features\auth\auth.context.tsx
+FILE SIZE:
+1071 bytes
+================================================
+
+
+"use client";
+
+import {
+ createContext,
+ useContext,
+ useEffect,
+ useState
+} from "react";
+
+
+import {
+ onAuthStateChanged,
+ User as FirebaseUser
+} from "firebase/auth";
+
+
+import { auth } from "@/lib/firebase/firebase";
+
+
+interface AuthContextType {
+
+ user: FirebaseUser | null;
+
+ loading:boolean;
+
+}
+
+
+const AuthContext =
+createContext<AuthContextType>({
+ user:null,
+ loading:true
+});
+
+
+
+export function AuthProvider(
+ {
+ children
+ }:{
+ children:React.ReactNode
+ }
+){
+
+ const [user,setUser]
+ =
+ useState<FirebaseUser|null>(null);
+
+
+ const [loading,setLoading]
+ =
+ useState(true);
+
+
+
+ useEffect(()=>{
+
+
+  const unsubscribe =
+  onAuthStateChanged(
+  auth,
+  (currentUser)=>{
+
+
+    setUser(currentUser);
+
+    setLoading(false);
+
+  }
+);
+
+
+
+  return unsubscribe;
+
+
+ },[]);
+
+
+
+ return (
+
+  <AuthContext.Provider
+   value={{
+    user,
+    loading
+   }}
+  >
+
+   {children}
+
+  </AuthContext.Provider>
+
+ );
+
+
+}
+
+
+
+export function useAuth(){
+
+ return useContext(AuthContext);
+
+}
+
+
+================================================
+FILE PATH:
+src\features\auth\use-user-role.ts
+FILE SIZE:
+1104 bytes
+================================================
+
+
+"use client";
+
+import {
+  useEffect,
+  useState
+} from "react";
+
+
+import {
+  useAuth
+} from "./auth.context";
+
+
+import {
+  getUserProfile
+} from "@/repositories/user.repository";
+
+
+
+export function useUserRole(){
+
+
+  const {
+    user
+  } = useAuth();
+
+
+
+  const [role,setRole] =
+  useState<string | null>(null);
+
+
+
+  const [loading,setLoading] =
+  useState(true);
+
+
+
+
+
+  useEffect(()=>{
+
+
+    async function loadRole(){
+
+
+      try{
+
+
+        if(!user){
+
+          setRole(null);
+          setLoading(false);
+
+          return;
+
+        }
+
+
+
+
+        const profile =
+        await getUserProfile(user.uid);
+
+
+
+        if(profile){
+
+ setRole(profile.role);
+
+}
+else{
+
+setRole(null);
+
+}
+
+
+
+      }
+      catch(error){
+
+
+        console.error(
+          "ROLE FETCH ERROR:",
+          error
+        );
+
+
+        setRole(null);
+
+
+      }
+      finally{
+
+
+        setLoading(false);
+
+
+      }
+
+
+    }
+
+
+
+
+    loadRole();
+
+
+
+  },[user]);
+
+
+
+
+
+  return {
+
+    role,
+    loading
+
+  };
+
+
+}
+
+
+================================================
+FILE PATH:
+src\lib\auth\verify-admin.ts
+FILE SIZE:
+640 bytes
+================================================
+
+
+import { adminAuth, adminDb } from "@/lib/firebase/firebase-admin";
+
+
+export async function verifyAdmin(
+  token:string
+){
+
+  const decoded =
+    await adminAuth.verifyIdToken(
+      token
+    );
+
+
+  const userDoc =
+    await adminDb
+    .collection("users")
+    .doc(decoded.uid)
+    .get();
+
+
+
+  if(!userDoc.exists){
+
+    throw new Error(
+      "User profile not found"
+    );
+
+  }
+
+
+
+  const user =
+    userDoc.data();
+
+
+
+  if(
+    user?.role !== "admin"
+  ){
+
+    throw new Error(
+      "Admin access required"
+    );
+
+  }
+
+
+  return {
+
+    uid:decoded.uid,
+
+    ...user
+
+  };
+
+
+}
+
+
+================================================
+FILE PATH:
+src\lib\auth\verify-role.ts
+FILE SIZE:
+664 bytes
+================================================
+
+
+import { adminAuth, adminDb } from "@/lib/firebase/firebase-admin";
+
+
+export async function verifyRole(
+  token:string,
+  allowedRoles:string[]
+){
+
+  const decoded =
+    await adminAuth.verifyIdToken(token);
+
+
+  const userDoc =
+    await adminDb
+      .collection("users")
+      .doc(decoded.uid)
+      .get();
+
+
+  if(!userDoc.exists){
+
+    throw new Error(
+      "User not found"
+    );
+
+  }
+
+
+  const user =
+    userDoc.data();
+
+
+  if(
+    !allowedRoles.includes(
+      user?.role
+    )
+  ){
+
+    throw new Error(
+      "Permission denied"
+    );
+
+  }
+
+
+  return {
+
+    uid: decoded.uid,
+
+    ...user
+
+  };
+
+}
+
+
+================================================
+FILE PATH:
+src\lib\firebase\auth.ts
+FILE SIZE:
+931 bytes
+================================================
+
+
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  User,
+} from "firebase/auth";
+
+import { auth } from "./firebase";
+
+
+// Register User
+export async function registerUser(
+  email: string,
+  password: string
+) {
+
+  const result =
+    await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+  return result.user;
+}
+
+
+// Login User
+export async function loginUser(
+  email: string,
+  password: string
+) {
+
+  const result =
+    await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+  return result.user;
+}
+
+
+// Logout
+export async function logoutUser(){
+
+  await signOut(auth);
+
+}
+
+
+// Current User
+export function getCurrentUser(){
+
+  return auth.currentUser;
+
+}
+
+
+// Auth State Listener
+export function authStateListener(
+  callback:(user:User|null)=>void
+){
+
+ return onAuthStateChanged(
+    auth,
+    callback
+ );
+
+}
+
+
+================================================
+FILE PATH:
+src\lib\firebase\firebase-admin.ts
+FILE SIZE:
+599 bytes
+================================================
+
+
+import { cert, getApps, initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
+import { getFirestore } from "firebase-admin/firestore";
+
+const serviceAccount = {
+  projectId: process.env.FIREBASE_PROJECT_ID!,
+  clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
+  privateKey: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, "\n"),
+};
+
+const app =
+  getApps().length > 0
+    ? getApps()[0]
+    : initializeApp({
+        credential: cert(serviceAccount),
+      });
+
+export const adminAuth = getAuth(app);
+
+export const adminDb = getFirestore(app);
+
+
+================================================
+FILE PATH:
+src\lib\firebase\firebase.ts
+FILE SIZE:
+1445 bytes
+================================================
+
+
+import { FirebaseApp, getApp, getApps, initializeApp } from "firebase/app";
+import { getAnalytics, isSupported } from "firebase/analytics";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getMessaging } from "firebase/messaging";
+
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID!,
+};
+
+const app: FirebaseApp =
+  getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+const messaging =
+  typeof window !== "undefined"
+    ? (() => {
+
+        try {
+
+          if(
+            "serviceWorker" in navigator &&
+            "PushManager" in window
+          ){
+
+            return getMessaging(app);
+
+          }
+
+          return null;
+
+
+        } catch {
+
+          return null;
+
+        }
+
+      })()
+    : null;
+
+const analytics =
+  typeof window !== "undefined"
+    ? isSupported().then((supported) =>
+        supported ? getAnalytics(app) : null
+      )
+    : null;
+
+export { app, auth, db, messaging, analytics };
+
+
+================================================
+FILE PATH:
+src\lib\firebase\firestore.ts
+FILE SIZE:
+2269 bytes
+================================================
+
+
+import {
+  collection,
+  doc,
+  addDoc,
+  getDoc,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  setDoc,
+  query,
+  where,
+  orderBy,
+  limit,
+  DocumentData,
+  QueryConstraint,
+} from "firebase/firestore";
+
+import { db } from "./firebase";
+
+
+// Create Document
+export async function createDocument(
+  collectionName: string,
+  data: DocumentData
+) {
+
+  const ref = await addDoc(
+    collection(db, collectionName),
+    data
+  );
+
+  return ref.id;
+
+}
+
+
+// Get Single Document
+export async function getDocument<T>(
+  collectionName:string,
+  id:string
+): Promise<T | null>{
+
+  const snapshot =
+    await getDoc(
+      doc(
+        db,
+        collectionName,
+        id
+      )
+    );
+
+
+  if(!snapshot.exists()){
+    return null;
+  }
+
+
+  return {
+    id:snapshot.id,
+    ...snapshot.data()
+  } as T;
+
+}
+
+export async function setDocument(
+  collectionName:string,
+  id:string,
+  data:DocumentData
+){
+
+  await setDoc(
+    doc(
+      db,
+      collectionName,
+      id
+    ),
+    data
+  );
+
+}
+
+// Get Collection
+export async function getCollection(
+  collectionName:string,
+  constraints:QueryConstraint[]=[]
+){
+
+ const q =
+ query(
+   collection(
+    db,
+    collectionName
+   ),
+   ...constraints
+ );
+
+
+ const snapshot =
+   await getDocs(q);
+
+
+ return snapshot.docs.map(
+   item=>({
+     id:item.id,
+     ...item.data()
+   })
+ );
+
+}
+
+
+
+// Update Document
+export async function updateDocument(
+ collectionName:string,
+ id:string,
+ data:DocumentData
+){
+
+ await updateDoc(
+   doc(
+    db,
+    collectionName,
+    id
+   ),
+   data
+ );
+
+}
+
+
+
+// Delete Document
+export async function deleteDocument(
+ collectionName:string,
+ id:string
+){
+
+ await deleteDoc(
+   doc(
+    db,
+    collectionName,
+    id
+   )
+ );
+
+}
+
+
+
+// Query Helper
+export function createQuery(
+ field:string,
+ operator:any,
+ value:any
+){
+
+ return where(
+   field,
+   operator,
+   value
+ );
+
+}
+
+
+
+// Sorting Helper
+export function createOrder(
+ field:string,
+ direction:"asc"|"desc"="desc"
+){
+
+ return orderBy(
+   field,
+   direction
+ );
+
+}
+
+
+
+// Limit Helper
+export function createLimit(
+ count:number
+){
+
+ return limit(count);
+
+}
+
+
+================================================
+FILE PATH:
+src\lib\firebase\messaging.ts
+FILE SIZE:
+733 bytes
+================================================
+
+
+import { getToken } from "firebase/messaging";
+import { messaging } from "./firebase";
+
+
+export async function requestNotificationPermission(){
+
+  if(typeof window === "undefined"){
+    return null;
+  }
+
+
+  const permission =
+    await Notification.requestPermission();
+
+
+  if(permission !== "granted"){
+    return null;
+  }
+
+
+  return permission;
+
+}
+
+
+
+export async function getFCMToken(){
+
+  if(!messaging){
+    return null;
+  }
+
+
+  try {
+
+    const token =
+      await getToken(
+        messaging,
+        {
+          vapidKey:
+          process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY
+        }
+      );
+
+
+    return token;
+
+
+  } catch(error){
+
+    console.error(
+      "FCM Token Error:",
+      error
+    );
+
+    return null;
+
+  }
+
+}
+
+
+================================================
+FILE PATH:
+src\repositories\ad.repository.ts
+FILE SIZE:
+836 bytes
+================================================
+
+
+import {
+ createDocument,
+ getCollection,
+ getDocument,
+ updateDocument,
+ deleteDocument
+} from "@/lib/firebase/firestore";
+
+
+import { Advertisement } from "@/types/ad";
+
+
+const COLLECTION="ads";
+
+
+
+export async function createAd(
+ data:Omit<Advertisement,"id">
+){
+
+ return await createDocument(
+  COLLECTION,
+  data
+ );
+
+}
+
+
+
+export async function getAds(){
+
+ return await getCollection(
+  COLLECTION
+ );
+
+}
+
+
+
+export async function getAd(
+ id:string
+){
+
+ return await getDocument(
+  COLLECTION,
+  id
+ );
+
+}
+
+
+
+export async function updateAd(
+ id:string,
+ data:Partial<Advertisement>
+){
+
+ return await updateDocument(
+  COLLECTION,
+  id,
+  data
+ );
+
+}
+
+
+
+export async function deleteAd(
+ id:string
+){
+
+ return await deleteDocument(
+  COLLECTION,
+  id
+ );
+
+}
+
+
+
+================================================
+FILE PATH:
+src\repositories\article.repository.ts
+FILE SIZE:
+866 bytes
+================================================
+
+
+import {
+  createDocument,
+  getCollection,
+  getDocument,
+  updateDocument,
+  deleteDocument
+} from "@/lib/firebase/firestore";
+
+
+import { Article } from "@/types/article";
+
+
+
+const COLLECTION = "articles";
+
+
+
+export async function createArticle(
+ article:Omit<Article,"id">
+){
+
+ return await createDocument(
+  COLLECTION,
+  article
+ );
+
+}
+
+
+
+export async function getArticle(
+ id:string
+){
+
+ return await getDocument(
+  COLLECTION,
+  id
+ );
+
+}
+
+
+
+export async function getArticles(){
+
+ return await getCollection(
+  COLLECTION
+ );
+
+}
+
+
+
+export async function updateArticle(
+ id:string,
+ data:Partial<Article>
+){
+
+ return await updateDocument(
+  COLLECTION,
+  id,
+  data
+ );
+
+}
+
+
+
+export async function deleteArticle(
+ id:string
+){
+
+ return await deleteDocument(
+  COLLECTION,
+  id
+ );
+
+}
+
+
+================================================
+FILE PATH:
+src\repositories\category.repository.ts
+FILE SIZE:
+863 bytes
+================================================
+
+
+import {
+ createDocument,
+ getCollection,
+ getDocument,
+ updateDocument,
+ deleteDocument
+} from "@/lib/firebase/firestore";
+
+
+import { Category } from "@/types/category";
+
+
+const COLLECTION="categories";
+
+
+
+export async function createCategory(
+ data:Omit<Category,"id">
+){
+
+ return await createDocument(
+  COLLECTION,
+  data
+ );
+
+}
+
+
+
+export async function getCategories(){
+
+ return await getCollection(
+  COLLECTION
+ );
+
+}
+
+
+
+export async function getCategory(
+ id:string
+){
+
+ return await getDocument(
+  COLLECTION,
+  id
+ );
+
+}
+
+
+
+export async function updateCategory(
+ id:string,
+ data:Partial<Category>
+){
+
+ return await updateDocument(
+  COLLECTION,
+  id,
+  data
+ );
+
+}
+
+
+
+export async function deleteCategory(
+ id:string
+){
+
+ return await deleteDocument(
+  COLLECTION,
+  id
+ );
+
+}
+
+
+================================================
+FILE PATH:
+src\repositories\settings.repository.ts
+FILE SIZE:
+470 bytes
+================================================
+
+
+import {
+ getDocument,
+ updateDocument
+} from "@/lib/firebase/firestore";
+
+
+import { SiteSettings } from "@/types/settings";
+
+
+const COLLECTION="settings";
+
+const SETTINGS_ID="website";
+
+
+
+export async function getSettings(){
+
+ return await getDocument(
+  COLLECTION,
+  SETTINGS_ID
+ );
+
+}
+
+
+
+export async function updateSettings(
+ data:Partial<SiteSettings>
+){
+
+ return await updateDocument(
+  COLLECTION,
+  SETTINGS_ID,
+  data
+ );
+
+}
+
+
+================================================
+FILE PATH:
+src\repositories\user.repository.ts
+FILE SIZE:
+599 bytes
+================================================
+
+
+import {
+  createDocument,
+  getDocument,
+  updateDocument,
+} from "@/lib/firebase/firestore";
+
+import { User } from "@/types/user";
+
+
+const COLLECTION = "users";
+
+
+
+export async function createUserProfile(
+ user:Omit<User,"id">
+){
+
+ return await createDocument(
+  COLLECTION,
+  user
+ );
+
+}
+
+
+
+export async function getUserProfile(
+ id:string
+){
+
+ return await getDocument<User>(
+  COLLECTION,
+  id
+ );
+
+}
+
+
+
+export async function updateUserProfile(
+ id:string,
+ data:Partial<User>
+){
+
+ return await updateDocument(
+  COLLECTION,
+  id,
+  data
+ );
+
+}
+
+
+================================================
+FILE PATH:
+src\repositories\video.repository.ts
+FILE SIZE:
+831 bytes
+================================================
+
+
+import {
+ createDocument,
+ getCollection,
+ getDocument,
+ updateDocument,
+ deleteDocument
+} from "@/lib/firebase/firestore";
+
+
+import { Video } from "@/types/video";
+
+
+const COLLECTION="videos";
+
+
+
+export async function createVideo(
+ data:Omit<Video,"id">
+){
+
+ return await createDocument(
+  COLLECTION,
+  data
+ );
+
+}
+
+
+
+export async function getVideos(){
+
+ return await getCollection(
+  COLLECTION
+ );
+
+}
+
+
+
+export async function getVideo(
+ id:string
+){
+
+ return await getDocument(
+  COLLECTION,
+  id
+ );
+
+}
+
+
+
+export async function updateVideo(
+ id:string,
+ data:Partial<Video>
+){
+
+ return await updateDocument(
+  COLLECTION,
+  id,
+  data
+ );
+
+}
+
+
+
+export async function deleteVideo(
+ id:string
+){
+
+ return await deleteDocument(
+  COLLECTION,
+  id
+ );
+
+}

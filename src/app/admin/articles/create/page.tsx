@@ -10,14 +10,13 @@ import {
 } from "next/navigation";
 
 
-import {
-  createArticle
-} from "@/services/article.service";
-
+import { auth } from "@/lib/firebase/firebase";
 
 import {
   getCategories
 } from "@/services/category.service";
+
+import Editor from "@/components/editor/NewsEditor";
 
 
 
@@ -56,8 +55,9 @@ breaking:false,
 
 priority:0,
 
-status:"draft" as "draft"|"published"
+status:"draft" as "draft"|"published",
 
+author:null
 
 });
 
@@ -114,49 +114,85 @@ value
 
 }
 
+function handleEditorChange(value: string){
 
+  setForm({
 
+    ...form,
 
+    content: value
 
-
-
-async function handleSubmit(){
-
-
-try{
-
-
-setLoading(true);
-
-
-await createArticle(form as any);
-
-
-alert("Article Created");
-
-
-router.push(
-"/admin/articles"
-);
-
-
-}
-catch(error){
-
-console.error(error);
-
-alert("Failed");
-
-}
-finally{
-
-setLoading(false);
+  });
 
 }
 
 
-}
 
+
+
+
+
+async function handleSubmit() {
+
+  try {
+
+    setLoading(true);
+
+    const user = auth.currentUser;
+
+    if (!user) {
+
+      alert("Please login again.");
+
+      return;
+
+    }
+
+    const token = await user.getIdToken();
+
+    const res = await fetch("/api/admin/articles", {
+
+      method: "POST",
+
+      headers: {
+
+        "Content-Type": "application/json",
+
+        Authorization: `Bearer ${token}`
+
+      },
+
+      body: JSON.stringify(form)
+
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+
+      throw new Error(data.message || "Failed");
+
+    }
+
+    alert("Article Created Successfully");
+
+    router.push("/admin/articles");
+
+  }
+  catch (error: any) {
+
+    console.error(error);
+
+    alert(error.message);
+
+  }
+  finally {
+
+    setLoading(false);
+
+  }
+
+}
 
 
 
@@ -293,21 +329,23 @@ className="w-full border p-3 rounded-lg"
 
 
 
-<textarea
+<div className="space-y-2">
 
-name="content"
+  <label className="text-sm font-semibold">
 
-placeholder="Full Article Content"
+    Article Content
 
-value={form.content}
+  </label>
 
-onChange={handleChange}
+  <Editor
 
-rows={8}
+    value={form.content}
 
-className="w-full border p-3 rounded-lg"
+    onChange={handleEditorChange}
 
-/>
+  />
+
+</div>
 
 
 

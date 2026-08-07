@@ -38,7 +38,7 @@ data:AdsData
 
 return await addDoc(
 
-collection(db,"ads"),
+collection(db,"businessAds"),
 
 {
 
@@ -62,7 +62,7 @@ export async function getAds(){
 
 const snap =
 await getDocs(
-collection(db,"ads")
+collection(db,"businessAds")
 );
 
 
@@ -89,9 +89,9 @@ id:string
 
 await deleteDoc(
 doc(
-db,
-"ads",
-id
+ db,
+ "businessAds",
+ id
 )
 );
 

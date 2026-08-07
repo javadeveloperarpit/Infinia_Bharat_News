@@ -574,7 +574,7 @@ text-white/60
 hover:text-[#ECCA6D]
 transition
 "
-
+href="https://www.facebook.com/share/1jBhdb8phJ/"
 >
 
 <FaFacebookF size={13}/>
@@ -592,7 +592,7 @@ text-white/60
 hover:text-[#ECCA6D]
 transition
 "
-
+href="https://twitter.com/"
 >
 
 <FaXTwitter size={13}/>
@@ -610,7 +610,7 @@ text-white/60
 hover:text-[#ECCA6D]
 transition
 "
-
+href="https://www.youtube.com/@Infinia_Bharat_News"
 >
 
 <FaYoutube size={13}/>
@@ -628,7 +628,7 @@ text-white/60
 hover:text-[#ECCA6D]
 transition
 "
-
+href="https://www.instagram.com/infiniabharatnews?igsh=eHptM29kbGV3ZXlw"
 >
 
 <FaInstagram size={13}/>

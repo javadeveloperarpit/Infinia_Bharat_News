@@ -10,7 +10,7 @@ import {
 import { Advertisement } from "@/types/ad";
 
 
-const COLLECTION="ads";
+const COLLECTION="businessAds";
 
 
 

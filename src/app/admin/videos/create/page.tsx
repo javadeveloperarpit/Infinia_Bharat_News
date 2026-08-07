@@ -34,9 +34,7 @@ const [form,setForm]=useState({
 
 title:"",
 
-youtubeId:"",
-
-thumbnail:"",
+youtubeUrl:"",
 
 categoryId:"",
 
@@ -123,19 +121,10 @@ className="border p-3 w-full"
 
 
 <input
-name="youtubeId"
-placeholder="Youtube Video ID"
-onChange={change}
-className="border p-3 w-full"
-/>
 
+name="youtubeUrl"
 
-
-<input
-
-name="thumbnail"
-
-placeholder="Thumbnail URL"
+placeholder="https://www.youtube.com/watch?v=..."
 
 onChange={change}
 
