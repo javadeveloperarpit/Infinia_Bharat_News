@@ -54,13 +54,12 @@ return;
 
 
 await createBreakingNews({
+    text,
 
-text,
+    active: true,
 
-active:true,
-
-expiry:"24h"
-
+    expiry: "24h",
+    id: ""
 });
 
 
