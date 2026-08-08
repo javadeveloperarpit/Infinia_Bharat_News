@@ -3,39 +3,26 @@ import {
   getDocs,
   query,
   where,
-  orderBy
+  orderBy,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase/firebase";
 
+function formatDate(value: any) {
+  if (!value) return "";
 
-
-function formatDate(value:any){
-
-  if(!value) return "";
-
-  if(value.toDate){
-
+  if (value.toDate) {
     return value.toDate().toISOString();
-
   }
 
   return value;
-
 }
-
-
-
-
 
 export async function getCategoryArticles(
-  categoryId:string
-){
-
-
+  categoryId: string
+) {
   const q = query(
-
-    collection(db,"articles"),
+    collection(db, "articles"),
 
     where(
       "status",
@@ -53,79 +40,65 @@ export async function getCategoryArticles(
       "createdAt",
       "desc"
     )
-
   );
-
-
 
   const snap = await getDocs(q);
 
-
-
-  return snap.docs.map(doc=>{
-
-
+  return snap.docs.map((doc) => {
     const data = doc.data();
 
-
-
     return {
+      id: doc.id,
 
-      id:doc.id,
+      // IMPORTANT: Article URL ke liye slug
+      slug: data.slug || "",
 
-      title:data.title || "",
+      title: data.title || "",
 
-      thumbnail:data.thumbnail || "",
+      thumbnail:
+        data.thumbnail || "",
 
-      shortDescription:data.shortDescription || "",
+      shortDescription:
+        data.shortDescription || "",
 
-      content:data.content || "",
+      content:
+        data.content || "",
 
-      categoryId:data.categoryId || "",
+      categoryId:
+        data.categoryId || "",
 
-      status:data.status || "",
+      status:
+        data.status || "",
 
-      breaking:data.breaking || false,
+      breaking:
+        data.breaking || false,
 
-      featured:data.featured || false,
+      featured:
+        data.featured || false,
 
-      priority:data.priority || 0,
+      priority:
+        data.priority || 0,
 
-      seoTitle:data.seoTitle || "",
+      seoTitle:
+        data.seoTitle || "",
 
-      seoDescription:data.seoDescription || "",
-
+      seoDescription:
+        data.seoDescription || "",
 
       createdAt:
-      formatDate(data.createdAt),
-
+        formatDate(data.createdAt),
 
       updatedAt:
-      formatDate(data.updatedAt)
-
+        formatDate(data.updatedAt),
     };
-
-
   });
-
-
 }
-
-
-
-
-
-
 
 export async function getCategoryVideos(
-  categoryId:string
-){
-
-
+  categoryId: string
+) {
   const q = query(
-
-    collection(db,"videos"),
-
+    collection(db, "videos"),
 
     where(
       "status",
@@ -133,72 +106,50 @@ export async function getCategoryVideos(
       "published"
     ),
 
-
     where(
       "categoryId",
       "==",
       categoryId
     ),
 
-
     orderBy(
       "createdAt",
       "desc"
     )
-
   );
-
-
 
   const snap = await getDocs(q);
 
-
-
-  return snap.docs.map(doc=>{
-
-
+  return snap.docs.map((doc) => {
     const data = doc.data();
 
-
-
     return {
+      id: doc.id,
 
+      title:
+        data.title || "",
 
-      id:doc.id,
+      thumbnail:
+        data.thumbnail || "",
 
+      youtubeUrl:
+        data.youtubeUrl || "",
 
-      title:data.title || "",
+      description:
+        data.description || "",
 
+      categoryId:
+        data.categoryId || "",
 
-      thumbnail:data.thumbnail || "",
-
-
-      youtubeUrl:data.youtubeUrl || "",
-
-
-      description:data.description || "",
-
-
-      categoryId:data.categoryId || "",
-
-
-      status:data.status || "",
-
-
+      status:
+        data.status || "",
 
       createdAt:
-      formatDate(data.createdAt),
-
-
+        formatDate(data.createdAt),
 
       updatedAt:
-      formatDate(data.updatedAt)
-
-
+        formatDate(data.updatedAt),
     };
-
-
   });
-
-
 }
+

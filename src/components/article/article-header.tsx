@@ -87,7 +87,7 @@ text-xs
 font-bold
 ">
 
-Breaking 
+BREAKING
 
 </span>
 
