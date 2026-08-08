@@ -11,6 +11,7 @@ import ShareButtons from "@/components/article/share-buttons";
 import AuthorBox from "@/components/article/author-box";
 import RelatedNews from "@/components/article/related-news";
 import ArticleSidebar from "@/components/article/article-sidebar";
+import CommentsList from "@/components/comments/comments-list";
 
 
 export default async function NewsPage({
@@ -86,6 +87,20 @@ return (
           />
         </div>
         <AuthorBox article={article} />
+
+        {/* =========================================
+            COMMENTS
+        ========================================= */}
+
+        <section
+          id="comments"
+          className="mt-10 border-t border-zinc-200 pt-8"
+        >
+          <CommentsList
+            articleId={article.id}
+            articleSlug={article.slug}
+          />
+        </section>
 
 
         <ArticleContent article={article} />

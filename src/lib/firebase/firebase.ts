@@ -15,8 +15,8 @@ const firebaseConfig = {
 };
 
 const app: FirebaseApp =
-  getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-
+  getApps().find((app) => app.name === "[DEFAULT]") ??
+  initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
