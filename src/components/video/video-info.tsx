@@ -1,199 +1,156 @@
 "use client";
 
-import {
-useState
-} from "react";
+import { useState } from "react";
 
 import VideoShareButtons from "@/components/video/video-share-buttons";
 
-
-interface Props{
-
-video:any;
-
+interface Props {
+  video: any;
 }
 
+export default function VideoInfo({ video }: Props) {
+  const [expanded, setExpanded] = useState(false);
+
+  function formatDate(date?: string) {
+    if (!date) return "";
+
+    return new Date(date).toLocaleDateString("hi-IN", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  }
+
+  return (
+    <div className="w-full min-w-0 max-w-full mt-5">
+      {/* =========================
+          TITLE
+      ========================= */}
+
+      <h1 className="
+        text-xl
+        sm:text-2xl
+        md:text-3xl
+        font-extrabold
+        text-zinc-900
+        leading-tight
+        break-words
+      ">
+        {video.title}
+      </h1>
 
 
-export default function VideoInfo({
+      {/* =========================
+          DATE + SHARE
+      ========================= */}
 
-video
+      <div className="
+        mt-4
+        flex
+        flex-col
+        sm:flex-row
+        sm:items-center
+        sm:justify-between
+        gap-4
+        min-w-0
+      ">
 
-}:Props){
+        {video.createdAt && (
+          <span className="text-sm text-zinc-500">
+            {formatDate(video.createdAt)}
+          </span>
+        )}
 
+        <div className="shrink-0">
+          <VideoShareButtons
+            title={video.title}
+            url={`https://infiniabharatnews.vercel.app/video/${video.id}`}
+          />
+        </div>
 
-const [expanded,setExpanded] =
-useState(false);
-
-
-
-function formatDate(date?:string){
-
-if(!date)
-return "";
-
-
-return new Date(date)
-.toLocaleDateString(
-"hi-IN",
-{
-day:"numeric",
-month:"long",
-year:"numeric"
-}
-);
-
-}
-
-
-
-return (
-
-<div
-className="
-mt-8
-"
->
+      </div>
 
 
-<h1
-className="
-text-2xl
-md:text-4xl
-font-black
-leading-tight
-text-zinc-900
-"
->
+      {/* =========================
+          DESCRIPTION
+      ========================= */}
 
-{video.title}
+      {video.description && (
+        <div className="mt-5 w-full min-w-0 max-w-full">
 
-</h1>
+          <div
+            className={`
+              text-zinc-700
+              leading-relaxed
+              whitespace-pre-line
+              text-sm
+              md:text-base
+              break-words
+              transition-all
+              duration-300
 
-
-
-
-<div
-className="
-flex
-items-center
-gap-3
-mt-4
-text-sm
-text-zinc-500
-"
->
-
-<span>
-📅 {formatDate(video.createdAt)}
-</span>
-
-<span>
-•
-</span>
-
-<span>
-INFINIA BHARAT NEWS
-</span>
-
-</div>
+              ${
+                expanded
+                  ? ""
+                  : "line-clamp-3"
+              }
+            `}
+          >
+            {video.description}
+          </div>
 
 
+          {/* =========================
+              SHOW MORE / LESS
+          ========================= */}
 
-
-<div className="mt-5">
-
-<VideoShareButtons
-
-title={video.title}
-
-url={
-`https://infiniabharatnews.vercel.app/video/${video.id}`
-}
-
-/>
-
-</div>
-
-
-
-
-
-{/* Description Box */}
-
-<div
-className="
-mt-8
-rounded-2xl
-bg-zinc-50
-border
-p-5
-"
->
-
-
-<p
-
-className={`
-text-zinc-700
-leading-relaxed
-whitespace-pre-line
-text-sm
-md:text-base
-
-${
-expanded
-?
-""
-:
-"line-clamp-3"
-}
-
-`}
-
->
-
-{video.description}
-
-</p>
-
-
-
-
-{video.description?.length > 150 && (
-
+          {video.description.length > 150 && (
 <button
-
-onClick={()=>setExpanded(!expanded)}
-
-className="
-mt-3
-font-bold
-text-black
-text-sm
-"
-
+  type="button"
+  onClick={() => setExpanded(!expanded)}
+  className="
+    mt-2
+    inline-flex
+    items-center
+    gap-1.5
+    text-blue-600
+    hover:text-blue-700
+    font-semibold
+    text-sm
+    transition-colors
+    cursor-pointer
+  "
 >
+  <span>
+    {expanded ? "Show less" : "Show more"}
+  </span>
 
-{
-expanded
-?
-"Show less"
-:
-"Show more"
-}
-
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={`
+      transition-transform
+      duration-300
+      ${expanded ? "rotate-180" : ""}
+    `}
+  >
+    <path d="m6 9 6 6 6-6" />
+  </svg>
 </button>
 
-)}
+          )}
 
+        </div>
+      )}
 
-
-</div>
-
-
-</div>
-
-);
-
+    </div>
+  );
 }
+

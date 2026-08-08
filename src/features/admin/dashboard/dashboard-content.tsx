@@ -2,204 +2,720 @@
 
 import {
   useEffect,
-  useState
+  useState,
 } from "react";
 
-
-import StatCard 
-from "../components/stat-card";
-
+import Link from "next/link";
 
 import {
-  getDashboardStats
+  FileText,
+  Video,
+  Users,
+  Radio,
+  Megaphone,
+  Zap,
+  Clock,
+  Tv,
+  ArrowUpRight,
+} from "lucide-react";
+
+import StatCard from "../components/stat-card";
+
+import {
+  getDashboardStats,
+  getRecentActivities,
+  RecentActivity,
 } from "@/services/dashboard.service";
 
 
+// ==========================================
+// ACTIVITY ICON
+// ==========================================
 
-export default function DashboardContent(){
+function ActivityIcon({
+  type,
+}: {
+  type: RecentActivity["type"];
+}) {
 
+  if (type === "article") {
+    return <FileText size={18} />;
+  }
 
-const [stats,setStats] = useState({
+  if (type === "video") {
+    return <Video size={18} />;
+  }
 
-articles:0,
+  if (type === "user") {
+    return <Users size={18} />;
+  }
 
-videos:0,
+  if (type === "breaking") {
+    return <Zap size={18} />;
+  }
 
-users:0,
+  if (type === "liveTv") {
+    return <Tv size={18} />;
+  }
 
-breakingNews:0,
+  if (type === "ad") {
+    return <Megaphone size={18} />;
+  }
 
-liveTv:0,
-
-ads:0
-
-});
-
-
-useEffect(()=>{
-
-
-async function loadStats(){
-
-
-try{
-
-
-const data =
-await getDashboardStats();
-
-
-setStats(data);
-
-
-}
-catch(error){
-
-console.error(
-"Dashboard Stats Error:",
-error
-);
-
+  return <Radio size={18} />;
 }
 
 
+// ==========================================
+// ACTIVITY LABEL
+// ==========================================
+
+function getActivityLabel(
+  type: RecentActivity["type"]
+) {
+
+  switch (type) {
+
+    case "article":
+      return "ARTICLE";
+
+    case "video":
+      return "VIDEO";
+
+    case "user":
+      return "USER";
+
+    case "breaking":
+      return "BREAKING";
+
+    case "liveTv":
+      return "LIVE TV";
+
+    case "ad":
+      return "ADVERTISEMENT";
+
+    default:
+      return "ACTIVITY";
+
+  }
+
 }
 
 
+// ==========================================
+// ACTIVITY ROUTE
+// ==========================================
 
-loadStats();
+function getActivityRoute(
+  activity: RecentActivity
+) {
 
+  switch (activity.type) {
 
-},[]);
+    case "article":
+      return `/admin/articles/${activity.id}/edit`;
 
+    case "video":
+      return `/admin/videos`;
 
+    case "user":
+      return `/admin/users`;
 
+    case "breaking":
+      return `/admin/breaking-news`;
 
-return (
+    case "liveTv":
+      return `/admin/live-tv`;
 
-<div
-className="
-space-y-6
-"
->
+    case "ad":
+      return `/admin/business-ads`;
 
+    default:
+      return "#";
 
-<h1
-className="
-text-3xl
-font-bold
-text-zinc-900
-"
->
-Dashboard
-</h1>
+  }
 
-
-
-
-<div
-className="
-grid
-grid-cols-1
-md:grid-cols-2
-xl:grid-cols-4
-gap-5
-"
->
+}
 
 
-<StatCard
+// ==========================================
+// TIME FORMAT
+// ==========================================
 
-title="Total Articles"
+function formatTime(
+  date?: string
+) {
 
-value={String(stats.articles)}
+  if (!date) {
+    return "";
+  }
 
-description="Published news articles"
+  const timestamp =
+    new Date(date).getTime();
 
-/>
+  if (isNaN(timestamp)) {
+    return "";
+  }
 
+  const difference =
+    Date.now() - timestamp;
 
+  const seconds =
+    Math.floor(
+      difference / 1000
+    );
 
-<StatCard
+  if (seconds < 60) {
+    return "Just now";
+  }
 
-title="Videos"
+  const minutes =
+    Math.floor(
+      seconds / 60
+    );
 
-value={String(stats.videos)}
+  if (minutes < 60) {
+    return `${minutes}m ago`;
+  }
 
-description="Uploaded videos"
+  const hours =
+    Math.floor(
+      minutes / 60
+    );
 
-/>
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
 
+  const days =
+    Math.floor(
+      hours / 24
+    );
 
+  if (days < 7) {
+    return `${days}d ago`;
+  }
 
-<StatCard
+  return new Date(
+    date
+  ).toLocaleDateString(
+    "en-IN",
+    {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }
+  );
 
-title="Users"
-
-value={String(stats.users)}
-
-description="Registered users"
-
-/>
-
-
-
-<StatCard
-
-title="Business Ads"
-
-value={String(stats.ads)}
-
-description="Active advertisements"
-
-/>
-
-
-
-</div>
-
-
-
-
-
-<div
-className="
-bg-white
-rounded-xl
-border
-p-6
-"
->
-
-
-<h2
-className="
-font-bold
-text-xl
-mb-4
-"
->
-Recent Activity
-</h2>
+}
 
 
-<p
-className="
-text-zinc-500
-"
->
-No activity yet
-</p>
+// ==========================================
+// DASHBOARD
+// ==========================================
+
+export default function DashboardContent() {
+
+  const [
+    stats,
+    setStats,
+  ] = useState({
+
+    articles: 0,
+
+    videos: 0,
+
+    users: 0,
+
+    breakingNews: 0,
+
+    liveTv: 0,
+
+    ads: 0,
+
+  });
 
 
+  const [
+    activities,
+    setActivities,
+  ] = useState<
+    RecentActivity[]
+  >([]);
 
-</div>
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
 
 
+  // ========================================
+  // LOAD DASHBOARD
+  // ========================================
 
-</div>
+  useEffect(() => {
 
-);
+    async function loadDashboard() {
 
+      try {
+
+        setLoading(true);
+
+        const [
+          data,
+          recentActivities,
+        ] = await Promise.all([
+
+          getDashboardStats(),
+
+          getRecentActivities(),
+
+        ]);
+
+        setStats(data);
+
+        setActivities(
+          recentActivities
+        );
+
+      } catch (error) {
+
+        console.error(
+          "Dashboard Error:",
+          error
+        );
+
+      } finally {
+
+        setLoading(false);
+
+      }
+
+    }
+
+    loadDashboard();
+
+  }, []);
+
+
+  // ========================================
+  // UI
+  // ========================================
+
+  return (
+
+    <div
+      className="
+        space-y-7
+        pb-10
+      "
+    >
+
+      {/* HEADER */}
+
+      <div>
+
+        <h1
+          className="
+            text-3xl
+            font-bold
+            text-zinc-900
+          "
+        >
+          Dashboard
+        </h1>
+
+        <p
+          className="
+            mt-1
+            text-sm
+            text-zinc-500
+          "
+        >
+          Overview of your news platform
+        </p>
+
+      </div>
+
+
+      {/* STAT CARDS */}
+
+      <div
+        className="
+          grid
+          grid-cols-1
+          sm:grid-cols-2
+          xl:grid-cols-4
+          gap-5
+        "
+      >
+
+        <StatCard
+          title="Total Articles"
+          value={
+            loading
+              ? "..."
+              : String(stats.articles)
+          }
+          description="Published news articles"
+        />
+
+        <StatCard
+          title="Videos"
+          value={
+            loading
+              ? "..."
+              : String(stats.videos)
+          }
+          description="Uploaded videos"
+        />
+
+        <StatCard
+          title="Users"
+          value={
+            loading
+              ? "..."
+              : String(stats.users)
+          }
+          description="Registered users"
+        />
+
+        <StatCard
+          title="Business Ads"
+          value={
+            loading
+              ? "..."
+              : String(stats.ads)
+          }
+          description="Active advertisements"
+        />
+
+      </div>
+
+
+      {/* RECENT ACTIVITY */}
+
+      <section
+        className="
+          bg-white
+          rounded-2xl
+          border
+          border-zinc-200
+          shadow-sm
+          overflow-hidden
+        "
+      >
+
+        {/* HEADER */}
+
+        <div
+          className="
+            px-6
+            py-5
+            border-b
+            border-zinc-100
+            flex
+            items-center
+            justify-between
+          "
+        >
+
+          <div>
+
+            <h2
+              className="
+                text-xl
+                font-bold
+                text-zinc-900
+              "
+            >
+              Recent Activity
+            </h2>
+
+            <p
+              className="
+                text-sm
+                text-zinc-500
+                mt-1
+              "
+            >
+              Latest activity across your platform
+            </p>
+
+          </div>
+
+          <div
+            className="
+              hidden
+              sm:flex
+              items-center
+              gap-2
+              text-xs
+              font-medium
+              text-zinc-500
+            "
+          >
+
+            <Clock size={14} />
+
+            Live updates
+
+          </div>
+
+        </div>
+
+
+        {/* ACTIVITY */}
+
+        <div
+          className="
+            divide-y
+            divide-zinc-100
+          "
+        >
+
+          {loading && (
+
+            <div
+              className="
+                px-6
+                py-10
+                text-center
+                text-sm
+                text-zinc-500
+              "
+            >
+              Loading recent activity...
+            </div>
+
+          )}
+
+
+          {!loading &&
+            activities.length === 0 && (
+
+              <div
+                className="
+                  px-6
+                  py-12
+                  text-center
+                "
+              >
+
+                <div
+                  className="
+                    mx-auto
+                    mb-3
+                    w-12
+                    h-12
+                    rounded-full
+                    bg-zinc-100
+                    flex
+                    items-center
+                    justify-center
+                    text-zinc-400
+                  "
+                >
+
+                  <Clock size={20} />
+
+                </div>
+
+                <p
+                  className="
+                    font-medium
+                    text-zinc-700
+                  "
+                >
+                  No activity yet
+                </p>
+
+                <p
+                  className="
+                    text-sm
+                    text-zinc-500
+                    mt-1
+                  "
+                >
+                  New activity will appear here.
+                </p>
+
+              </div>
+
+            )}
+
+
+          {!loading &&
+            activities.map(
+              (activity) => (
+
+                <Link
+                  key={`${activity.type}-${activity.id}`}
+                  href={getActivityRoute(activity)}
+                  className="
+                    group
+                    px-6
+                    py-4
+                    flex
+                    items-center
+                    gap-4
+                    hover:bg-zinc-50
+                    transition-all
+                    duration-200
+                  "
+                >
+
+                  {/* ICON */}
+
+                  <div
+                    className="
+                      shrink-0
+                      w-10
+                      h-10
+                      rounded-xl
+                      bg-zinc-100
+                      text-zinc-700
+                      flex
+                      items-center
+                      justify-center
+                      group-hover:bg-blue-50
+                      group-hover:text-blue-600
+                      transition-colors
+                    "
+                  >
+
+                    <ActivityIcon
+                      type={
+                        activity.type
+                      }
+                    />
+
+                  </div>
+
+
+                  {/* CONTENT */}
+
+                  <div
+                    className="
+                      min-w-0
+                      flex-1
+                    "
+                  >
+
+                    <div
+                      className="
+                        flex
+                        items-center
+                        gap-2
+                        flex-wrap
+                      "
+                    >
+
+                      <span
+                        className="
+                          text-[10px]
+                          font-bold
+                          tracking-wider
+                          text-blue-600
+                          bg-blue-50
+                          px-2
+                          py-1
+                          rounded-md
+                        "
+                      >
+                        {
+                          getActivityLabel(
+                            activity.type
+                          )
+                        }
+                      </span>
+
+                    </div>
+
+
+                    <h3
+                      className="
+                        mt-1
+                        font-semibold
+                        text-sm
+                        text-zinc-900
+                        truncate
+                        group-hover:text-blue-600
+                        transition-colors
+                      "
+                    >
+                      {
+                        activity.title
+                      }
+                    </h3>
+
+
+                    <p
+                      className="
+                        text-xs
+                        text-zinc-500
+                        mt-0.5
+                      "
+                    >
+                      {
+                        activity.description
+                      }
+                    </p>
+
+                  </div>
+
+
+                  {/* TIME */}
+
+                  <div
+                    className="
+                      shrink-0
+                      flex
+                      items-center
+                      gap-3
+                    "
+                  >
+
+                    <span
+                      className="
+                        text-xs
+                        text-zinc-400
+                        whitespace-nowrap
+                      "
+                    >
+                      {
+                        formatTime(
+                          activity.createdAt
+                        )
+                      }
+                    </span>
+
+
+                    <ArrowUpRight
+                      size={17}
+                      className="
+                        text-zinc-300
+                        group-hover:text-blue-600
+                        group-hover:translate-x-0.5
+                        group-hover:-translate-y-0.5
+                        transition-all
+                      "
+                    />
+
+                  </div>
+
+                </Link>
+
+              )
+            )}
+
+        </div>
+
+      </section>
+
+    </div>
+
+  );
 
 }

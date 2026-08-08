@@ -1,163 +1,216 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import AddUserModal from "./add-user-modal";
 import UsersTable from "./users-table";
 
-export interface UserType{
-
-  id:string;
-
-  uid:string;
-
-  name:string;
-
-  email:string;
-
-  role:string;
-
-  status:string;
-
+export interface UserType {
+  id: string;
+  uid: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
 }
 
-export default function UsersPage(){
+export default function UsersPage() {
+  const [users, setUsers] = useState<UserType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
 
-  const [users,setUsers]=
-    useState<UserType[]>([]);
+  async function loadUsers() {
+    try {
+      setLoading(true);
 
-  const [loading,setLoading]=
-    useState(true);
+      const {
+        getAuth,
+      } = await import("firebase/auth");
 
-  const [open,setOpen]=
-    useState(false);
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
 
-  async function loadUsers(){
+      if (!currentUser) {
+        console.error("No authenticated user found");
+        setUsers([]);
+        return;
+      }
 
-  try{
+      const token = await currentUser.getIdToken();
 
-    setLoading(true);
+      const res = await fetch(
+        "/api/admin/users",
+        {
+          method: "GET",
 
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
 
-    const res =
-      await fetch(
-        "/api/admin/users"
+          cache: "no-store",
+        }
       );
 
+      const contentType =
+        res.headers.get("content-type") || "";
 
-    const data =
-      await res.json();
+      let data: any = null;
 
+      if (
+        contentType.includes("application/json")
+      ) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
 
-    if(Array.isArray(data)){
+        console.error(
+          "Users API returned non-JSON:",
+          text
+        );
+      }
 
-      setUsers(data);
+      if (!res.ok) {
+        console.error(
+          "Users API Error:",
+          {
+            status: res.status,
+            data,
+          }
+        );
 
-    }
-    else{
+        setUsers([]);
+        return;
+      }
 
+      if (Array.isArray(data)) {
+        setUsers(data);
+      } else {
+        console.error(
+          "Unexpected users response:",
+          data
+        );
+
+        setUsers([]);
+      }
+    } catch (error) {
       console.error(
-        "API ERROR:",
-        data
+        "Load Users Error:",
+        error
       );
 
       setUsers([]);
-
+    } finally {
+      setLoading(false);
     }
-
-
-  }
-  catch(error){
-
-    console.error(error);
-
-    setUsers([]);
-
-  }
-  finally{
-
-    setLoading(false);
-
   }
 
-}
-
-  useEffect(()=>{
-
+  useEffect(() => {
     loadUsers();
+  }, []);
 
-  },[]);
+  return (
+    <div className="w-full min-w-0 space-y-6 overflow-hidden">
 
-  return(
-  <div className="
-    min-h-screen
-    bg-zinc-100
-    text-zinc-900
-    p-6
-    space-y-6
-  ">
-
-      <div className="flex items-center justify-between">
-
-        <div>
-
-          <h1 className="text-2xl font-bold">
-
+      {/* HEADER */}
+      <div
+        className="
+          flex
+          flex-col
+          gap-4
+          sm:flex-row
+          sm:items-center
+          sm:justify-between
+        "
+      >
+        <div className="min-w-0">
+          <h1
+            className="
+              text-2xl
+              sm:text-3xl
+              font-bold
+              text-zinc-900
+              tracking-tight
+            "
+          >
             Users
-
           </h1>
 
-          <p className="text-zinc-500">
-
-            Manage Editors
-
+          <p
+            className="
+              mt-1
+              text-sm
+              sm:text-base
+              text-zinc-500
+            "
+          >
+            Manage editors and admin users
           </p>
-
         </div>
 
         <button
-
-          onClick={()=>setOpen(true)}
-
+          type="button"
+          onClick={() => setOpen(true)}
           className="
-          bg-red-600
-          text-white
-          px-4
-          py-2
-          rounded-lg
-          hover:bg-red-700
+            w-full
+            sm:w-auto
+            shrink-0
+            inline-flex
+            items-center
+            justify-center
+            gap-2
+            rounded-xl
+            bg-red-600
+            px-5
+            py-2.5
+            text-sm
+            font-semibold
+            text-white
+            shadow-sm
+            transition
+            hover:bg-red-700
+            active:scale-[0.98]
           "
-
         >
+          <span className="text-lg leading-none">
+            +
+          </span>
 
-          + Add Editor
-
+          Add Editor
         </button>
-
       </div>
 
-      <UsersTable
+      {/* USERS TABLE */}
+      <div
+        className="
+          w-full
+          min-w-0
+          overflow-hidden
+          rounded-2xl
+          border
+          border-zinc-200
+          bg-white
+          shadow-sm
+        "
+      >
+        <div className="w-full min-w-0 overflow-x-auto">
+          <UsersTable
+            users={users}
+            loading={loading}
+            reload={loadUsers}
+          />
+        </div>
+      </div>
 
-        users={users}
-
-        loading={loading}
-
-        reload={loadUsers}
-
-      />
-
+      {/* ADD USER MODAL */}
       <AddUserModal
-
         open={open}
-
         setOpen={setOpen}
-
         reload={loadUsers}
-
       />
 
     </div>
-
   );
-
 }
