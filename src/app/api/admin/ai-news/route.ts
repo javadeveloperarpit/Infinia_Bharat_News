@@ -36,7 +36,7 @@ function cleanText(text: string) {
   return text
     .replace(/<[^>]*>/g, " ")
     .replace(/&amp;/g, "&")
-    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
     .replace(/&quot;/g, '"')
     .replace(/&nbsp;/g, " ")
     .replace(/\s+/g, " ")
@@ -89,6 +89,25 @@ function similarity(a: string, b: string) {
 }
 
 // ============================================================
+// ENGLISH SLUG SANITIZER
+// ============================================================
+
+function sanitizeEnglishSlug(
+  value: string
+): string {
+  return String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+}
+
+// ============================================================
 // GET FIRESTORE CATEGORIES
 // ============================================================
 
@@ -125,11 +144,14 @@ async function fetchPage(
   const response = await fetch(url, {
     cache: "no-store",
     redirect: "follow",
+
     headers: {
       "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0 Safari/537.36",
+
       Accept:
         "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+
       "Accept-Language":
         "en-IN,en;q=0.9,hi;q=0.8",
     },
@@ -157,7 +179,9 @@ function extractAttribute(
     "i"
   );
 
-  return tag.match(regex)?.[1] || "";
+  return (
+    tag.match(regex)?.[1] || ""
+  );
 }
 
 // ============================================================
@@ -172,12 +196,12 @@ function extractImageFromHtml(
   // OG IMAGE
   // ----------------------------------------------------------
 
-  const ogMatches =
+  const metaTags =
     html.match(
       /<meta\b[^>]*>/gi
     ) || [];
 
-  for (const tag of ogMatches) {
+  for (const tag of metaTags) {
     const property =
       extractAttribute(
         tag,
@@ -214,7 +238,7 @@ function extractImageFromHtml(
   // TWITTER IMAGE
   // ----------------------------------------------------------
 
-  for (const tag of ogMatches) {
+  for (const tag of metaTags) {
     const name =
       extractAttribute(
         tag,
@@ -286,7 +310,7 @@ function extractImageFromHtml(
 
   const articleMatch =
     html.match(
-      /<article[\s\S]{0,20000}?>[\s\S]*?<img\b[^>]*>/i
+      /<article[\s\S]{0,20000}?<img\b[^>]*>/i
     );
 
   if (articleMatch) {
@@ -420,9 +444,11 @@ async function downloadImageAsBase64(
       await fetch(imageUrl, {
         cache: "no-store",
         redirect: "follow",
+
         headers: {
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0 Safari/537.36",
+
           Accept:
             "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
         },
@@ -455,7 +481,6 @@ async function downloadImageAsBase64(
     const buffer =
       Buffer.from(arrayBuffer);
 
-    // Prevent sending extremely large images
     if (
       buffer.length >
       15 * 1024 * 1024
@@ -470,7 +495,6 @@ async function downloadImageAsBase64(
         .split(";")[0]
         .trim();
 
-    // Gemini-supported fallback
     const supportedTypes = [
       "image/jpeg",
       "image/png",
@@ -492,6 +516,7 @@ async function downloadImageAsBase64(
         buffer.toString(
           "base64"
         ),
+
       mimeType,
     };
   } catch (error) {
@@ -517,6 +542,7 @@ async function getGoogleNews(): Promise<
   const response =
     await fetch(url, {
       cache: "no-store",
+
       headers: {
         "User-Agent":
           "Mozilla/5.0 NewsReader/1.0",
@@ -537,7 +563,7 @@ async function getGoogleNews(): Promise<
 
   const blocks =
     xml.match(
-      /<item>[\s\S]*?<\/item>/g
+      /<item>[\s\S]*?<\/item>/gi
     ) || [];
 
   for (
@@ -573,9 +599,12 @@ async function getGoogleNews(): Promise<
     items.push({
       title:
         cleanText(title),
+
       link:
         link.trim(),
+
       pubDate,
+
       source:
         cleanText(source),
     });
@@ -602,13 +631,20 @@ async function getExistingArticles() {
 
       return {
         id: doc.id,
+
         title:
           String(
             data.title || ""
           ),
+
         seoTitle:
           String(
             data.seoTitle || ""
+          ),
+
+        slug:
+          String(
+            data.slug || ""
           ),
       };
     }
@@ -704,7 +740,7 @@ async function generateArticle(
       .join("\n");
 
   // ----------------------------------------------------------
-  // GET ORIGINAL IMAGE
+  // ORIGINAL IMAGE
   // ----------------------------------------------------------
 
   let originalImageUrl = "";
@@ -732,7 +768,7 @@ async function generateArticle(
   );
 
   // ----------------------------------------------------------
-  // DOWNLOAD ORIGINAL IMAGE
+  // DOWNLOAD IMAGE
   // ----------------------------------------------------------
 
   const originalImage =
@@ -744,7 +780,7 @@ async function generateArticle(
     !!originalImage;
 
   // ----------------------------------------------------------
-  // IMAGE ANALYSIS INSTRUCTIONS
+  // IMAGE ANALYSIS
   // ----------------------------------------------------------
 
   const imageAnalysisInstruction =
@@ -754,40 +790,38 @@ IMPORTANT ORIGINAL NEWS IMAGE:
 
 The following image is the actual image associated with the selected source article.
 
-You MUST inspect this image carefully.
+Inspect this image carefully.
 
-Use it as visual reference only.
+Use it only as visual reference.
 
 Analyze:
 
-1. Who or what is the primary subject?
-2. What people are visible?
-3. What objects are visible?
-4. What environment/location is visible?
-5. What event or context does the image visually suggest?
-6. What is the camera perspective?
-7. How are the subjects positioned?
-8. What lighting is used?
-9. What colors dominate?
-10. What background elements are visible?
-11. What visual details are genuinely supported by the image?
+1. Primary subject
+2. Visible people
+3. Visible objects
+4. Environment/location
+5. Visually supported context
+6. Camera perspective
+7. Subject positioning
+8. Lighting
+9. Dominant colors
+10. Background elements
+11. Genuine visual details
 
-DO NOT blindly assume that everything in the image is factually connected to the news.
+Do not assume that every visual detail is factually connected to the news.
 
-The image is only supporting visual evidence.
+Do not invent facts from the image.
 
-Do NOT invent facts from the image.
+Create a NEW image concept inspired by the source image and news topic.
 
-For the final imagePrompt, create a NEW image concept inspired by the actual source image and news topic.
+Do not request an exact copy of the source image.
 
-Do NOT request an exact copy of the source image.
-
-Do NOT mention the source image URL in imagePrompt.
+Do not mention the source image URL in imagePrompt.
 `
       : `
 No original source image could be retrieved.
 
-In this case, create the imagePrompt from the news topic and generated title only.
+Create imagePrompt from the news topic and generated title only.
 
 Do not invent unsupported details.
 `;
@@ -801,26 +835,17 @@ You are the senior digital editor and SEO strategist of an Indian Hindi news web
 
 Create a publication-ready Hindi news article from the selected trending topic.
 
-============================================================
-NEWS TOPIC
-============================================================
-
+NEWS TOPIC:
 ${topic}
 
-============================================================
-SOURCE
-============================================================
-
+SOURCE:
 ${source || "Google News"}
 
-============================================================
-SOURCE URL
-============================================================
-
+SOURCE URL:
 ${sourceUrl || "Not available"}
 
 ============================================================
-CATEGORY LIST
+CATEGORY
 ============================================================
 
 You MUST select exactly ONE category from this list:
@@ -833,7 +858,7 @@ CATEGORY RULES:
 2. Do NOT invent a category.
 3. Do NOT return a category outside this list.
 4. Return the category using its EXACT slug.
-5. The slug MUST exactly match one of the supplied slugs.
+5. The slug MUST exactly match one supplied slug.
 6. Do not return the English display name.
 7. Do not return the Hindi display name.
 8. Do not return "News", "Latest News", "Political News", etc.
@@ -856,16 +881,16 @@ NOT:
 "Political News"
 
 ============================================================
-EDITORIAL RULES
+ARTICLE
 ============================================================
 
-1. Write the article in natural, professional Hindi.
+Write the article in natural, professional Hindi.
 
-2. The writing must sound like a real Indian digital newsroom.
+The writing must sound like a real Indian digital newsroom.
 
-3. Do NOT copy the source article.
+Do NOT copy the source article.
 
-4. Do NOT invent:
+Do NOT invent:
 
 - facts
 - statistics
@@ -876,35 +901,30 @@ EDITORIAL RULES
 - locations
 - events
 
-5. If available information is limited, write only what can reasonably be established.
+If available information is limited, write only what can reasonably be established.
 
-6. Never pretend to know information that is not available.
+Never pretend to know information that is not available.
 
-7. Do not use:
+Do not use:
 
 "इस खबर के अनुसार"
-
 "AI के अनुसार"
-
 "यह आर्टिकल"
-
 "हमने पाया"
-
 "ChatGPT"
-
 "Gemini"
 
-8. Avoid unnecessary keyword repetition.
+Avoid unnecessary keyword repetition.
 
-9. Write for Google search intent and Google Discover-style readability.
+Write for Google search intent and Google Discover-style readability.
 
-10. Use short paragraphs of 2-4 sentences.
+write the article content similar to the source article.
 
-11. Avoid clickbait.
+Avoid clickbait.
 
-12. Title must be informative and strong without misleading readers.
+Title must be informative and strong without misleading readers.
 
-13. Use Hindi naturally while retaining official names, organizations, places and technical terms where appropriate.
+Use Hindi naturally while retaining official names, organizations, places and technical terms where appropriate.
 
 ============================================================
 SEO
@@ -916,6 +936,7 @@ Create:
 - seoTitle
 - seoDescription
 - shortDescription
+- slug
 - suggestedCategory
 - content
 - imagePrompt
@@ -937,22 +958,53 @@ Short description:
 - suitable for article cards and social previews
 
 ============================================================
-ARTICLE
+IMPORTANT: ENGLISH URL SLUG
+============================================================
+
+The "slug" field is ONLY for the article URL.
+
+The article itself can remain completely Hindi.
+
+The slug MUST be written in English words high seo url only.
+
+STRICT RULES FOR slug:
+
+1. ONLY lowercase English letters a-z.
+2. Numbers 0-9 are allowed.
+3. Hyphens "-" are allowed.
+4. NEVER use Hindi characters.
+5. NEVER use Devanagari.
+6. NEVER use Unicode characters.
+7. NEVER use punctuation.
+8. NEVER use "/" or "\".
+9. NEVER use spaces.
+10. NEVER URL-encode the slug.
+11. NEVER transliterate Hindi characters directly into Unicode.
+12. Translate the important meaning of the Hindi title/topic into concise English words.
+13. Keep it short and SEO-friendly.
+14. Prefer keywords that are likely to be searched by readers in English.
+15. Do not include unnecessary words such as "latest", "news", "today" unless genuinely useful.
+16. Use the main news keyword near the beginning.
+
+Example:
+
+Hindi title:
+"झारखंड में परीक्षाओं में देरी और रिश्वत के आरोपों पर प्रदर्शन"
+
+Correct slug:
+"jharkhand-exam-delay-bribery-protests"
+
+The final slug MUST already be clean English words suitable for a URL.
+
+============================================================
+CONTENT HTML
 ============================================================
 
 The content field MUST contain valid HTML.
 
-Use:
+Use <strong> only for genuinely important facts.
 
-<h2>...</h2>
-
-<p>...</p>
-
-<strong>...</strong>
-
-<ul>
-<li>...</li>
-</ul>
+Use <ul><li>...</li></ul> only when a list improves readability.
 
 Use headings only when genuinely useful.
 
@@ -975,12 +1027,12 @@ Suggested structure:
 7. Concise conclusion
 
 ============================================================
-IMAGE PROMPT
+IMAGE
 ============================================================
 
 ${imageAnalysisInstruction}
 
-The generated article TITLE is extremely important for the image prompt.
+The generated article TITLE is extremely important for imagePrompt.
 
 After generating the article title, use the title together with:
 
@@ -1003,146 +1055,26 @@ The imagePrompt must identify:
 7. Depth
 8. Editorial hierarchy
 
-If the original image contains a recognizable public figure, use that person only when their identity is genuinely relevant to the news.
-
-If the original image contains people whose identities are unknown, describe them generically.
-
-Never invent a person's identity.
+If the original image contains a recognizable public figure, use that person mention in the article.
 
 If the original image shows a building, location or object, only describe it specifically when the visual evidence supports it.
-
-============================================================
-IMAGE STYLE
-============================================================
 
 Create a premium Indian digital-news editorial photograph.
 
 Style:
 
-- photorealistic
-- highly detailed
-- realistic skin texture
-- natural facial features
-- realistic environment
-- professional editorial photography
-- cinematic but believable lighting
-- strong subject separation
-- controlled depth of field
-- sharp primary subject
-- subtle background blur
-- dramatic but credible composition
-- premium television-news visual quality
-- modern Indian digital newsroom aesthetic
-- sophisticated red, black, white and subtle gold palette
-- high contrast
-- clean composition
+- high reach
+- high seo
+- high ctr
+-exact title suited 
 - 16:9 landscape
 - photorealistic 4K quality
 
-The image must look like professional news photography, not an advertisement.
-
-============================================================
-IMAGE ACCURACY
-============================================================
-
-Never invent:
-
-- people
-- names
-- events
-- locations
-- buildings
-- uniforms
-- government symbols
-- police actions
-- military actions
-- disasters
-- protests
-- statistics
-- fictional situations presented as real
-
-If exact visual details are unknown, use a realistic contextual representation.
-
-Do not make unsupported visual claims.
-
-============================================================
-DO NOT RENDER TEXT
-============================================================
-
-Do NOT render:
-
-- article title
-- SEO title
-- headline
-- captions
-- subtitles
-- logos
-- watermarks
-- channel names
-- fake newspaper text
-- fake statistics
-- fake banners
-- fake UI
-- fake social media posts
-- readable text
-
-============================================================
-AVOID
-============================================================
-
-Do NOT create:
-
-- cartoon
-- illustration
-- anime
-- 3D render
-- fantasy
-- poster design
-- advertising style
-- excessive HDR
-- excessive saturation
-- fake explosions
-- unnecessary crowds
-- random people
-- random politicians
-- generic microphones
-- generic newsroom backgrounds
-- clickbait imagery
-- misleading symbolism
-- distorted hands
-- duplicate people
-- unnatural objects
-
-============================================================
-FINAL IMAGE PROMPT
-============================================================
 
 The imagePrompt MUST be ONE detailed paragraph.
 
-It must combine:
-
-- actual news topic
-- generated article title
-- primary subject
-- relevant people/objects
-- relevant location/environment
-- supported visual context
-- camera perspective
-- composition
-- lighting
-- color grading
-- editorial photography style
-- 16:9 landscape
-- photorealistic 4K quality
-
-Do not make the prompt generic.
-
-Do not simply say:
-
-"Create a professional news thumbnail."
-
 ============================================================
-OUTPUT
+JSON
 ============================================================
 
 Return ONLY valid JSON.
@@ -1156,6 +1088,7 @@ Use exactly:
   "seoTitle": "",
   "seoDescription": "",
   "shortDescription": "",
+  "slug": "",
   "content": "",
   "suggestedCategory": "",
   "imagePrompt": ""
@@ -1165,7 +1098,7 @@ IMPORTANT:
 
 suggestedCategory MUST contain ONLY the exact Firestore category slug.
 
-============================================================
+slug MUST contain ONLY lowercase ASCII English characters, numbers and hyphens.
 `;
 
   // ----------------------------------------------------------
@@ -1179,7 +1112,7 @@ suggestedCategory MUST contain ONLY the exact Firestore category slug.
   ];
 
   // ----------------------------------------------------------
-  // ADD ORIGINAL IMAGE TO GEMINI
+  // ADD ORIGINAL IMAGE
   // ----------------------------------------------------------
 
   if (originalImage) {
@@ -1187,6 +1120,7 @@ suggestedCategory MUST contain ONLY the exact Firestore category slug.
       inlineData: {
         mimeType:
           originalImage.mimeType,
+
         data:
           originalImage.data,
       },
@@ -1277,7 +1211,6 @@ suggestedCategory MUST contain ONLY the exact Firestore category slug.
       text
     );
 
-    // Try removing accidental markdown fences
     try {
       const cleaned =
         text
@@ -1304,9 +1237,9 @@ suggestedCategory MUST contain ONLY the exact Firestore category slug.
     }
   }
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // NORMALIZE CATEGORY
-  // ----------------------------------------------------------
+  // ==========================================================
 
   const suggestedCategory =
     String(
@@ -1316,9 +1249,9 @@ suggestedCategory MUST contain ONLY the exact Firestore category slug.
       .trim()
       .toLowerCase();
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // FIND CATEGORY BY SLUG
-  // ----------------------------------------------------------
+  // ==========================================================
 
   let selectedCategory =
     categories.find(
@@ -1328,9 +1261,9 @@ suggestedCategory MUST contain ONLY the exact Firestore category slug.
         suggestedCategory
     );
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // FALLBACK BY ENGLISH NAME
-  // ----------------------------------------------------------
+  // ==========================================================
 
   if (!selectedCategory) {
     selectedCategory =
@@ -1342,9 +1275,9 @@ suggestedCategory MUST contain ONLY the exact Firestore category slug.
       );
   }
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // FALLBACK BY HINDI NAME
-  // ----------------------------------------------------------
+  // ==========================================================
 
   if (!selectedCategory) {
     selectedCategory =
@@ -1356,9 +1289,9 @@ suggestedCategory MUST contain ONLY the exact Firestore category slug.
       );
   }
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // FINAL CATEGORY FALLBACK
-  // ----------------------------------------------------------
+  // ==========================================================
 
   if (!selectedCategory) {
     selectedCategory =
@@ -1370,9 +1303,33 @@ suggestedCategory MUST contain ONLY the exact Firestore category slug.
       categories[0];
   }
 
+  // ==========================================================
+  // SANITIZE GEMINI SLUG
+  // ==========================================================
+
+  let slug =
+    sanitizeEnglishSlug(
+      article.slug
+    );
+
   // ----------------------------------------------------------
+  // FALLBACK IF GEMINI RETURNS BAD/EMPTY SLUG
+  // ----------------------------------------------------------
+
+  if (!slug) {
+    throw new Error(
+      "AI generated an invalid English slug"
+    );
+  }
+
+  console.log(
+    "Generated English slug:",
+    slug
+  );
+
+  // ==========================================================
   // FINAL RESULT
-  // ----------------------------------------------------------
+  // ==========================================================
 
   return {
     title:
@@ -1402,6 +1359,10 @@ suggestedCategory MUST contain ONLY the exact Firestore category slug.
         article.content || ""
       ),
 
+    // IMPORTANT:
+    // This is the clean English URL slug.
+    slug,
+
     suggestedCategory:
       selectedCategory.slug,
 
@@ -1423,7 +1384,6 @@ suggestedCategory MUST contain ONLY the exact Firestore category slug.
           ""
       ),
 
-    // Useful for debugging / UI
     sourceImageUrl:
       originalImageUrl || "",
   };
@@ -1519,3 +1479,4 @@ export async function POST(
     );
   }
 }
+
