@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import {
+  useEffect,
+  useState
+} from "react";
 
 import {
   Clock3,
@@ -10,7 +14,6 @@ import {
 
 
 interface HeroArticle {
-
   id: string;
   slug?: string;
   title: string;
@@ -18,7 +21,7 @@ interface HeroArticle {
   shortDescription?: string;
   category?: string;
   views?: number;
-
+  createdAt?: string;
 }
 
 
@@ -28,7 +31,60 @@ interface HeroProps {
 
 }
 
+function formatTime(createdAt?: string) {
 
+  if (!createdAt) {
+    return "—";
+  }
+
+  const createdTime =
+    new Date(createdAt).getTime();
+
+  if (isNaN(createdTime)) {
+    return "—";
+  }
+
+  const difference =
+    Math.max(0, Date.now() - createdTime);
+
+  const seconds =
+    Math.floor(difference / 1000);
+
+  const minutes =
+    Math.floor(seconds / 60);
+
+  const hours =
+    Math.floor(minutes / 60);
+
+  const days =
+    Math.floor(hours / 24);
+
+
+  if (seconds < 60) {
+    return `${seconds} sec ago`;
+  }
+
+  if (minutes < 60) {
+    return `${minutes} min ago`;
+  }
+
+  if (hours < 24) {
+    return `${hours} hours ago`;
+  }
+
+  if (days < 7) {
+    return `${days} days ago`;
+  }
+
+  return new Date(createdTime).toLocaleDateString(
+    "hi-IN",
+    {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }
+  );
+}
 
 export default function HeroSection({
 
@@ -41,7 +97,17 @@ const hero = featured?.[0];
 
 const sideStories = featured?.slice(1,5) || [];
 
+const [, setTime] = useState(Date.now());
 
+useEffect(() => {
+
+  const timer = setInterval(() => {
+    setTime(Date.now());
+  }, 1000);
+
+  return () => clearInterval(timer);
+
+}, []);
 
 if(!hero) return null;
 
@@ -188,7 +254,7 @@ text-zinc-200
 
 <Clock3 size={15}/>
 
-Just Now
+ {formatTime(hero.createdAt)}
 
 </span>
 

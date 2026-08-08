@@ -19,12 +19,21 @@ import {
 import Editor from "@/components/editor/NewsEditor";
 
 
+// ======================================================
+// CREATE ARTICLE PAGE
+// ======================================================
+
 export default function CreateArticlePage() {
 
   const router = useRouter();
 
   const searchParams =
     useSearchParams();
+
+
+  // ======================================================
+  // STATES
+  // ======================================================
 
   const [loading, setLoading] =
     useState(false);
@@ -57,19 +66,15 @@ export default function CreateArticlePage() {
 
     status:
       "draft" as
-        | "draft"
-        | "published",
-
-    author: null,
+      "draft" |
+      "published",
 
   });
 
 
-  /*
-  |--------------------------------------------------------------------------
-  | LOAD CATEGORIES
-  |--------------------------------------------------------------------------
-  */
+  // ======================================================
+  // LOAD CATEGORIES
+  // ======================================================
 
   useEffect(() => {
 
@@ -80,7 +85,16 @@ export default function CreateArticlePage() {
         const data =
           await getCategories();
 
-        setCategories(data);
+        console.log(
+          "ARTICLE CATEGORIES:",
+          data
+        );
+
+        setCategories(
+          Array.isArray(data)
+            ? data
+            : []
+        );
 
       } catch (error) {
 
@@ -93,16 +107,15 @@ export default function CreateArticlePage() {
 
     }
 
+
     loadCategories();
 
   }, []);
 
 
-  /*
-  |--------------------------------------------------------------------------
-  | LOAD AI GENERATED ARTICLE
-  |--------------------------------------------------------------------------
-  */
+  // ======================================================
+  // LOAD AI GENERATED ARTICLE
+  // ======================================================
 
   useEffect(() => {
 
@@ -112,67 +125,203 @@ export default function CreateArticlePage() {
       return;
     }
 
+
     const saved =
       sessionStorage.getItem(
         "ai_article"
       );
 
+
     if (!saved) {
       return;
     }
+
 
     try {
 
       const aiArticle =
         JSON.parse(saved);
 
+
+      console.log(
+        "AI ARTICLE RECEIVED:",
+        aiArticle
+      );
+
+
+      // ==================================================
+      // BASIC AI DATA
+      // ==================================================
+
       setForm((previous) => ({
 
         ...previous,
 
         title:
-          aiArticle.title || "",
-
-        categoryId:
-          aiArticle.categoryId || "",
+          aiArticle.title ||
+          "",
 
         thumbnail:
-          aiArticle.thumbnail || "",
+          aiArticle.thumbnail ||
+          "",
 
         shortDescription:
-          aiArticle.shortDescription || "",
+          aiArticle.shortDescription ||
+          "",
 
         content:
-          aiArticle.content || "",
+          aiArticle.content ||
+          "",
 
         seoTitle:
-          aiArticle.seoTitle || "",
+          aiArticle.seoTitle ||
+          "",
 
         seoDescription:
-          aiArticle.seoDescription || "",
+          aiArticle.seoDescription ||
+          "",
 
         featured:
-          aiArticle.featured || false,
+          Boolean(
+            aiArticle.featured
+          ),
 
         breaking:
-          aiArticle.breaking || false,
+          Boolean(
+            aiArticle.breaking
+          ),
 
         priority:
-          aiArticle.priority || 0,
+          Number(
+            aiArticle.priority || 0
+          ),
 
         status:
-          aiArticle.status || "draft",
+          aiArticle.status ===
+          "published"
+            ? "published"
+            : "draft",
 
       }));
 
-      /*
-       * AI data ek baar load ho gaya.
-       * Isliye sessionStorage clean kar rahe hain.
-       */
+
+      // ==================================================
+      // CATEGORY AUTO MATCH
+      // ==================================================
+      //
+      // AI JSON:
+      //
+      // {
+      //   "suggestedCategory": "National"
+      // }
+      //
+      // Existing category:
+      //
+      // {
+      //   id: "...",
+      //   name: "National"
+      // }
+      //
+      // categoryId automatically set hoga.
+      //
+      // ==================================================
+
+      const suggestedCategory =
+        String(
+          aiArticle.suggestedCategory ||
+          aiArticle.category ||
+          ""
+        )
+          .trim()
+          .toLowerCase();
+
+
+      if (
+        suggestedCategory
+      ) {
+
+        const matchedCategory =
+          categories.find(
+            (category) => {
+
+              const categoryName =
+                String(
+                  category?.name ||
+                  ""
+                )
+                  .trim()
+                  .toLowerCase();
+
+
+              const categorySlug =
+                String(
+                  category?.slug ||
+                  ""
+                )
+                  .trim()
+                  .toLowerCase();
+
+
+              return (
+                categoryName ===
+                suggestedCategory ||
+
+                categorySlug ===
+                suggestedCategory
+              );
+
+            }
+          );
+
+
+        if (
+          matchedCategory
+        ) {
+
+          console.log(
+            "AI CATEGORY MATCHED:",
+            matchedCategory
+          );
+
+
+          setForm(
+            (previous) => ({
+
+              ...previous,
+
+              categoryId:
+                matchedCategory.id,
+
+            })
+          );
+
+        } else {
+
+          console.warn(
+            "AI CATEGORY NOT FOUND:",
+            suggestedCategory,
+
+            "Available categories:",
+            categories
+              .map(
+                (category) =>
+                  category.name
+              )
+          );
+
+        }
+
+      }
+
+
+      // ==================================================
+      // REMOVE SESSION DATA
+      // ==================================================
 
       sessionStorage.removeItem(
         "ai_article"
       );
+
 
     } catch (error) {
 
@@ -183,14 +332,15 @@ export default function CreateArticlePage() {
 
     }
 
-  }, [searchParams]);
+  }, [
+    searchParams,
+    categories,
+  ]);
 
 
-  /*
-  |--------------------------------------------------------------------------
-  | INPUT CHANGE
-  |--------------------------------------------------------------------------
-  */
+  // ======================================================
+  // INPUT CHANGE
+  // ======================================================
 
   function handleChange(
     e: any
@@ -204,48 +354,49 @@ export default function CreateArticlePage() {
     } = e.target;
 
 
-    setForm((previous) => ({
+    setForm(
+      (previous) => ({
 
-      ...previous,
+        ...previous,
 
-      [name]:
-        type === "checkbox"
-          ? checked
-          : name === "priority"
-          ? Number(value)
-          : value,
+        [name]:
+          type === "checkbox"
+            ? checked
+            : name === "priority"
+            ? Number(value)
+            : value,
 
-    }));
+      })
+    );
 
   }
 
 
-  /*
-  |--------------------------------------------------------------------------
-  | EDITOR CHANGE
-  |--------------------------------------------------------------------------
-  */
+  // ======================================================
+  // EDITOR CHANGE
+  // ======================================================
 
   function handleEditorChange(
     value: string
   ) {
 
-    setForm((previous) => ({
+    setForm(
+      (previous) => ({
 
-      ...previous,
+        ...previous,
 
-      content: value,
+        content:
+          value,
 
-    }));
+      })
+    );
 
   }
 
 
-  /*
-  |--------------------------------------------------------------------------
-  | SUBMIT ARTICLE
-  |--------------------------------------------------------------------------
-  */
+  // ======================================================
+  // SUBMIT ARTICLE
+  // ======================================================
 
   async function handleSubmit() {
 
@@ -269,16 +420,40 @@ export default function CreateArticlePage() {
       }
 
 
+      // ==================================================
+      // CATEGORY VALIDATION
+      // ==================================================
+
+      if (!form.categoryId) {
+
+        alert(
+          "Please select an article category."
+        );
+
+        return;
+
+      }
+
+
+      // ==================================================
+      // GET TOKEN
+      // ==================================================
+
       const token =
         await user.getIdToken();
 
+
+      // ==================================================
+      // CREATE ARTICLE
+      // ==================================================
 
       const res =
         await fetch(
           "/api/admin/articles",
           {
 
-            method: "POST",
+            method:
+              "POST",
 
             headers: {
 
@@ -291,7 +466,9 @@ export default function CreateArticlePage() {
             },
 
             body:
-              JSON.stringify(form),
+              JSON.stringify(
+                form
+              ),
 
           }
         );
@@ -304,12 +481,16 @@ export default function CreateArticlePage() {
       if (!res.ok) {
 
         throw new Error(
-          data.message ||
+          data?.message ||
           "Failed to create article"
         );
 
       }
 
+
+      // ==================================================
+      // SUCCESS
+      // ==================================================
 
       alert(
         "Article Created Successfully"
@@ -331,10 +512,12 @@ export default function CreateArticlePage() {
         error
       );
 
+
       alert(
-        error.message ||
+        error?.message ||
         "Something went wrong"
       );
+
 
     } finally {
 
@@ -345,11 +528,9 @@ export default function CreateArticlePage() {
   }
 
 
-  /*
-  |--------------------------------------------------------------------------
-  | UI
-  |--------------------------------------------------------------------------
-  */
+  // ======================================================
+  // UI
+  // ======================================================
 
   return (
 
@@ -362,7 +543,9 @@ export default function CreateArticlePage() {
       "
     >
 
-      {/* HEADER */}
+      {/* ==================================================
+          HEADER
+      ================================================== */}
 
       <div>
 
@@ -375,6 +558,7 @@ export default function CreateArticlePage() {
         >
           Create Article
         </h1>
+
 
         <p
           className="
@@ -390,12 +574,15 @@ export default function CreateArticlePage() {
       </div>
 
 
-      {/* ARTICLE FORM */}
+      {/* ==================================================
+          ARTICLE FORM
+      ================================================== */}
 
       <div
         className="
           bg-white
           border
+          border-zinc-200
           rounded-2xl
           p-4
           sm:p-6
@@ -403,8 +590,9 @@ export default function CreateArticlePage() {
         "
       >
 
-
-        {/* TITLE */}
+        {/* ==================================================
+            TITLE
+        ================================================== */}
 
         <div>
 
@@ -419,14 +607,20 @@ export default function CreateArticlePage() {
             Article Title
           </label>
 
+
           <input
             name="title"
             placeholder="Article Title"
-            value={form.title}
-            onChange={handleChange}
+            value={
+              form.title
+            }
+            onChange={
+              handleChange
+            }
             className="
               w-full
               border
+              border-zinc-300
               p-3
               rounded-lg
               outline-none
@@ -438,7 +632,9 @@ export default function CreateArticlePage() {
         </div>
 
 
-        {/* CATEGORY */}
+        {/* ==================================================
+            CATEGORY
+        ================================================== */}
 
         <div>
 
@@ -453,13 +649,19 @@ export default function CreateArticlePage() {
             Category
           </label>
 
+
           <select
             name="categoryId"
-            value={form.categoryId}
-            onChange={handleChange}
+            value={
+              form.categoryId
+            }
+            onChange={
+              handleChange
+            }
             className="
               w-full
               border
+              border-zinc-300
               p-3
               rounded-lg
               outline-none
@@ -473,14 +675,21 @@ export default function CreateArticlePage() {
               Select Category
             </option>
 
+
             {categories.map(
               (cat) => (
 
                 <option
-                  key={cat.id}
-                  value={cat.id}
+                  key={
+                    cat.id
+                  }
+                  value={
+                    cat.id
+                  }
                 >
-                  {cat.name}
+                  {
+                    cat.name
+                  }
                 </option>
 
               )
@@ -488,10 +697,34 @@ export default function CreateArticlePage() {
 
           </select>
 
+
+          {/* AI CATEGORY STATUS */}
+
+          {searchParams.get(
+            "from"
+          ) === "ai" &&
+            form.categoryId && (
+
+              <p
+                className="
+                  mt-2
+                  text-xs
+                  font-semibold
+                  text-green-600
+                "
+              >
+                ✓ Category automatically
+                selected from AI suggestion
+              </p>
+
+            )}
+
         </div>
 
 
-        {/* THUMBNAIL */}
+        {/* ==================================================
+            THUMBNAIL
+        ================================================== */}
 
         <div>
 
@@ -506,14 +739,20 @@ export default function CreateArticlePage() {
             Thumbnail Image
           </label>
 
+
           <input
             name="thumbnail"
             placeholder="Blogger Image URL"
-            value={form.thumbnail}
-            onChange={handleChange}
+            value={
+              form.thumbnail
+            }
+            onChange={
+              handleChange
+            }
             className="
               w-full
               border
+              border-zinc-300
               p-3
               rounded-lg
               outline-none
@@ -521,6 +760,7 @@ export default function CreateArticlePage() {
               focus:ring-red-500
             "
           />
+
 
           <p
             className="
@@ -533,10 +773,55 @@ export default function CreateArticlePage() {
             and paste the image URL here.
           </p>
 
+
+          {/* IMAGE PREVIEW */}
+
+          {form.thumbnail && (
+
+            <div
+              className="
+                mt-4
+                overflow-hidden
+                rounded-xl
+                border
+                border-zinc-200
+                bg-zinc-50
+              "
+            >
+
+              <img
+                src={
+                  form.thumbnail
+                }
+                alt={
+                  form.title ||
+                  "Article thumbnail"
+                }
+                className="
+                  w-full
+                  max-h-72
+                  object-cover
+                "
+                onError={(
+                  event
+                ) => {
+
+                  event.currentTarget.style.display =
+                    "none";
+
+                }}
+              />
+
+            </div>
+
+          )}
+
         </div>
 
 
-        {/* SHORT DESCRIPTION */}
+        {/* ==================================================
+            SHORT DESCRIPTION
+        ================================================== */}
 
         <div>
 
@@ -551,17 +836,21 @@ export default function CreateArticlePage() {
             Short Description
           </label>
 
+
           <textarea
             name="shortDescription"
             placeholder="Short description"
             value={
               form.shortDescription
             }
-            onChange={handleChange}
+            onChange={
+              handleChange
+            }
             rows={4}
             className="
               w-full
               border
+              border-zinc-300
               p-3
               rounded-lg
               outline-none
@@ -574,7 +863,9 @@ export default function CreateArticlePage() {
         </div>
 
 
-        {/* CONTENT EDITOR */}
+        {/* ==================================================
+            CONTENT EDITOR
+        ================================================== */}
 
         <div>
 
@@ -589,8 +880,11 @@ export default function CreateArticlePage() {
             Article Content
           </label>
 
+
           <Editor
-            value={form.content}
+            value={
+              form.content
+            }
             onChange={
               handleEditorChange
             }
@@ -599,7 +893,9 @@ export default function CreateArticlePage() {
         </div>
 
 
-        {/* SEO TITLE */}
+        {/* ==================================================
+            SEO TITLE
+        ================================================== */}
 
         <div>
 
@@ -614,14 +910,20 @@ export default function CreateArticlePage() {
             SEO Title
           </label>
 
+
           <input
             name="seoTitle"
             placeholder="SEO Title"
-            value={form.seoTitle}
-            onChange={handleChange}
+            value={
+              form.seoTitle
+            }
+            onChange={
+              handleChange
+            }
             className="
               w-full
               border
+              border-zinc-300
               p-3
               rounded-lg
               outline-none
@@ -629,6 +931,7 @@ export default function CreateArticlePage() {
               focus:ring-red-500
             "
           />
+
 
           <p
             className="
@@ -645,7 +948,9 @@ export default function CreateArticlePage() {
         </div>
 
 
-        {/* SEO DESCRIPTION */}
+        {/* ==================================================
+            SEO DESCRIPTION
+        ================================================== */}
 
         <div>
 
@@ -660,17 +965,21 @@ export default function CreateArticlePage() {
             SEO Description
           </label>
 
+
           <textarea
             name="seoDescription"
             placeholder="SEO Description"
             value={
               form.seoDescription
             }
-            onChange={handleChange}
+            onChange={
+              handleChange
+            }
             rows={3}
             className="
               w-full
               border
+              border-zinc-300
               p-3
               rounded-lg
               outline-none
@@ -683,7 +992,9 @@ export default function CreateArticlePage() {
         </div>
 
 
-        {/* OPTIONS */}
+        {/* ==================================================
+            OPTIONS
+        ================================================== */}
 
         <div
           className="
@@ -694,12 +1005,15 @@ export default function CreateArticlePage() {
           "
         >
 
+          {/* FEATURED */}
+
           <label
             className="
               flex
               items-center
               gap-3
               border
+              border-zinc-200
               rounded-lg
               p-4
               cursor-pointer
@@ -709,12 +1023,19 @@ export default function CreateArticlePage() {
             <input
               type="checkbox"
               name="featured"
-              checked={form.featured}
-              onChange={handleChange}
+              checked={
+                form.featured
+              }
+              onChange={
+                handleChange
+              }
             />
 
+
             <span
-              className="font-semibold"
+              className="
+                font-semibold
+              "
             >
               Featured Article
             </span>
@@ -722,12 +1043,15 @@ export default function CreateArticlePage() {
           </label>
 
 
+          {/* BREAKING */}
+
           <label
             className="
               flex
               items-center
               gap-3
               border
+              border-zinc-200
               rounded-lg
               p-4
               cursor-pointer
@@ -737,12 +1061,19 @@ export default function CreateArticlePage() {
             <input
               type="checkbox"
               name="breaking"
-              checked={form.breaking}
-              onChange={handleChange}
+              checked={
+                form.breaking
+              }
+              onChange={
+                handleChange
+              }
             />
 
+
             <span
-              className="font-semibold"
+              className="
+                font-semibold
+              "
             >
               Breaking News
             </span>
@@ -752,7 +1083,9 @@ export default function CreateArticlePage() {
         </div>
 
 
-        {/* PRIORITY */}
+        {/* ==================================================
+            PRIORITY
+        ================================================== */}
 
         <div>
 
@@ -767,15 +1100,21 @@ export default function CreateArticlePage() {
             Priority
           </label>
 
+
           <input
             type="number"
             name="priority"
-            value={form.priority}
-            onChange={handleChange}
+            value={
+              form.priority
+            }
+            onChange={
+              handleChange
+            }
             min={0}
             className="
               w-full
               border
+              border-zinc-300
               p-3
               rounded-lg
               outline-none
@@ -787,7 +1126,9 @@ export default function CreateArticlePage() {
         </div>
 
 
-        {/* STATUS */}
+        {/* ==================================================
+            STATUS
+        ================================================== */}
 
         <div>
 
@@ -802,13 +1143,19 @@ export default function CreateArticlePage() {
             Status
           </label>
 
+
           <select
             name="status"
-            value={form.status}
-            onChange={handleChange}
+            value={
+              form.status
+            }
+            onChange={
+              handleChange
+            }
             className="
               w-full
               border
+              border-zinc-300
               p-3
               rounded-lg
               bg-white
@@ -819,6 +1166,7 @@ export default function CreateArticlePage() {
               Draft
             </option>
 
+
             <option value="published">
               Published
             </option>
@@ -828,7 +1176,9 @@ export default function CreateArticlePage() {
         </div>
 
 
-        {/* SUBMIT */}
+        {/* ==================================================
+            SUBMIT
+        ================================================== */}
 
         <div
           className="
@@ -839,8 +1189,11 @@ export default function CreateArticlePage() {
             sm:justify-end
             pt-4
             border-t
+            border-zinc-200
           "
         >
+
+          {/* CANCEL */}
 
           <button
             type="button"
@@ -854,6 +1207,7 @@ export default function CreateArticlePage() {
               py-3
               rounded-lg
               border
+              border-zinc-300
               font-semibold
               hover:bg-zinc-50
             "
@@ -862,10 +1216,16 @@ export default function CreateArticlePage() {
           </button>
 
 
+          {/* CREATE */}
+
           <button
             type="button"
-            onClick={handleSubmit}
-            disabled={loading}
+            onClick={
+              handleSubmit
+            }
+            disabled={
+              loading
+            }
             className="
               px-6
               py-3
@@ -893,5 +1253,5 @@ export default function CreateArticlePage() {
     </div>
 
   );
-}
 
+}

@@ -15,7 +15,7 @@ interface Props {
     title: string;
     thumbnail: string;
     category?: string;
-    createdAt?: string;
+    createdAt?: any;
     views?: number;
   };
 }
@@ -34,17 +34,62 @@ function generateViews(id: string) {
 
   if (views >= 1000) {
     return (
-      (views / 1000)
-        .toFixed(1) + "K"
+      (views / 1000).toFixed(1) + "K"
     );
   }
 
   return String(views);
 }
 
+/* SAFE DATE FORMATTER */
+function formatArticleDate(value: any) {
+  if (!value) {
+    return "Today";
+  }
+
+  try {
+    let date: Date;
+
+    /* Firestore Timestamp */
+    if (
+      value &&
+      typeof value.toDate === "function"
+    ) {
+      date = value.toDate();
+    }
+
+    /* Firestore timestamp object */
+    else if (
+      typeof value === "object" &&
+      typeof value.seconds === "number"
+    ) {
+      date = new Date(
+        value.seconds * 1000
+      );
+    }
+
+    /* Normal string / number */
+    else {
+      date = new Date(value);
+    }
+
+    /* Invalid date protection */
+    if (Number.isNaN(date.getTime())) {
+      return "Today";
+    }
+
+    return date.toLocaleDateString(
+      "hi-IN"
+    );
+  } catch {
+    return "Today";
+  }
+}
+
 export default function NewsCard({
   article,
 }: Props) {
+
   const {
     id,
     slug,
@@ -64,6 +109,7 @@ export default function NewsCard({
         h-full
       "
     >
+
       <div
         className="
           flex
@@ -198,6 +244,8 @@ export default function NewsCard({
             "
           >
 
+            {/* DATE */}
+
             <span
               className="
                 flex
@@ -207,12 +255,13 @@ export default function NewsCard({
             >
               <Clock3 size={12} />
 
-              {createdAt
-                ? new Date(createdAt)
-                    .toLocaleDateString("hi-IN")
-                : "Today"}
+              {formatArticleDate(
+                createdAt
+              )}
             </span>
 
+
+            {/* VIEWS */}
 
             <span
               className="
@@ -223,7 +272,8 @@ export default function NewsCard({
             >
               <Eye size={12} />
 
-              {views || generateViews(id)}
+              {views ||
+                generateViews(id)}
             </span>
 
           </div>
@@ -231,7 +281,7 @@ export default function NewsCard({
         </div>
 
       </div>
+
     </Link>
   );
 }
-

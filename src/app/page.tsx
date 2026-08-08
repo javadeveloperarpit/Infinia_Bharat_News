@@ -1,374 +1,367 @@
 import {
   getPublishedArticles,
   getFeaturedArticles,
-  getPublishedArticlesByCategory
+  getPublishedArticlesByCategory,
 } from "@/services/public/article.public.service";
-
 
 import {
   getPublishedVideos,
-  getPublishedVideosByCategory
+  getPublishedVideosByCategory,
 } from "@/services/public/video.public.service";
 
-
 import {
-  getCategories
+  getCategories,
 } from "@/services/category.service";
 
+import BreakingStrip
+  from "@/components/home/breaking-strip";
 
-import BreakingStrip 
-from "@/components/home/breaking-strip";
+import HeroSection
+  from "@/components/home/hero-section";
 
+import NewsGrid
+  from "@/components/home/news-grid";
 
-import HeroSection 
-from "@/components/home/hero-section";
+import CategorySection
+  from "@/components/home/category-section";
 
 
-import NewsGrid 
-from "@/components/home/news-grid";
+export default async function Home() {
 
+  // ======================================
+  // FETCH HOME DATA
+  // ======================================
 
-import CategorySection 
-from "@/components/home/category-section";
+  const [
+    articles,
+    featured,
+    categories,
+    videos,
+  ] = await Promise.all([
 
+    getPublishedArticles(),
 
+    getFeaturedArticles(),
 
+    getCategories(),
 
+    getPublishedVideos(),
 
-export default async function Home(){
+  ]);
 
 
+  // ======================================
+  // CATEGORY MAP
+  // categoryId -> category
+  // ======================================
 
-const [
+  const categoryMap = new Map(
 
-  articles,
+    categories.map(
+      (category) => [
+        category.id,
+        category,
+      ]
+    )
 
-  featured,
+  );
 
-  categories,
 
-  videos
+  // ======================================
+  // FEATURED ARTICLES
+  // Attach category information
+  // ======================================
 
+  const featuredWithCategory =
+    featured.map(
+      (article) => {
 
-]=await Promise.all([
+        const category =
+          categoryMap.get(
+            article.categoryId
+          );
 
 
-  getPublishedArticles(),
+        return {
 
+          ...article,
 
-  getFeaturedArticles(),
+          category:
+            category?.name ||
+            "News",
 
+          categoryHi:
+            category?.nameHi ||
+            "समाचार",
 
-  getCategories(),
+        };
 
+      }
+    );
 
-  getPublishedVideos()
 
+  // ======================================
+  // LATEST ITEMS
+  // Articles + Videos
+  // Attach category information
+  // ======================================
 
-]);
+  const latestItems = [
 
+    // ------------------------------
+    // ARTICLES
+    // ------------------------------
 
+    ...articles.map(
+      (article) => {
 
+        const category =
+          categoryMap.get(
+            article.categoryId
+          );
 
 
-const latestItems = [
+        return {
 
+          ...article,
 
-  ...articles.map(article=>({
+          category:
+            category?.name ||
+            "News",
 
-    ...article,
+          categoryHi:
+            category?.nameHi ||
+            "समाचार",
 
-    type:"article"
+          type:
+            "article" as const,
 
-  })),
+        };
 
+      }
+    ),
 
 
-  ...videos.map(video=>({
+    // ------------------------------
+    // VIDEOS
+    // ------------------------------
 
-    ...video,
+    ...videos.map(
+      (video) => {
 
-    type:"video"
+        const category =
+          categoryMap.get(
+            video.categoryId
+          );
 
-  }))
 
+        return {
 
+          ...video,
 
-]
-.sort((a,b)=>{
+          category:
+            category?.name ||
+            "Video",
 
+          categoryHi:
+            category?.nameHi ||
+            "वीडियो",
 
-  const dateA = new Date(
-    a.createdAt || 0
-  ).getTime();
+          type:
+            "video" as const,
 
+        };
 
+      }
+    ),
 
-  const dateB = new Date(
-    b.createdAt || 0
-  ).getTime();
+  ]
 
+    // ==================================
+    // SORT LATEST
+    // ==================================
 
+    .sort(
+      (a, b) => {
 
-  return dateB - dateA;
+        const dateA =
+          new Date(
+            a.createdAt || 0
+          ).getTime();
 
 
-})
-.slice(0,3);
+        const dateB =
+          new Date(
+            b.createdAt || 0
+          ).getTime();
 
 
+        return dateB - dateA;
 
+      }
+    )
 
+    .slice(0, 3);
 
 
+  // ======================================
+  // CATEGORY DATA
+  // ======================================
 
-const categoryData =
+  const categoryData =
+    await Promise.all(
 
-await Promise.all(
+      categories.map(
+        async (category) => {
 
+          const categoryId =
+            category.id;
 
-categories.map(async(category)=>{
 
+          const [
+            articles,
+            videos,
+          ] = await Promise.all([
 
+            getPublishedArticlesByCategory(
+              categoryId
+            ),
 
-const categoryId = category.id;
+            getPublishedVideosByCategory(
+              categoryId
+            ),
 
+          ]);
 
 
-const [
+          return {
 
-  articles,
+            ...category,
 
-  videos
+            articles,
 
-]=await Promise.all([
+            videos,
 
+          };
 
+        }
+      )
 
-  getPublishedArticlesByCategory(
+    );
 
-    categoryId!
 
-  ),
+  // ======================================
+  // PAGE
+  // ======================================
 
+  return (
 
+    <main
+      className="
+        min-h-screen
+        bg-white
+      "
+    >
 
+      {/* ================================
+          BREAKING NEWS
+      ================================= */}
 
-  getPublishedVideosByCategory(
+      <BreakingStrip />
 
-    categoryId!
 
-  )
+      {/* ================================
+          HERO
+      ================================= */}
 
+      <section
+        className="
+          container-news
+          mt-5
+        "
+      >
 
+        <HeroSection
+          featured={
+            featuredWithCategory
+          }
+        />
 
-]);
+      </section>
 
 
+      {/* ================================
+          LATEST NEWS
+      ================================= */}
 
-return {
+      <section
+        className="
+          container-news
+          mt-12
+        "
+      >
 
+        <NewsGrid
+          articles={
+            latestItems
+          }
+        />
 
-  ...category,
+      </section>
 
 
-  articles,
+      {/* ================================
+          CATEGORY SECTIONS
+      ================================= */}
 
+      <div
+        className="
+          container-news
+          mt-16
+          space-y-20
+        "
+      >
 
-  videos
+        {
+          categoryData.map(
+            (category) => (
 
+              <CategorySection
 
-};
+                key={
+                  category.id
+                }
 
+                name={
+                  category.name
+                }
 
+                nameHi={
+                  category.nameHi
+                }
 
-})
+                slug={
+                  category.slug
+                }
 
+                articles={
+                  category.articles
+                }
 
-);
+                videos={
+                  category.videos
+                }
 
+              />
 
+            )
+          )
+        }
 
+      </div>
 
+    </main>
 
-
-
-
-
-return (
-
-
-<main
-
-className="
-
-min-h-screen
-
-bg-white
-
-"
-
->
-
-
-
-
-{/* Breaking */}
-
-
-<BreakingStrip/>
-
-
-
-
-
-
-
-
-{/* Hero */}
-
-
-
-<section
-
-className="
-
-container-news
-
-mt-5
-
-"
-
->
-
-
-<HeroSection
-
-
-featured={featured}
-
-
-/>
-
-
-</section>
-
-
-
-
-
-
-
-
-
-{/* Latest */}
-
-
-
-<section
-
-className="
-
-container-news
-
-mt-12
-
-"
-
->
-
-
-<NewsGrid
-
-
-articles={latestItems}
-
-
-/>
-
-
-</section>
-
-
-
-
-
-
-
-
-
-{/* Categories */}
-
-
-
-<section
-
-className="
-container-news
-mt-16
-space-y-20
-"
-
->
-
-
-{
-
-
-categoryData.map(category=>(
-
-
-
-<CategorySection
-
-
-
-key={category.id}
-
-
-
-name={category.name}
-
-
-
-nameHi={category.nameHi}
-
-
-
-slug={category.slug}
-
-
-
-articles={category.articles}
-
-
-
-videos={category.videos}
-
-
-/>
-
-
-
-))
-
-
-}
-
-
-
-</section>
-
-
-
-
-
-
-
-</main>
-
-
-);
-
+  );
 
 }

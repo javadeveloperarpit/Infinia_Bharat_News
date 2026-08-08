@@ -1,33 +1,43 @@
-export function createSlug(title:string){
+// ======================================
+// ARTICLE SLUG
+// ======================================
 
-const now = new Date();
+export function createSlug(title: string) {
+  const now = new Date();
 
+  const date =
+    `${now.getFullYear()}` +
+    `${String(now.getMonth() + 1).padStart(2, "0")}` +
+    `${String(now.getDate()).padStart(2, "0")}`;
 
-const date =
-`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}`;
+  const time =
+    `${String(now.getHours()).padStart(2, "0")}` +
+    `${String(now.getMinutes()).padStart(2, "0")}` +
+    `${String(now.getSeconds()).padStart(2, "0")}`;
 
+  const slug = title
+    .toLowerCase()
+    .trim()
+    .replace(/[^\p{L}\p{N}\s-]/gu, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 
-const time =
-`${String(now.getHours()).padStart(2,"0")}${String(now.getMinutes()).padStart(2,"0")}${String(now.getSeconds()).padStart(2,"0")}`;
-
-
-
-const slug = title
-
-.toLowerCase()
-
-.trim()
-
-.replace(/[^\p{L}\p{N}\s-]/gu,"")
-
-.replace(/\s+/g,"-")
-
-.replace(/-+/g,"-")
-
-.replace(/^-|-$/g,"");
-
-
-
-return `${slug}-${date}-${time}`;
-
+  return `${slug}-${date}-${time}`;
 }
+
+
+// ======================================
+// AUTHOR SLUG
+// ======================================
+
+export function createAuthorSlug(name: string) {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\p{L}\p{N}\s-]/gu, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+

@@ -11,34 +11,115 @@ import {
   FieldValue,
 } from "firebase-admin/firestore";
 
-
 // ==========================================
 // CREATE SLUG
 // ==========================================
 
-function createSlug(text: string) {
-
-  const base = text
+function createAuthorSlug(name: string) {
+  return name
     .toLowerCase()
     .trim()
-    .replace(/[^\w\s-]/g, "")
+    .replace(/[^\p{L}\p{N}\s-]/gu, "")
     .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
-
-  const now = new Date();
-
-  const suffix =
-    now.getFullYear().toString() +
-    String(now.getMonth() + 1).padStart(2, "0") +
-    String(now.getDate()).padStart(2, "0") +
-    "-" +
-    String(now.getHours()).padStart(2, "0") +
-    String(now.getMinutes()).padStart(2, "0") +
-    String(now.getSeconds()).padStart(2, "0");
-
-  return `${base}-${suffix}`;
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
+// ==========================================
+// VERIFY CURRENT USER
+// ==========================================
+
+async function verifyUser(request: NextRequest) {
+  const authorization =
+    request.headers.get("authorization");
+
+  if (!authorization) {
+    return {
+      error: NextResponse.json(
+        {
+          success: false,
+          message: "Authorization header missing",
+        },
+        {
+          status: 401,
+        }
+      ),
+    };
+  }
+
+  const token =
+    authorization.startsWith("Bearer ")
+      ? authorization.substring(7)
+      : authorization;
+
+  if (!token) {
+    return {
+      error: NextResponse.json(
+        {
+          success: false,
+          message: "Authentication token missing",
+        },
+        {
+          status: 401,
+        }
+      ),
+    };
+  }
+
+  try {
+    const decoded =
+      await adminAuth.verifyIdToken(token);
+
+    const userRef =
+      adminDb
+        .collection("users")
+        .doc(decoded.uid);
+
+    const userSnapshot =
+      await userRef.get();
+
+    if (!userSnapshot.exists) {
+      return {
+        error: NextResponse.json(
+          {
+            success: false,
+            message: "Admin user not found",
+          },
+          {
+            status: 404,
+          }
+        ),
+      };
+    }
+
+    const user =
+      userSnapshot.data();
+
+    return {
+      decoded,
+      user,
+    };
+
+  } catch (error) {
+    console.error(
+      "VERIFY USER ERROR:",
+      error
+    );
+
+    return {
+      error: NextResponse.json(
+        {
+          success: false,
+          message:
+            "Invalid or expired authentication token",
+        },
+        {
+          status: 401,
+        }
+      ),
+    };
+  }
+}
 
 // ==========================================
 // VERIFY ADMIN
@@ -47,76 +128,58 @@ function createSlug(text: string) {
 async function verifyAdmin(
   request: NextRequest
 ) {
+  const auth =
+    await verifyUser(request);
 
-  const authHeader =
-    request.headers.get("authorization");
-
-  if (!authHeader) {
-
-    return {
-      error: NextResponse.json(
-        {
-          success: false,
-          message: "Unauthorized",
-        },
-        {
-          status: 401,
-        }
-      ),
-    };
-
+  if (auth.error) {
+    return auth;
   }
-
-
-  const token =
-    authHeader.replace(
-      "Bearer ",
-      ""
-    );
-
-
-  const decoded =
-    await adminAuth.verifyIdToken(
-      token
-    );
-
-
-  const userDoc =
-    await adminDb
-      .collection("users")
-      .doc(decoded.uid)
-      .get();
-
-
-  if (!userDoc.exists) {
-
-    return {
-      error: NextResponse.json(
-        {
-          success: false,
-          message: "User not found",
-        },
-        {
-          status: 404,
-        }
-      ),
-    };
-
-  }
-
-
-  const user =
-    userDoc.data();
-
 
   if (
-    user?.role !== "admin" &&
-    user?.role !== "editor" &&
-    user?.role !== "superAdmin"
+    auth.user?.role !== "admin" &&
+    auth.user?.role !== "superAdmin"
   ) {
-
     return {
       error: NextResponse.json(
+        {
+          success: false,
+          message:
+            "Only admin can perform this action",
+        },
+        {
+          status: 403,
+        }
+      ),
+    };
+  }
+
+  return auth;
+}
+
+// ==========================================
+// GET ALL USERS
+// ==========================================
+
+export async function GET(
+  request: NextRequest
+) {
+  try {
+    const auth =
+      await verifyUser(request);
+
+    if (auth.error) {
+      return auth.error;
+    }
+
+    const role =
+      auth.user?.role;
+
+    if (
+      role !== "admin" &&
+      role !== "editor" &&
+      role !== "superAdmin"
+    ) {
+      return NextResponse.json(
         {
           success: false,
           message: "Permission denied",
@@ -124,57 +187,21 @@ async function verifyAdmin(
         {
           status: 403,
         }
-      ),
-    };
-
-  }
-
-
-  return {
-    decoded,
-    user,
-  };
-
-}
-
-
-// ==========================================
-// GET USERS
-// ==========================================
-
-export async function GET(
-  request: NextRequest
-) {
-
-  try {
-
-    const auth =
-      await verifyAdmin(
-        request
       );
-
-
-    if (auth.error) {
-      return auth.error;
     }
-
 
     const snapshot =
       await adminDb
         .collection("users")
         .get();
 
-
     const users =
       snapshot.docs.map(
         (doc) => {
-
           const data =
             doc.data();
 
-
           return {
-
             id: doc.id,
 
             uid:
@@ -197,25 +224,38 @@ export async function GET(
               data.status ||
               "active",
 
+            photo:
+              data.photo ||
+              "",
+
+            bio:
+              data.bio ||
+              "",
+
+            slug:
+              data.slug ||
+              createAuthorSlug(
+                data.name || ""
+              ),
+
             createdAt:
-              data.createdAt?.toDate
+              data.createdAt
+                ?.toDate
                 ? data.createdAt
                     .toDate()
                     .toISOString()
-                : undefined,
+                : null,
 
             updatedAt:
-              data.updatedAt?.toDate
+              data.updatedAt
+                ?.toDate
                 ? data.updatedAt
                     .toDate()
                     .toISOString()
-                : undefined,
-
+                : null,
           };
-
         }
       );
-
 
     return NextResponse.json(
       users,
@@ -224,14 +264,11 @@ export async function GET(
       }
     );
 
-
   } catch (error: any) {
-
     console.error(
       "GET USERS ERROR:",
       error
     );
-
 
     return NextResponse.json(
       {
@@ -244,159 +281,489 @@ export async function GET(
         status: 500,
       }
     );
-
   }
-
 }
 
-
 // ==========================================
-// CREATE ARTICLE
+// CREATE EDITOR
 // ==========================================
 
 export async function POST(
   request: NextRequest
 ) {
-
   try {
 
-    const auth =
-      await verifyAdmin(
-        request
-      );
+    // ======================================
+    // 1. VERIFY ADMIN
+    // ======================================
 
+    const auth =
+      await verifyAdmin(request);
 
     if (auth.error) {
       return auth.error;
     }
 
-
-    const {
-      decoded,
-      user,
-    } = auth;
-
+    // ======================================
+    // 2. READ REQUEST BODY
+    // ======================================
 
     const body =
       await request.json();
 
+    console.log(
+      "CREATE USER BODY:",
+      {
+        ...body,
+        password: "***",
+      }
+    );
 
-    const slug =
-      createSlug(
-        body.seoTitle ||
-        body.title
+    // ======================================
+    // 3. CLEAN DATA
+    // ======================================
+
+    const name =
+      String(
+        body.name || ""
+      ).trim();
+
+    const email =
+      String(
+        body.email || ""
+      )
+        .trim()
+        .toLowerCase();
+
+    const password =
+      String(
+        body.password || ""
       );
 
+    const photo =
+      String(
+        body.photo || ""
+      ).trim();
 
-    const ref =
+    const bio =
+      String(
+        body.bio || ""
+      ).trim();
+
+    // ======================================
+    // 4. VALIDATION
+    // ======================================
+
+    if (!name) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Name is required",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (!email) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Email is required",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (!password) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Password is required",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Password must be at least 6 characters",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (!photo) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Profile photo URL is required",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (!bio) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Author bio is required",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    // ======================================
+    // 5. CREATE SLUG
+    // ======================================
+
+    const slug =
+      createAuthorSlug(name);
+
+    if (!slug) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Unable to create author slug",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    // ======================================
+    // 6. CHECK FIRESTORE EMAIL
+    // ======================================
+
+    const existingEmail =
       await adminDb
-        .collection("articles")
-        .add({
+        .collection("users")
+        .where(
+          "email",
+          "==",
+          email
+        )
+        .limit(1)
+        .get();
 
-          title:
-            body.title,
+    if (!existingEmail.empty) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "A user with this email already exists",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
 
-          categoryId:
-            body.categoryId,
+    // ======================================
+    // 7. CHECK SLUG
+    // ======================================
 
-          thumbnail:
-            body.thumbnail,
+    const existingSlug =
+      await adminDb
+        .collection("users")
+        .where(
+          "slug",
+          "==",
+          slug
+        )
+        .limit(1)
+        .get();
 
-          shortDescription:
-            body.shortDescription,
+    if (!existingSlug.empty) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "An author with this name already exists",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
 
-          content:
-            body.content,
+    // ======================================
+    // 8. CREATE FIREBASE AUTH ACCOUNT
+    // ======================================
 
-          seoTitle:
-            body.seoTitle,
+    const firebaseUser =
+      await adminAuth.createUser({
+        email,
+        password,
+        displayName: name,
+        photoURL: photo,
+      });
 
-          seoDescription:
-            body.seoDescription,
+    // ======================================
+    // 9. CREATE FIRESTORE AUTHOR DOCUMENT
+    // ======================================
 
-          slug,
+    const authorData = {
+      uid:
+        firebaseUser.uid,
 
-          featured:
-            body.featured ||
-            false,
+      name,
 
-          breaking:
-            body.breaking ||
-            false,
+      email,
 
-          priority:
-            body.priority ||
-            0,
+      role:
+        "editor",
 
-          status:
-            body.status ||
-            "draft",
+      status:
+        "active",
 
-          author: {
+      photo,
 
-            uid:
-              decoded.uid,
+      bio,
 
-            name:
-              user?.name ||
-              "",
+      slug,
 
-            email:
-              user?.email ||
-              "",
+      createdAt:
+        FieldValue.serverTimestamp(),
 
-            role:
-              user?.role ||
-              "editor",
+      updatedAt:
+        FieldValue.serverTimestamp(),
+    };
 
-          },
+    await adminDb
+      .collection("users")
+      .doc(firebaseUser.uid)
+      .set(authorData);
 
-          createdAt:
-            FieldValue.serverTimestamp(),
+    // ======================================
+    // 10. RESPONSE
+    // ======================================
 
-          updatedAt:
-            FieldValue.serverTimestamp(),
+    console.log(
+      "AUTHOR CREATED:",
+      {
+        uid:
+          firebaseUser.uid,
 
-        });
+        name,
 
+        email,
+
+        role:
+          "editor",
+
+        status:
+          "active",
+
+        photo,
+
+        bio,
+
+        slug,
+      }
+    );
 
     return NextResponse.json(
       {
         success: true,
 
-        id:
-          ref.id,
+        user: {
+          uid:
+            firebaseUser.uid,
 
-        slug,
+          name,
 
+          email,
+
+          role:
+            "editor",
+
+          status:
+            "active",
+
+          photo,
+
+          bio,
+
+          slug,
+        },
+
+        message:
+          "Editor created successfully",
       },
       {
         status: 201,
       }
     );
 
-
   } catch (error: any) {
 
     console.error(
-      "POST ERROR:",
+      "CREATE USER ERROR:",
       error
     );
-
 
     return NextResponse.json(
       {
         success: false,
-
         message:
           error?.message ||
-          "Something went wrong",
+          "Failed to create editor",
       },
       {
         status: 500,
       }
     );
-
   }
+}
 
+// ==========================================
+// DELETE USER
+// ==========================================
+
+export async function DELETE(
+  request: NextRequest
+) {
+  try {
+
+    const auth =
+      await verifyAdmin(request);
+
+    if (auth.error) {
+      return auth.error;
+    }
+
+    const body =
+      await request.json();
+
+    const uid =
+      String(
+        body.uid || ""
+      ).trim();
+
+    if (!uid) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "User UID is required",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (
+      uid ===
+      auth.decoded.uid
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "You cannot delete your own admin account",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
+    const userRef =
+      adminDb
+        .collection("users")
+        .doc(uid);
+
+    const userDoc =
+      await userRef.get();
+
+    if (!userDoc.exists) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "User not found",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    const targetUser =
+      userDoc.data();
+
+    if (
+      targetUser?.role !==
+      "editor"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Only editor accounts can be deleted",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
+    await adminAuth
+      .deleteUser(uid);
+
+    await userRef.delete();
+
+    return NextResponse.json(
+      {
+        success: true,
+        message:
+          "Editor deleted successfully",
+      },
+      {
+        status: 200,
+      }
+    );
+
+  } catch (error: any) {
+
+    console.error(
+      "DELETE USER ERROR:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          error?.message ||
+          "Failed to delete editor",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
 }

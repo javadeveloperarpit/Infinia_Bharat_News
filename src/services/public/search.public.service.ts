@@ -9,11 +9,11 @@ import {
 import { db } from "@/lib/firebase/firebase";
 
 import {
-  PublicArticle
+  PublicArticle,
 } from "./article.public.service";
 
 import {
-  PublicVideo
+  PublicVideo,
 } from "./video.public.service";
 
 
@@ -22,59 +22,51 @@ import {
 // TIMESTAMP FORMAT
 // ================================
 
-function formatTimestamp(value:any){
+function formatTimestamp(
+  value: any
+): string | undefined {
 
-  if(!value){
+  if (!value) {
     return undefined;
   }
 
+  // Firebase Timestamp
 
-
-  // Firestore Timestamp
-
-  if(typeof value?.toDate === "function"){
-
+  if (
+    typeof value?.toDate ===
+    "function"
+  ) {
     return value
-    .toDate()
-    .toISOString();
-
+      .toDate()
+      .toISOString();
   }
-
-
 
   // Timestamp seconds object
 
-  if(value?.seconds){
-
+  if (
+    typeof value?.seconds ===
+    "number"
+  ) {
     return new Date(
       value.seconds * 1000
-    )
-    .toISOString();
-
+    ).toISOString();
   }
-
-
 
   // Normal date/string
 
   const date =
-  new Date(value);
+    new Date(value);
 
-
-
-  if(isNaN(date.getTime())){
-
+  if (
+    isNaN(
+      date.getTime()
+    )
+  ) {
     return undefined;
-
   }
 
-
-
   return date.toISOString();
-
 }
-
-
 
 
 
@@ -83,154 +75,198 @@ function formatTimestamp(value:any){
 // ================================
 
 export async function searchArticles(
-keyword:string
-):Promise<PublicArticle[]> {
+  keyword: string
+): Promise<PublicArticle[]> {
+
+  if (!keyword?.trim()) {
+    return [];
+  }
+
+  // ==========================================
+  // IMPORTANT
+  // ==========================================
+  //
+  // We are intentionally using only:
+  //
+  // status == published
+  //
+  // No additional Firestore where()
+  // is added, so no new composite index
+  // is required.
+  //
+  // Search itself is performed in JavaScript.
+  // ==========================================
+
+  const q =
+    query(
+      collection(
+        db,
+        "articles"
+      ),
+
+      where(
+        "status",
+        "==",
+        "published"
+      ),
+
+      limit(100)
+    );
+
+  const snap =
+    await getDocs(q);
+
+  const search =
+    keyword
+      .trim()
+      .toLowerCase();
 
 
+  return snap.docs
 
-if(!keyword){
+    .map((doc: any) => {
 
-  return [];
+      const data =
+        doc.data();
+
+      return {
+
+        id:
+          doc.id,
+
+        title:
+          data.title || "",
+
+        slug:
+          data.slug || "",
+
+        thumbnail:
+          data.thumbnail || "",
+
+        shortDescription:
+          data.shortDescription || "",
+
+        content:
+          data.content || "",
+
+        seoTitle:
+          data.seoTitle || "",
+
+        seoDescription:
+          data.seoDescription || "",
+
+        categoryId:
+          data.categoryId || "",
+
+        category:
+          data.category || "",
+
+        categoryHi:
+          data.categoryHi || "",
+
+        featured:
+          data.featured || false,
+
+        breaking:
+          data.breaking || false,
+
+        priority:
+          data.priority || 0,
+
+        status:
+          data.status,
+
+        createdAt:
+          formatTimestamp(
+            data.createdAt
+          ),
+
+      };
+
+    })
+
+    // ==========================================
+    // SEARCH ALL IMPORTANT ARTICLE FIELDS
+    // ==========================================
+
+    .filter(
+      (article) => {
+
+        const title =
+          String(
+            article.title || ""
+          ).toLowerCase();
+
+        const shortDescription =
+          String(
+            article.shortDescription || ""
+          ).toLowerCase();
+
+        const content =
+          String(
+            article.content || ""
+          ).toLowerCase();
+
+        const seoTitle =
+          String(
+            article.seoTitle || ""
+          ).toLowerCase();
+
+        const seoDescription =
+          String(
+            article.seoDescription || ""
+          ).toLowerCase();
+
+        const category =
+          String(
+            article.category || ""
+          ).toLowerCase();
+
+        const categoryHi =
+          String(
+            article.categoryHi || ""
+          ).toLowerCase();
+
+
+        return (
+
+          title.includes(search)
+
+          ||
+
+          shortDescription.includes(search)
+
+          ||
+
+          content.includes(search)
+
+          ||
+
+          seoTitle.includes(search)
+
+          ||
+
+          seoDescription.includes(search)
+
+          ||
+
+          category.includes(search)
+
+          ||
+
+          categoryHi.includes(search)
+
+        );
+
+      }
+    )
+
+    .slice(
+      0,
+      20
+    );
 
 }
-
-
-
-const q =
-query(
-
-  collection(
-    db,
-    "articles"
-  ),
-
-
-  where(
-    "status",
-    "==",
-    "published"
-  ),
-
-
-  limit(100)
-
-);
-
-
-
-
-const snap =
-await getDocs(q);
-
-
-
-const search =
-keyword.toLowerCase();
-
-
-
-
-return snap.docs
-
-.map((doc:any)=>{
-
-
-const data =
-doc.data();
-
-
-
-return {
-
-
-id:doc.id,
-
-
-title:
-data.title || "",
-
-
-slug:
-data.slug || "",
-
-
-thumbnail:
-data.thumbnail || "",
-
-
-shortDescription:
-data.shortDescription || "",
-
-
-content:
-data.content || "",
-
-
-seoTitle:
-data.seoTitle || "",
-
-
-seoDescription:
-data.seoDescription || "",
-
-
-categoryId:
-data.categoryId || "",
-
-
-featured:
-data.featured || false,
-
-
-breaking:
-data.breaking || false,
-
-
-priority:
-data.priority || 0,
-
-
-status:
-data.status,
-
-
-
-createdAt:
-formatTimestamp(
-  data.createdAt
-),
-
-
-};
-
-
-})
-
-
-.filter(
-
-(article)=>
-
-article.title
-.toLowerCase()
-.includes(search)
-
-||
-
-article.shortDescription
-.toLowerCase()
-.includes(search)
-
-)
-
-.slice(0,20);
-
-
-
-}
-
-
-
 
 
 
@@ -239,167 +275,153 @@ article.shortDescription
 // ================================
 
 export async function searchVideos(
+  keyword: string
+): Promise<PublicVideo[]> {
 
-keyword:string
+  if (!keyword?.trim()) {
+    return [];
+  }
 
-):Promise<PublicVideo[]> {
+
+  const q =
+    query(
+      collection(
+        db,
+        "videos"
+      ),
+
+      where(
+        "status",
+        "==",
+        "published"
+      ),
+
+      limit(100)
+    );
 
 
+  const snap =
+    await getDocs(q);
 
-if(!keyword){
 
-return [];
+  const search =
+    keyword
+      .trim()
+      .toLowerCase();
+
+
+  // ==========================================
+  // YOUTUBE THUMBNAIL
+  // ==========================================
+
+  function getYoutubeThumbnail(
+    url: string
+  ) {
+
+    try {
+
+      const videoId =
+        new URL(url)
+          .searchParams
+          .get("v");
+
+      if (videoId) {
+
+        return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+
+      }
+
+    } catch {
+
+      return "";
+
+    }
+
+    return "";
+
+  }
+
+
+  return snap.docs
+
+    .map((doc: any) => {
+
+      const data =
+        doc.data();
+
+
+      return {
+
+        id:
+          doc.id,
+
+        title:
+          data.title || "",
+
+        youtubeUrl:
+          data.youtubeUrl || "",
+
+        thumbnail:
+          data.thumbnail ||
+          getYoutubeThumbnail(
+            data.youtubeUrl || ""
+          ),
+
+        description:
+          data.description || "",
+
+        categoryId:
+          data.categoryId || "",
+
+        status:
+          data.status,
+
+        createdAt:
+          formatTimestamp(
+            data.createdAt
+          ),
+
+      };
+
+    })
+
+
+    // ==========================================
+    // SEARCH VIDEO TITLE + DESCRIPTION
+    // ==========================================
+
+    .filter(
+      (video) => {
+
+        const title =
+          String(
+            video.title || ""
+          ).toLowerCase();
+
+        const description =
+          String(
+            video.description || ""
+          ).toLowerCase();
+
+
+        return (
+
+          title.includes(search)
+
+          ||
+
+          description.includes(search)
+
+        );
+
+      }
+    )
+
+
+    .slice(
+      0,
+      20
+    );
 
 }
 
-
-
-const q =
-query(
-
-collection(
-db,
-"videos"
-),
-
-
-where(
-"status",
-"==",
-"published"
-),
-
-
-limit(100)
-
-);
-
-
-
-
-const snap =
-await getDocs(q);
-
-
-
-const search =
-keyword.toLowerCase();
-
-function getYoutubeThumbnail(url:string){
-
-try{
-
-const videoId =
-new URL(url)
-.searchParams
-.get("v");
-
-
-if(videoId){
-
-return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-
-}
-
-
-}catch{
-
-return "";
-
-}
-
-
-return "";
-
-}
-
-
-
-return snap.docs
-
-
-.map((doc:any)=>{
-
-
-const data =
-doc.data();
-
-
-
-return {
-
-
-id:
-doc.id,
-
-
-title:
-data.title || "",
-
-
-
-youtubeUrl:
-data.youtubeUrl || "",
-
-
-
-thumbnail:
-data.thumbnail ||
-getYoutubeThumbnail(
-data.youtubeUrl
-),
-
-
-
-description:
-data.description || "",
-
-
-
-categoryId:
-data.categoryId || "",
-
-
-
-status:
-data.status,
-
-
-
-createdAt:
-formatTimestamp(
-  data.createdAt
-),
-
-
-
-};
-
-
-})
-
-
-
-.filter(
-
-(video)=>
-
-video.title
-.toLowerCase()
-.includes(search)
-
-||
-
-video.description
-.toLowerCase()
-.includes(search)
-
-)
-
-
-
-.slice(0,20);
-
-
-
-}

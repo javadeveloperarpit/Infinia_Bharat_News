@@ -5,6 +5,14 @@ import {
   useState,
 } from "react";
 
+import {
+  onAuthStateChanged,
+} from "firebase/auth";
+
+import {
+  auth,
+} from "@/lib/firebase/firebase";
+
 import AddUserModal from "./add-user-modal";
 import UsersTable from "./users-table";
 
@@ -15,77 +23,111 @@ export interface UserType {
   email: string;
   role: string;
   status: string;
+  photo?: string;
+  slug?: string;
 }
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<UserType[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
+  const [users, setUsers] =
+    useState<UserType[]>([]);
 
-  async function loadUsers() {
+  const [loading, setLoading] =
+    useState(true);
+
+  const [open, setOpen] =
+    useState(false);
+
+  async function loadUsers(
+    currentUser: any
+  ) {
     try {
       setLoading(true);
 
-      const {
-        getAuth,
-      } = await import("firebase/auth");
-
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
-
       if (!currentUser) {
-        console.error("No authenticated user found");
+        console.error(
+          "No authenticated Firebase user"
+        );
+
         setUsers([]);
+
         return;
       }
 
-      const token = await currentUser.getIdToken();
+      /*
+       * Force fresh Firebase ID token
+       */
+      const token =
+        await currentUser.getIdToken(true);
 
-      const res = await fetch(
-        "/api/admin/users",
-        {
-          method: "GET",
+      if (!token) {
+        throw new Error(
+          "Firebase authentication token not available"
+        );
+      }
 
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-
-          cache: "no-store",
-        }
+      console.log(
+        "Authenticated UID:",
+        currentUser.uid
       );
 
+      const res =
+        await fetch(
+          "/api/admin/users",
+          {
+            method: "GET",
+
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+            },
+
+            cache: "no-store",
+          }
+        );
+
       const contentType =
-        res.headers.get("content-type") || "";
+        res.headers.get(
+          "content-type"
+        ) || "";
 
       let data: any = null;
 
       if (
-        contentType.includes("application/json")
+        contentType.includes(
+          "application/json"
+        )
       ) {
         data = await res.json();
       } else {
-        const text = await res.text();
+        const text =
+          await res.text();
 
         console.error(
           "Users API returned non-JSON:",
           text
         );
+
+        throw new Error(
+          "Server returned an invalid response"
+        );
       }
+
+      console.log(
+        "Users API Response:",
+        res.status,
+        data
+      );
 
       if (!res.ok) {
-        console.error(
-          "Users API Error:",
-          {
-            status: res.status,
-            data,
-          }
+        throw new Error(
+          data?.message ||
+          `Users API failed (${res.status})`
         );
-
-        setUsers([]);
-        return;
       }
 
-      if (Array.isArray(data)) {
+      if (
+        Array.isArray(data)
+      ) {
         setUsers(data);
       } else {
         console.error(
@@ -95,26 +137,45 @@ export default function UsersPage() {
 
         setUsers([]);
       }
-    } catch (error) {
+
+    } catch (error: any) {
       console.error(
         "Load Users Error:",
         error
       );
 
       setUsers([]);
+
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadUsers();
+    /*
+     * Wait until Firebase Auth
+     * restores the logged-in user.
+     */
+    const unsubscribe =
+      onAuthStateChanged(
+        auth,
+        (currentUser) => {
+          loadUsers(
+            currentUser
+          );
+        }
+      );
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   return (
-    <div className="w-full min-w-0 space-y-6 overflow-hidden">
+    <div className="space-y-6">
 
       {/* HEADER */}
+
       <div
         className="
           flex
@@ -126,6 +187,7 @@ export default function UsersPage() {
         "
       >
         <div className="min-w-0">
+
           <h1
             className="
               text-2xl
@@ -148,11 +210,14 @@ export default function UsersPage() {
           >
             Manage editors and admin users
           </p>
+
         </div>
 
         <button
           type="button"
-          onClick={() => setOpen(true)}
+          onClick={() =>
+            setOpen(true)
+          }
           className="
             w-full
             sm:w-auto
@@ -180,9 +245,12 @@ export default function UsersPage() {
 
           Add Editor
         </button>
+
       </div>
 
+
       {/* USERS TABLE */}
+
       <div
         className="
           w-full
@@ -195,20 +263,40 @@ export default function UsersPage() {
           shadow-sm
         "
       >
-        <div className="w-full min-w-0 overflow-x-auto">
+
+        <div
+          className="
+            w-full
+            min-w-0
+            overflow-x-auto
+          "
+        >
+
           <UsersTable
             users={users}
             loading={loading}
-            reload={loadUsers}
+            reload={() =>
+              loadUsers(
+                auth.currentUser
+              )
+            }
           />
+
         </div>
+
       </div>
 
+
       {/* ADD USER MODAL */}
+
       <AddUserModal
         open={open}
         setOpen={setOpen}
-        reload={loadUsers}
+        reload={() =>
+          loadUsers(
+            auth.currentUser
+          )
+        }
       />
 
     </div>

@@ -33,11 +33,20 @@ interface GeneratedArticle {
   shortDescription: string;
   content: string;
   suggestedCategory: string;
+  categoryId: string;
   imagePrompt: string;
 }
 
 export default function AINewsPage() {
+
   const router = useRouter();
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | STATE
+  |--------------------------------------------------------------------------
+  */
 
   const [news, setNews] =
     useState<TrendingNews[]>([]);
@@ -60,9 +69,19 @@ export default function AINewsPage() {
   const [copied, setCopied] =
     useState(false);
 
+
+  /*
+  |--------------------------------------------------------------------------
+  | LOAD TRENDING NEWS
+  |--------------------------------------------------------------------------
+  */
+
   async function loadNews() {
+
     try {
+
       setLoading(true);
+
       setError("");
 
       const res =
@@ -73,51 +92,92 @@ export default function AINewsPage() {
           }
         );
 
+
       const data =
         await res.json();
 
+
       if (!res.ok) {
+
         throw new Error(
           data.message ||
-            "Failed to load news"
+          "Failed to load news"
         );
+
       }
+
 
       setNews(
         Array.isArray(data.news)
           ? data.news
           : []
       );
+
+
     } catch (error: any) {
-      console.error(error);
+
+      console.error(
+        "Load News Error:",
+        error
+      );
+
 
       setError(
         error.message ||
-          "Unable to load trending news"
+        "Unable to load trending news"
       );
+
+
     } finally {
+
       setLoading(false);
+
     }
+
   }
 
+
+  /*
+  |--------------------------------------------------------------------------
+  | INITIAL LOAD
+  |--------------------------------------------------------------------------
+  */
+
   useEffect(() => {
+
     loadNews();
+
   }, []);
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | GENERATE ARTICLE
+  |--------------------------------------------------------------------------
+  */
 
   async function generate(
     item: TrendingNews
   ) {
+
     try {
+
       setGenerating(true);
+
       setSelected(item);
+
       setArticle(null);
+
       setError("");
+
       setCopied(false);
+
 
       const res =
         await fetch(
           "/api/admin/ai-news",
           {
+
             method: "POST",
 
             headers: {
@@ -125,46 +185,99 @@ export default function AINewsPage() {
                 "application/json",
             },
 
-            body: JSON.stringify({
-              title: item.title,
-              source: item.source,
-            }),
+            body:
+              JSON.stringify({
+                title:
+                  item.title,
+
+                source:
+                  item.source,
+              }),
+
           }
         );
+
 
       const data =
         await res.json();
 
+
       if (!res.ok) {
+
         throw new Error(
           data.message ||
-            "AI generation failed"
+          "AI generation failed"
         );
+
       }
 
-      setArticle(
-        data.article
-      );
+
+      if (!data.article) {
+
+        throw new Error(
+          "AI returned empty article"
+        );
+
+      }
+
+
+      setArticle({
+  ...data.article,
+  categoryId: data.article.categoryId || "",
+});
+
+
     } catch (error: any) {
-      console.error(error);
+
+      console.error(
+        "AI Generation Error:",
+        error
+      );
+
 
       setError(
         error.message ||
-          "AI generation failed"
+        "AI generation failed"
       );
+
+
     } finally {
+
       setGenerating(false);
+
     }
+
   }
 
+
+  /*
+  |--------------------------------------------------------------------------
+  | OPEN CHATGPT + COPY IMAGE PROMPT
+  |--------------------------------------------------------------------------
+  */
+
   async function openChatGPT() {
+
     if (!article?.imagePrompt) {
+
       setError(
         "Image prompt is not available."
       );
 
       return;
+
     }
+
+
+    /*
+     * IMPORTANT:
+     *
+     * Generated title is deliberately
+     * included with imagePrompt.
+     *
+     * This gives ChatGPT additional
+     * visual context.
+     */
 
     const prompt = `
 Create a professional 16:9 HD thumbnail for an Indian digital news website.
@@ -173,83 +286,165 @@ Use this exact image-generation brief:
 
 ${article.imagePrompt}
 
-IMPORTANT:
+IMPORTANT NEWS CONTEXT:
+
+Article Title:
+${article.title}
+
+SEO Title:
+${article.seoTitle}
+
+Suggested Category:
+${article.suggestedCategory}
+
+The article title is provided as visual context.
+Use it to understand the exact news development and determine the correct primary visual subject.
+
+Do NOT write the article title, SEO title, category name, or any other text inside the image.
+
+IMPORTANT IMAGE REQUIREMENTS:
+
 - Photorealistic editorial news photography
 - Premium Indian television-news visual quality
 - 16:9 landscape
 - 4K quality
 - Strong cinematic composition
-- Realistic lighting
+- Realistic natural lighting
 - Accurate subject representation
+- Realistic people and environments
 - Red, black, white and subtle gold visual palette
 - Clean professional newsroom aesthetic
-- No cartoon
-- No illustration
-- No fake facts
-- No fake statistics
-- No watermark
-- No logo
-- No headline text
-- No unnecessary text inside the image
+- Strong visual hierarchy
+- Sharp primary subject
+- Realistic depth of field
+- Professional news-agency photography style
+- Suitable for a premium Indian digital news website
+
+DO NOT CREATE:
+
+- Cartoon
+- Illustration
+- Anime
+- 3D render
+- Poster design
+- Advertisement style
+- Fake facts
+- Fake statistics
+- Fake events
+- Fake people
+- Misleading imagery
+- Watermark
+- Logo
+- Channel branding
+- Headline text
+- Caption text
+- Subtitle text
+- Fake newspaper
+- Fake social media post
+- Fake UI
+- Unnecessary graphics
+- Unnecessary text inside the image
+
+The image must look like a real professional editorial photograph captured by a news photographer.
+
+The visual scene must accurately represent the actual news topic and article title.
 
 Generate ONLY the image.
 `;
 
+
     try {
+
       await navigator.clipboard.writeText(
         prompt.trim()
       );
 
+
       setCopied(true);
 
+
       setTimeout(() => {
+
         setCopied(false);
+
       }, 3000);
+
+
     } catch (error) {
+
       console.error(
-        "Clipboard error:",
+        "Clipboard Error:",
         error
       );
+
     }
+
 
     window.open(
       "https://chatgpt.com/",
       "_blank",
       "noopener,noreferrer"
     );
+
   }
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | EDIT ARTICLE
+  |--------------------------------------------------------------------------
+  |
+  | IMPORTANT:
+  |
+  | suggestedCategory ko preserve karna hai.
+  |
+  | Create Article Page existing
+  | categories ke saath isko match karke
+  | actual categoryId banayega.
+  |
+  |--------------------------------------------------------------------------
+  */
 
   function editArticle() {
-    if (!article) return;
+  if (!article) return;
 
-    sessionStorage.setItem(
-      "ai_article",
-      JSON.stringify({
-        ...article,
+  sessionStorage.setItem(
+    "ai_article",
+    JSON.stringify({
+      ...article,
+      categoryId: article.categoryId || "",
+      thumbnail: "",
+      featured: false,
+      breaking: false,
+      priority: 0,
+      status: "draft",
+    })
+  );
 
-        thumbnail: "",
+  router.push(
+    "/admin/articles/create?from=ai"
+  );
+}
 
-        categoryId: "",
 
-        featured: false,
-
-        breaking: false,
-
-        priority: 0,
-
-        status: "draft",
-      })
-    );
-
-    router.push(
-      "/admin/articles/create?from=ai"
-    );
-  }
+  /*
+  |--------------------------------------------------------------------------
+  | UI
+  |--------------------------------------------------------------------------
+  */
 
   return (
-    <div className="space-y-6 pb-10">
 
-      {/* HEADER */}
+    <div
+      className="
+        space-y-6
+        pb-10
+      "
+    >
+
+      {/* =========================================================
+          HEADER
+      ========================================================== */}
 
       <div
         className="
@@ -261,7 +456,9 @@ Generate ONLY the image.
           sm:justify-between
         "
       >
+
         <div>
+
           <div
             className="
               flex
@@ -269,6 +466,7 @@ Generate ONLY the image.
               gap-3
             "
           >
+
             <div
               className="
                 w-11
@@ -281,12 +479,16 @@ Generate ONLY the image.
                 justify-center
               "
             >
+
               <Sparkles
                 size={22}
               />
+
             </div>
 
+
             <div>
+
               <h1
                 className="
                   text-2xl
@@ -298,6 +500,7 @@ Generate ONLY the image.
                 AI News
               </h1>
 
+
               <p
                 className="
                   text-sm
@@ -307,13 +510,23 @@ Generate ONLY the image.
                 Trending topics ready
                 for your newsroom
               </p>
+
             </div>
+
           </div>
+
         </div>
 
+
+        {/* REFRESH */}
+
         <button
-          onClick={loadNews}
-          disabled={loading}
+          onClick={
+            loadNews
+          }
+          disabled={
+            loading
+          }
           className="
             flex
             items-center
@@ -328,17 +541,29 @@ Generate ONLY the image.
             disabled:opacity-50
           "
         >
+
           <RefreshCw
             size={17}
+            className={
+              loading
+                ? "animate-spin"
+                : ""
+            }
           />
 
           Refresh
+
         </button>
+
       </div>
 
-      {/* ERROR */}
+
+      {/* =========================================================
+          ERROR
+      ========================================================== */}
 
       {error && (
+
         <div
           className="
             rounded-xl
@@ -349,9 +574,17 @@ Generate ONLY the image.
             p-4
           "
         >
+
           {error}
+
         </div>
+
       )}
+
+
+      {/* =========================================================
+          MAIN GRID
+      ========================================================== */}
 
       <div
         className="
@@ -362,7 +595,10 @@ Generate ONLY the image.
         "
       >
 
-        {/* TRENDING */}
+
+        {/* =======================================================
+            TRENDING NEWS
+        ======================================================== */}
 
         <section
           className="
@@ -373,12 +609,16 @@ Generate ONLY the image.
             overflow-hidden
           "
         >
+
+          {/* HEADER */}
+
           <div
             className="
               p-5
               border-b
             "
           >
+
             <h2
               className="
                 font-black
@@ -388,12 +628,15 @@ Generate ONLY the image.
                 gap-2
               "
             >
+
               <Newspaper
                 size={20}
               />
 
               Trending Topics
+
             </h2>
+
 
             <p
               className="
@@ -405,11 +648,20 @@ Generate ONLY the image.
               Topics not already present
               in your articles
             </p>
+
           </div>
 
-          <div className="divide-y">
+
+          {/* NEWS LIST */}
+
+          <div
+            className="
+              divide-y
+            "
+          >
 
             {loading ? (
+
               <div
                 className="
                   p-10
@@ -417,11 +669,18 @@ Generate ONLY the image.
                   justify-center
                 "
               >
+
                 <Loader2
-                  className="animate-spin"
+                  className="
+                    animate-spin
+                    text-red-600
+                  "
                 />
+
               </div>
+
             ) : news.length === 0 ? (
+
               <div
                 className="
                   p-10
@@ -429,23 +688,31 @@ Generate ONLY the image.
                   text-zinc-500
                 "
               >
+
                 No new trending topics
                 found.
+
               </div>
+
             ) : (
+
               news.map(
                 (
                   item,
                   index
                 ) => (
+
                   <div
-                    key={`${item.title}-${index}`}
+                    key={
+                      `${item.title}-${index}`
+                    }
                     className="
                       p-5
                       hover:bg-zinc-50
                       transition
                     "
                   >
+
                     <div
                       className="
                         flex
@@ -453,6 +720,9 @@ Generate ONLY the image.
                         gap-3
                       "
                     >
+
+                      {/* NUMBER */}
+
                       <span
                         className="
                           shrink-0
@@ -468,14 +738,21 @@ Generate ONLY the image.
                           font-bold
                         "
                       >
+
                         {index + 1}
+
                       </span>
+
+
+                      {/* CONTENT */}
 
                       <div
                         className="
                           min-w-0
+                          flex-1
                         "
                       >
+
                         <h3
                           className="
                             font-semibold
@@ -483,8 +760,11 @@ Generate ONLY the image.
                             leading-6
                           "
                         >
+
                           {item.title}
+
                         </h3>
+
 
                         <p
                           className="
@@ -493,16 +773,25 @@ Generate ONLY the image.
                             mt-2
                           "
                         >
+
                           {item.source}
+
                         </p>
+
+
+                        {/* ACTIONS */}
 
                         <div
                           className="
                             mt-4
                             flex
+                            flex-wrap
                             gap-3
                           "
                         >
+
+                          {/* GENERATE */}
+
                           <button
                             onClick={() =>
                               generate(
@@ -527,14 +816,24 @@ Generate ONLY the image.
                               disabled:opacity-50
                             "
                           >
+
                             <Sparkles
                               size={14}
                             />
 
-                            Generate
+                            {generating &&
+                            selected?.title ===
+                              item.title
+                              ? "Generating..."
+                              : "Generate"}
+
                           </button>
 
+
+                          {/* SOURCE */}
+
                           {item.link && (
+
                             <a
                               href={
                                 item.link
@@ -550,26 +849,41 @@ Generate ONLY the image.
                                 rounded-lg
                                 border
                                 text-xs
+                                hover:bg-zinc-50
                               "
                             >
+
                               <ExternalLink
                                 size={13}
                               />
 
                               Source
+
                             </a>
+
                           )}
+
                         </div>
+
                       </div>
+
                     </div>
+
                   </div>
+
                 )
               )
+
             )}
+
           </div>
+
         </section>
 
-        {/* AI RESULT */}
+
+        {/* =======================================================
+            AI RESULT
+        ======================================================== */}
 
         <section
           className="
@@ -580,12 +894,16 @@ Generate ONLY the image.
             overflow-hidden
           "
         >
+
+          {/* HEADER */}
+
           <div
             className="
               p-5
               border-b
             "
           >
+
             <h2
               className="
                 font-black
@@ -595,19 +913,28 @@ Generate ONLY the image.
                 gap-2
               "
             >
+
               <Sparkles
                 size={20}
-                className="text-red-600"
+                className="
+                  text-red-600
+                "
               />
 
               AI Article
+
             </h2>
+
           </div>
 
-          {/* EMPTY */}
+
+          {/* =====================================================
+              EMPTY STATE
+          ====================================================== */}
 
           {!article &&
             !generating && (
+
               <div
                 className="
                   min-h-[400px]
@@ -619,6 +946,7 @@ Generate ONLY the image.
                   p-8
                 "
               >
+
                 <Sparkles
                   size={40}
                   className="
@@ -626,6 +954,7 @@ Generate ONLY the image.
                     mb-4
                   "
                 />
+
 
                 <h3
                   className="
@@ -635,6 +964,7 @@ Generate ONLY the image.
                 >
                   Select a trending topic
                 </h3>
+
 
                 <p
                   className="
@@ -646,16 +976,22 @@ Generate ONLY the image.
                 >
                   AI will prepare the
                   title, SEO data,
-                  summary, article and
-                  professional image
-                  prompt.
+                  category, summary,
+                  article and professional
+                  image prompt.
                 </p>
+
               </div>
+
             )}
 
-          {/* GENERATING */}
+
+          {/* =====================================================
+              GENERATING
+          ====================================================== */}
 
           {generating && (
+
             <div
               className="
                 min-h-[400px]
@@ -665,6 +1001,7 @@ Generate ONLY the image.
                 justify-center
               "
             >
+
               <Loader2
                 size={40}
                 className="
@@ -672,6 +1009,7 @@ Generate ONLY the image.
                   text-red-600
                 "
               />
+
 
               <p
                 className="
@@ -682,6 +1020,7 @@ Generate ONLY the image.
                 Writing article...
               </p>
 
+
               <p
                 className="
                   text-sm
@@ -691,13 +1030,19 @@ Generate ONLY the image.
               >
                 Please wait
               </p>
+
             </div>
+
           )}
 
-          {/* ARTICLE */}
+
+          {/* =====================================================
+              ARTICLE
+          ====================================================== */}
 
           {article &&
             !generating && (
+
               <div
                 className="
                   p-5
@@ -705,9 +1050,12 @@ Generate ONLY the image.
                 "
               >
 
-                {/* TITLE */}
+                {/* =================================================
+                    TITLE
+                ================================================== */}
 
                 <div>
+
                   <label
                     className="
                       text-xs
@@ -718,20 +1066,100 @@ Generate ONLY the image.
                     ARTICLE TITLE
                   </label>
 
+
                   <h2
                     className="
                       text-2xl
                       font-black
                       mt-2
+                      leading-tight
                     "
                   >
                     {article.title}
                   </h2>
+
                 </div>
 
-                {/* SEO TITLE */}
+
+                {/* =================================================
+                    CATEGORY
+                ================================================== */}
+
+                <div
+                  className="
+                    rounded-xl
+                    border
+                    bg-red-50
+                    border-red-100
+                    p-4
+                  "
+                >
+
+                  <label
+                    className="
+                      text-xs
+                      font-bold
+                      text-red-600
+                    "
+                  >
+                    SUGGESTED CATEGORY
+                  </label>
+
+
+                  <div
+                    className="
+                      mt-2
+                      flex
+                      items-center
+                      gap-2
+                    "
+                  >
+
+                    <span
+                      className="
+                        inline-flex
+                        items-center
+                        px-3
+                        py-1.5
+                        rounded-full
+                        bg-red-600
+                        text-white
+                        text-sm
+                        font-bold
+                      "
+                    >
+
+                      {article.suggestedCategory ||
+                        "Not specified"}
+
+                    </span>
+
+                  </div>
+
+
+                  <p
+                    className="
+                      text-xs
+                      text-zinc-500
+                      mt-2
+                    "
+                  >
+                    This category will be
+                    matched automatically with
+                    your existing categories
+                    when you open the Article
+                    Editor.
+                  </p>
+
+                </div>
+
+
+                {/* =================================================
+                    SEO TITLE
+                ================================================== */}
 
                 <div>
+
                   <label
                     className="
                       text-xs
@@ -742,6 +1170,7 @@ Generate ONLY the image.
                     SEO TITLE
                   </label>
 
+
                   <p
                     className="
                       mt-2
@@ -750,11 +1179,16 @@ Generate ONLY the image.
                   >
                     {article.seoTitle}
                   </p>
+
                 </div>
 
-                {/* SEO DESCRIPTION */}
+
+                {/* =================================================
+                    SEO DESCRIPTION
+                ================================================== */}
 
                 <div>
+
                   <label
                     className="
                       text-xs
@@ -765,6 +1199,7 @@ Generate ONLY the image.
                     SEO DESCRIPTION
                   </label>
 
+
                   <p
                     className="
                       mt-2
@@ -773,15 +1208,18 @@ Generate ONLY the image.
                       leading-6
                     "
                   >
-                    {
-                      article.seoDescription
-                    }
+                    {article.seoDescription}
                   </p>
+
                 </div>
 
-                {/* SHORT DESCRIPTION */}
+
+                {/* =================================================
+                    SHORT DESCRIPTION
+                ================================================== */}
 
                 <div>
+
                   <label
                     className="
                       text-xs
@@ -792,6 +1230,7 @@ Generate ONLY the image.
                     SHORT DESCRIPTION
                   </label>
 
+
                   <p
                     className="
                       mt-2
@@ -800,13 +1239,15 @@ Generate ONLY the image.
                       leading-6
                     "
                   >
-                    {
-                      article.shortDescription
-                    }
+                    {article.shortDescription}
                   </p>
+
                 </div>
 
-                {/* ARTICLE PREVIEW */}
+
+                {/* =================================================
+                    ARTICLE PREVIEW
+                ================================================== */}
 
                 <div
                   className="
@@ -816,6 +1257,7 @@ Generate ONLY the image.
                     p-4
                   "
                 >
+
                   <div
                     className="
                       text-xs
@@ -826,6 +1268,7 @@ Generate ONLY the image.
                   >
                     ARTICLE PREVIEW
                   </div>
+
 
                   <div
                     className="
@@ -838,9 +1281,13 @@ Generate ONLY the image.
                         article.content,
                     }}
                   />
+
                 </div>
 
-                {/* AI IMAGE PROMPT */}
+
+                {/* =================================================
+                    AI IMAGE PROMPT
+                ================================================== */}
 
                 <div
                   className="
@@ -852,7 +1299,11 @@ Generate ONLY the image.
                     space-y-4
                   "
                 >
+
+                  {/* HEADER */}
+
                   <div>
+
                     <div
                       className="
                         flex
@@ -860,9 +1311,11 @@ Generate ONLY the image.
                         gap-2
                       "
                     >
+
                       <ImageIcon
                         size={18}
                       />
+
 
                       <p
                         className="
@@ -872,7 +1325,9 @@ Generate ONLY the image.
                       >
                         AI Thumbnail
                       </p>
+
                     </div>
+
 
                     <p
                       className="
@@ -884,7 +1339,9 @@ Generate ONLY the image.
                       ChatGPT me professional
                       thumbnail generate karein.
                     </p>
+
                   </div>
+
 
                   {/* PROMPT */}
 
@@ -896,6 +1353,7 @@ Generate ONLY the image.
                       p-3
                     "
                   >
+
                     <p
                       className="
                         text-[11px]
@@ -908,6 +1366,7 @@ Generate ONLY the image.
                       Generated Image Prompt
                     </p>
 
+
                     <p
                       className="
                         text-xs
@@ -915,11 +1374,11 @@ Generate ONLY the image.
                         leading-5
                       "
                     >
-                      {
-                        article.imagePrompt
-                      }
+                      {article.imagePrompt}
                     </p>
+
                   </div>
+
 
                   {/* CHATGPT BUTTON */}
 
@@ -944,7 +1403,9 @@ Generate ONLY the image.
                       font-bold
                     "
                   >
+
                     {copied ? (
+
                       <>
                         <Check
                           size={17}
@@ -953,7 +1414,9 @@ Generate ONLY the image.
                         Prompt Copied —
                         Opened ChatGPT
                       </>
+
                     ) : (
+
                       <>
                         <Copy
                           size={17}
@@ -962,8 +1425,11 @@ Generate ONLY the image.
                         Generate Thumbnail
                         in ChatGPT
                       </>
+
                     )}
+
                   </button>
+
 
                   <p
                     className="
@@ -977,9 +1443,13 @@ Generate ONLY the image.
                     kholega. Wahan paste karke
                     Enter dabana hai.
                   </p>
+
                 </div>
 
-                {/* EDIT ARTICLE */}
+
+                {/* =================================================
+                    EDIT ARTICLE
+                ================================================== */}
 
                 <button
                   onClick={
@@ -1000,17 +1470,25 @@ Generate ONLY the image.
                     font-bold
                   "
                 >
+
                   Edit in Article Editor
 
                   <ArrowRight
                     size={18}
                   />
+
                 </button>
 
               </div>
+
             )}
+
         </section>
+
       </div>
+
     </div>
+
   );
+
 }
