@@ -759,3 +759,189 @@ export async function toggleCommentReaction(
     }
   );
 }
+// ==========================================
+// COMMENT REPORT TYPES
+// ==========================================
+
+export type CommentReportReason =
+  | "spam"
+  | "harassment"
+  | "hate_speech"
+  | "misinformation"
+  | "inappropriate"
+  | "other";
+
+export interface CreateCommentReportData {
+  commentId: string;
+  articleId: string;
+  articleSlug: string;
+
+  reporterId: string;
+  reporterName: string;
+  reporterEmail: string;
+
+  reason: CommentReportReason;
+  details?: string;
+}
+
+// ==========================================
+// CREATE COMMENT REPORT
+// ==========================================
+
+export async function createCommentReport(
+  data: CreateCommentReportData
+) {
+  if (!data.commentId) {
+    throw new Error(
+      "Comment ID is required"
+    );
+  }
+
+  if (!data.reporterId) {
+    throw new Error(
+      "Reporter ID is required"
+    );
+  }
+
+  if (!data.reason) {
+    throw new Error(
+      "Report reason is required"
+    );
+  }
+
+  const details =
+    data.details?.trim() || "";
+
+  if (details.length > 1000) {
+    throw new Error(
+      "Report details are too long"
+    );
+  }
+
+  // ========================================
+  // CHECK COMMENT EXISTS
+  // ========================================
+
+  const commentRef = doc(
+    commentsDb,
+    "comments",
+    data.commentId
+  );
+
+  const commentSnapshot =
+    await getDoc(commentRef);
+
+  if (!commentSnapshot.exists()) {
+    throw new Error(
+      "Comment not found"
+    );
+  }
+
+  const commentData =
+    commentSnapshot.data();
+
+  // ========================================
+  // PREVENT DUPLICATE REPORT
+  // ========================================
+
+  const existingReportsQuery =
+    query(
+      collection(
+        commentsDb,
+        "commentReports"
+      ),
+
+      where(
+        "commentId",
+        "==",
+        data.commentId
+      ),
+
+      where(
+        "reporterId",
+        "==",
+        data.reporterId
+      ),
+
+      limit(1)
+    );
+
+  const existingReports =
+    await getDocs(
+      existingReportsQuery
+    );
+
+  if (!existingReports.empty) {
+    throw new Error(
+      "You have already reported this comment."
+    );
+  }
+
+  // ========================================
+  // CREATE REPORT
+  // ========================================
+
+  const reportRef =
+    await addDoc(
+      collection(
+        commentsDb,
+        "commentReports"
+      ),
+      {
+        commentId:
+          data.commentId,
+
+        articleId:
+          data.articleId ||
+          commentData.articleId ||
+          "",
+
+        articleSlug:
+          data.articleSlug ||
+          commentData.articleSlug ||
+          "",
+
+        reporterId:
+          data.reporterId,
+
+        reporterName:
+          data.reporterName ||
+          "User",
+
+        reporterEmail:
+          data.reporterEmail ||
+          "",
+
+        reason:
+          data.reason,
+
+        details,
+
+        commentText:
+          commentData.text ||
+          "",
+
+        commentUserId:
+          commentData.userId ||
+          "",
+
+        commentUserName:
+          commentData.userName ||
+          "User",
+
+        status:
+          "pending",
+
+        createdAt:
+          serverTimestamp(),
+
+        updatedAt:
+          serverTimestamp(),
+      }
+    );
+
+  return {
+    id: reportRef.id,
+    success: true,
+  };
+}

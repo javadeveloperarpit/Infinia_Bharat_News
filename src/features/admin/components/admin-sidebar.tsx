@@ -35,7 +35,12 @@ const menu = [
     href: "/admin/videos",
     icon: Video,
   },
-
+  
+  {
+  name: "Shorts",
+  href: "/admin/shorts",
+  icon: Video,
+}, 
   {
     name: "AI Newsroom",
     href: "/admin/ai-news",

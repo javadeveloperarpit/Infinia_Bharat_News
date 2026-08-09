@@ -23,45 +23,57 @@ const provider =
 provider.setCustomParameters({
   prompt: "select_account",
 });
-
+let commentLoginPromise:
+  Promise<any> | null = null;
 // ==========================================
 // SIGN IN
 // ==========================================
 
 export async function signInToComments() {
-  try {
-    const result =
-      await signInWithPopup(
-        commentsAuth,
-        provider
-      );
-
-    const user =
-      result.user;
-
-    return {
-      uid: user.uid,
-
-      name:
-        user.displayName ||
-        "User",
-
-      email:
-        user.email ||
-        "",
-
-      photo:
-        user.photoURL ||
-        "",
-    };
-  } catch (error) {
-    console.error(
-      "COMMENTS GOOGLE LOGIN ERROR:",
-      error
-    );
-
-    throw error;
+  if (commentLoginPromise) {
+    return commentLoginPromise;
   }
+
+  commentLoginPromise =
+    (async () => {
+      try {
+        const result =
+          await signInWithPopup(
+            commentsAuth,
+            provider
+          );
+
+        const user =
+          result.user;
+
+        return {
+          uid: user.uid,
+
+          name:
+            user.displayName ||
+            "User",
+
+          email:
+            user.email ||
+            "",
+
+          photo:
+            user.photoURL ||
+            "",
+        };
+      } catch (error) {
+        console.error(
+          "COMMENTS GOOGLE LOGIN ERROR:",
+          error
+        );
+
+        throw error;
+      } finally {
+        commentLoginPromise = null;
+      }
+    })();
+
+  return commentLoginPromise;
 }
 
 // ==========================================

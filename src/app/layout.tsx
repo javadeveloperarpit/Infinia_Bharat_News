@@ -1,16 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+
 import "./globals.css";
 
 import Providers from "./providers";
 import { siteConfig } from "@/config/site";
-
-
-import TopBar from "@/components/home/top-bar";
-import MainHeader from "@/components/home/main-header";
-import BreakingNews from "@/components/home/breaking-news";
-import Navbar from "@/components/home/navbar";
-import Footer from "@/components/home/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -90,22 +84,14 @@ export default function RootLayout({
 }>) {
   return (
     <html
-lang="hi"
-data-scroll-behavior="smooth"
-className={`${geistSans.variable} ${geistMono.variable}`}
->
+      lang="hi"
+      data-scroll-behavior="smooth"
+      className={`${geistSans.variable} ${geistMono.variable}`}
+    >
       <body className="min-h-screen antialiased">
         <Providers>
-
-  <TopBar/>
-
-  <MainHeader/>
-  <Navbar/>
-  <BreakingNews/>
-
-{children}
-<Footer />
-</Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

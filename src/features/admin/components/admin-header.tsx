@@ -1,10 +1,16 @@
 "use client";
 
 import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
   Bell,
   Menu,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  MessageSquareWarning,
 } from "lucide-react";
 
 export default function AdminHeader({
@@ -12,64 +18,497 @@ export default function AdminHeader({
   collapsed,
   setCollapsed,
 }: {
-  setSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setSidebarOpen: React.Dispatch<
+    React.SetStateAction<boolean>
+  >;
   collapsed: boolean;
-  setCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  setCollapsed: React.Dispatch<
+    React.SetStateAction<boolean>
+  >;
 }) {
+
+  const [reportCount, setReportCount] =
+    useState(0);
+
+  const [showReports, setShowReports] =
+    useState(false);
+
+  const [loadingReports, setLoadingReports] =
+    useState(false);
+
+  // ==========================================
+  // GET CURRENT ADMIN TOKEN
+  // ==========================================
+
+  async function getAdminToken() {
+    const {
+      getAuth,
+    } = await import(
+      "firebase/auth"
+    );
+
+    const auth =
+      getAuth();
+
+    const user =
+      auth.currentUser;
+
+    if (!user) {
+      return null;
+    }
+
+    return user.getIdToken();
+  }
+
+  // ==========================================
+  // LOAD REPORT COUNT
+  // ==========================================
+
+  async function loadReportCount() {
+
+    try {
+
+      const token =
+        await getAdminToken();
+
+      if (!token) {
+        return;
+      }
+
+      const response =
+        await fetch(
+          "/api/admin/comment-reports?limit=1",
+          {
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+            },
+          }
+        );
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data =
+        await response.json();
+
+      if (data.success) {
+        setReportCount(
+          Number(
+            data.count || 0
+          )
+        );
+      }
+
+    } catch (error) {
+
+      console.error(
+        "REPORT COUNT ERROR:",
+        error
+      );
+
+    }
+  }
+
+  // ==========================================
+  // INITIAL LOAD
+  // ==========================================
+
+  useEffect(() => {
+
+    loadReportCount();
+
+    const interval =
+      setInterval(
+        loadReportCount,
+        30000
+      );
+
+    return () => {
+      clearInterval(interval);
+    };
+
+  }, []);
+
+  // ==========================================
+  // BELL CLICK
+  // ==========================================
+
+  async function handleBellClick() {
+
+    setShowReports(
+      (previous) =>
+        !previous
+    );
+
+    if (!showReports) {
+
+      setLoadingReports(true);
+
+      await loadReportCount();
+
+      setLoadingReports(false);
+
+    }
+  }
 
   return (
 
     <header
       className="
-      sticky
-      top-0
-      z-30
-      h-16
-      border-b
-      bg-white
-      flex
-      items-center
-      justify-between
-      px-6
+        sticky
+        top-0
+        z-30
+        h-16
+        border-b
+        bg-white
+        flex
+        items-center
+        justify-between
+        px-6
       "
     >
 
-      <div className="flex items-center gap-3">
+      {/* LEFT */}
 
-        {/* Mobile */}
+      <div
+        className="
+          flex
+          items-center
+          gap-3
+        "
+      >
+
+        {/* MOBILE */}
 
         <button
+          type="button"
           className="md:hidden"
-          onClick={() => setSidebarOpen(true)}
+          onClick={() =>
+            setSidebarOpen(true)
+          }
         >
-          <Menu size={24}/>
+          <Menu size={24} />
         </button>
 
-        {/* Desktop */}
+        {/* DESKTOP */}
 
         <button
-          className="hidden md:block"
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          {
-            collapsed
-            ? <PanelLeftOpen size={22}/>
-            : <PanelLeftClose size={22}/>
+          type="button"
+          className="
+            hidden
+            md:block
+          "
+          onClick={() =>
+            setCollapsed(
+              !collapsed
+            )
           }
+        >
+
+          {collapsed ? (
+            <PanelLeftOpen
+              size={22}
+            />
+          ) : (
+            <PanelLeftClose
+              size={22}
+            />
+          )}
+
         </button>
 
-        <h1 className="font-semibold">
+        <h1
+          className="
+            font-semibold
+          "
+        >
           Admin Dashboard
         </h1>
 
       </div>
 
-      <button className="relative">
-        <Bell size={22}/>
-      </button>
+
+      {/* RIGHT */}
+
+      <div
+        className="
+          relative
+        "
+      >
+
+        {/* BELL */}
+
+        <button
+          type="button"
+          onClick={
+            handleBellClick
+          }
+          className="
+            relative
+            flex
+            h-10
+            w-10
+            items-center
+            justify-center
+            rounded-xl
+            text-zinc-700
+            hover:bg-zinc-100
+            transition
+          "
+          aria-label="Comment reports"
+        >
+
+          <Bell
+            size={22}
+          />
+
+          {/* REPORT BADGE */}
+
+          {reportCount > 0 && (
+
+            <span
+              className="
+                absolute
+                -right-0.5
+                -top-0.5
+                min-w-[18px]
+                h-[18px]
+                rounded-full
+                bg-red-600
+                px-1
+                flex
+                items-center
+                justify-center
+                text-[10px]
+                font-bold
+                text-white
+                ring-2
+                ring-white
+              "
+            >
+              {reportCount > 99
+                ? "99+"
+                : reportCount}
+            </span>
+
+          )}
+
+        </button>
+
+
+        {/* REPORT DROPDOWN */}
+
+        {showReports && (
+
+          <div
+            className="
+              absolute
+              right-0
+              top-12
+              w-[340px]
+              overflow-hidden
+              rounded-2xl
+              border
+              border-zinc-200
+              bg-white
+              shadow-xl
+            "
+          >
+
+            {/* HEADER */}
+
+            <div
+              className="
+                flex
+                items-center
+                justify-between
+                border-b
+                border-zinc-100
+                px-4
+                py-3
+              "
+            >
+
+              <div
+                className="
+                  flex
+                  items-center
+                  gap-2
+                "
+              >
+
+                <MessageSquareWarning
+                  size={18}
+                  className="
+                    text-red-600
+                  "
+                />
+
+                <span
+                  className="
+                    font-semibold
+                    text-zinc-900
+                  "
+                >
+                  Comment Reports
+                </span>
+
+              </div>
+
+              {reportCount > 0 && (
+
+                <span
+                  className="
+                    rounded-full
+                    bg-red-50
+                    px-2
+                    py-1
+                    text-xs
+                    font-bold
+                    text-red-600
+                  "
+                >
+                  {reportCount}
+                  {" "}
+                  pending
+                </span>
+
+              )}
+
+            </div>
+
+
+            {/* CONTENT */}
+
+            <div
+              className="
+                px-4
+                py-5
+              "
+            >
+
+              {loadingReports ? (
+
+                <div
+                  className="
+                    text-center
+                    text-sm
+                    text-zinc-500
+                  "
+                >
+                  Loading reports...
+                </div>
+
+              ) : reportCount > 0 ? (
+
+                <div>
+
+                  <p
+                    className="
+                      text-sm
+                      text-zinc-600
+                    "
+                  >
+                    You have{" "}
+                    <strong>
+                      {reportCount}
+                    </strong>{" "}
+                    pending comment{" "}
+                    {reportCount === 1
+                      ? "report"
+                      : "reports"}
+                    .
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowReports(
+                        false
+                      );
+
+                      window.location.href =
+                        "/admin/comment-reports";
+                    }}
+                    className="
+                      mt-4
+                      w-full
+                      rounded-xl
+                      bg-zinc-900
+                      py-2.5
+                      text-sm
+                      font-semibold
+                      text-white
+                      hover:bg-zinc-800
+                      transition
+                    "
+                  >
+                    View all reports
+                  </button>
+
+                </div>
+
+              ) : (
+
+                <div
+                  className="
+                    py-3
+                    text-center
+                  "
+                >
+
+                  <div
+                    className="
+                      mx-auto
+                      flex
+                      h-10
+                      w-10
+                      items-center
+                      justify-center
+                      rounded-full
+                      bg-green-50
+                      text-green-600
+                    "
+                  >
+                    ✓
+                  </div>
+
+                  <p
+                    className="
+                      mt-3
+                      text-sm
+                      font-semibold
+                      text-zinc-800
+                    "
+                  >
+                    No pending reports
+                  </p>
+
+                  <p
+                    className="
+                      mt-1
+                      text-xs
+                      text-zinc-500
+                    "
+                  >
+                    Everything looks good.
+                  </p>
+
+                </div>
+
+              )}
+
+            </div>
+
+          </div>
+
+        )}
+
+      </div>
 
     </header>
 
   );
-
 }

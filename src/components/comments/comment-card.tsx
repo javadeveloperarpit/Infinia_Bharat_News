@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 
 import {
   CommentData,
+  CommentReportReason,
+  createCommentReport,
   getCommentReaction,
   getCommentReplies,
   toggleCommentReaction,
@@ -31,13 +33,13 @@ function MoreIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
-      className="h-5 w-5"
+      className="h-6 w-6"
       fill="currentColor"
       aria-hidden="true"
     >
-      <circle cx="5" cy="12" r="1.5" />
-      <circle cx="12" cy="12" r="1.5" />
-      <circle cx="19" cy="12" r="1.5" />
+      <circle cx="5" cy="12" r="1.8" />
+      <circle cx="12" cy="12" r="1.8" />
+      <circle cx="19" cy="12" r="1.8" />
     </svg>
   );
 }
@@ -108,6 +110,20 @@ export default function CommentCard({
 
   const [showReport, setShowReport] =
     useState(false);
+  const [reportReason, setReportReason] =
+  useState<CommentReportReason | "">("");
+
+const [reportDetails, setReportDetails] =
+  useState("");
+
+const [reportLoading, setReportLoading] =
+  useState(false);
+
+const [reportError, setReportError] =
+  useState("");
+
+const [reportSuccess, setReportSuccess] =
+  useState(false);
 
   const [showEdit, setShowEdit] =
     useState(false);
@@ -156,13 +172,15 @@ export default function CommentCard({
 
   const [repliesError, setRepliesError] =
     useState("");
-
+ 
   // ==========================================
   // CURRENT USER
   // ==========================================
 
   const currentUser =
     commentsAuth.currentUser;
+  const isOwnComment =
+  currentUser?.uid === comment.userId;
 
   const isOwner =
     currentUser?.uid === comment.userId;
@@ -248,7 +266,7 @@ export default function CommentCard({
 
     if (!user) {
       setReactionError(
-        "Like karne ke liye Google se login karein."
+        "Please login for giving reaction"
       );
 
       return;
@@ -403,7 +421,84 @@ export default function CommentCard({
       setMenuOpen(false);
     }
   }
+// ==========================================
+// REPORT COMMENT
+// ==========================================
 
+async function handleReport() {
+  const user =
+    commentsAuth.currentUser;
+
+  if (!user) {
+    setReportError(
+      "Please login with Google Account"
+    );
+
+    return;
+  }
+
+  if (!reportReason) {
+    setReportError(
+      "Please select a reason."
+    );
+
+    return;
+  }
+
+  if (reportLoading) {
+    return;
+  }
+
+  try {
+    setReportLoading(true);
+    setReportError("");
+
+    await createCommentReport({
+      commentId: comment.id,
+
+      articleId:
+        comment.articleId,
+
+      articleSlug:
+        comment.articleSlug,
+
+      reporterId:
+        user.uid,
+
+      reporterName:
+        user.displayName ||
+        "User",
+
+      reporterEmail:
+        user.email ||
+        "",
+
+      reason:
+        reportReason,
+
+      details:
+        reportDetails,
+    });
+
+    setReportSuccess(true);
+
+    setReportReason("");
+    setReportDetails("");
+  } catch (error) {
+    console.error(
+      "REPORT COMMENT ERROR:",
+      error
+    );
+
+    setReportError(
+      error instanceof Error
+        ? error.message
+        : "Error in Submitting Report!"
+    );
+  } finally {
+    setReportLoading(false);
+  }
+}
   // ==========================================
   // DELETED STATE
   // ==========================================
@@ -497,30 +592,24 @@ export default function CommentCard({
 
           <div className="relative ml-auto">
             <button
-              type="button"
-              aria-label="Comment options"
-              onClick={() =>
-                setMenuOpen(
-                  (value) => !value
-                )
-              }
-              className="
-                flex
-                h-8
-                w-8
-                items-center
-                justify-center
-                rounded-full
-                text-zinc-500
-                opacity-0
-                transition
-                hover:bg-zinc-100
-                group-hover:opacity-100
-                focus:opacity-100
-              "
-            >
-              <MoreIcon />
-            </button>
+  type="button"
+  onClick={() => setMenuOpen((prev) => !prev)}
+  aria-label="Comment options"
+  className="
+    flex
+    h-9
+    w-9
+    items-center
+    justify-center
+    rounded-full
+    text-zinc-700
+    hover:bg-zinc-100
+    hover:text-zinc-950
+    transition
+  "
+>
+  <MoreIcon />
+</button>
 
             {menuOpen && (
               <div
@@ -601,30 +690,27 @@ export default function CommentCard({
 
                 {/* REPORT */}
 
-                <button
-                  type="button"
-                  className="
-                    w-full
-                    px-4
-                    py-2.5
-                    text-left
-                    text-sm
-                    text-zinc-800
-                    transition
-                    hover:bg-zinc-100
-                  "
-                  onClick={() => {
-                    setMenuOpen(
-                      false
-                    );
-
-                    setShowReport(
-                      true
-                    );
-                  }}
-                >
-                  Report
-                </button>
+                {!isOwnComment && (
+  <button
+    type="button"
+    onClick={() => {
+      setMenuOpen(false);
+      setShowReport(true);
+    }}
+    className="
+      w-full
+      px-4
+      py-2.5
+      text-left
+      text-sm
+      font-medium
+      text-red-600
+      hover:bg-red-50
+    "
+  >
+    Report
+  </button>
+)}
               </div>
             )}
           </div>
@@ -1027,59 +1113,183 @@ export default function CommentCard({
         )}
       </div>
 
-      {/* ================================= */}
-      {/* REPORT MODAL */}
-      {/* ================================= */}
+      {/* ==========================================
+    REPORT MODAL
+========================================== */}
 
-      {showReport && (
-        <div
-          className="
-            fixed
-            inset-0
-            z-50
-            flex
-            items-center
-            justify-center
-            bg-black/40
-            p-4
-          "
-          onClick={() =>
-            setShowReport(false)
-          }
-        >
-          <div
-            className="
-              w-full
-              max-w-sm
-              rounded-2xl
-              bg-white
-              p-5
-              shadow-2xl
-            "
-            onClick={(event) =>
-              event.stopPropagation()
+{showReport && (
+  <div
+    className="
+      fixed
+      inset-0
+      z-50
+      flex
+      items-center
+      justify-center
+      bg-black/40
+      p-4
+    "
+    onClick={() => {
+      if (!reportLoading) {
+        setShowReport(false);
+        setReportError("");
+        setReportSuccess(false);
+      }
+    }}
+  >
+    <div
+      className="
+        w-full
+        max-w-md
+        rounded-2xl
+        bg-white
+        p-5
+        shadow-2xl
+      "
+      onClick={(event) =>
+        event.stopPropagation()
+      }
+    >
+
+      {!reportSuccess ? (
+        <>
+          <h3 className="text-lg font-semibold text-zinc-900">
+            Report comment
+          </h3>
+
+          <p className="mt-1 text-sm text-zinc-500">
+            Why are you reporting this comment?
+          </p>
+
+          {/* REASONS */}
+
+          <div className="mt-4 space-y-2">
+
+            {[
+              {
+                value: "spam",
+                label: "Spam",
+              },
+              {
+                value: "harassment",
+                label: "Harassment or abuse",
+              },
+              {
+                value: "hate_speech",
+                label: "Hate speech",
+              },
+              {
+                value: "misinformation",
+                label: "Misinformation",
+              },
+              {
+                value: "inappropriate",
+                label: "Inappropriate content",
+              },
+              {
+                value: "other",
+                label: "Other",
+              },
+            ].map((item) => (
+              <label
+                key={item.value}
+                className="
+                  flex
+                  cursor-pointer
+                  items-center
+                  gap-3
+                  rounded-xl
+                  border
+                  border-zinc-200
+                  px-3
+                  py-2.5
+                  transition
+                  hover:bg-zinc-50
+                "
+              >
+                <input
+                  type="radio"
+                  name={`report-${comment.id}`}
+                  value={item.value}
+                  checked={
+                    reportReason ===
+                    item.value
+                  }
+                  onChange={() =>
+                    setReportReason(
+                      item.value as CommentReportReason
+                    )
+                  }
+                  disabled={reportLoading}
+                  className="accent-red-600"
+                />
+
+                <span className="text-sm text-zinc-800">
+                  {item.label}
+                </span>
+              </label>
+            ))}
+
+          </div>
+
+          {/* DETAILS */}
+
+          <textarea
+            value={reportDetails}
+            onChange={(event) =>
+              setReportDetails(
+                event.target.value
+              )
             }
-          >
-            <h3 className="text-lg font-semibold text-zinc-900">
-              Report comment
-            </h3>
+            maxLength={1000}
+            rows={3}
+            disabled={reportLoading}
+            placeholder="Additional details (optional)"
+            className="
+              mt-4
+              w-full
+              resize-none
+              rounded-xl
+              border
+              border-zinc-300
+              bg-white
+              px-3
+              py-2.5
+              text-sm
+              text-zinc-900
+              outline-none
+              placeholder:text-zinc-400
+              focus:border-zinc-900
+            "
+          />
 
-            <p className="mt-1 text-sm text-zinc-500">
-              Reporting options
-              next step mein
-              connect karenge.
+          <div className="mt-1 text-right text-[11px] text-zinc-400">
+            {reportDetails.length}/1000
+          </div>
+
+          {/* ERROR */}
+
+          {reportError && (
+            <p className="mt-2 text-sm text-red-600">
+              {reportError}
             </p>
+          )}
+
+          {/* BUTTONS */}
+
+          <div className="mt-5 flex gap-2">
 
             <button
               type="button"
-              onClick={() =>
-                setShowReport(
-                  false
-                )
-              }
+              disabled={reportLoading}
+              onClick={() => {
+                setShowReport(false);
+                setReportReason("");
+                setReportDetails("");
+                setReportError("");
+              }}
               className="
-                mt-5
-                w-full
+                flex-1
                 rounded-xl
                 bg-zinc-100
                 py-2.5
@@ -1088,13 +1298,98 @@ export default function CommentCard({
                 text-zinc-800
                 transition
                 hover:bg-zinc-200
+                disabled:opacity-50
               "
             >
-              Close
+              Cancel
             </button>
+
+            <button
+              type="button"
+              disabled={
+                reportLoading ||
+                !reportReason
+              }
+              onClick={handleReport}
+              className="
+                flex-1
+                rounded-xl
+                bg-red-600
+                py-2.5
+                text-sm
+                font-semibold
+                text-white
+                transition
+                hover:bg-red-700
+                disabled:cursor-not-allowed
+                disabled:opacity-40
+              "
+            >
+              {reportLoading
+                ? "Submitting..."
+                : "Submit report"}
+            </button>
+
           </div>
+        </>
+      ) : (
+        /* SUCCESS */
+
+        <div className="py-4 text-center">
+
+          <div className="
+            mx-auto
+            flex
+            h-12
+            w-12
+            items-center
+            justify-center
+            rounded-full
+            bg-green-100
+            text-xl
+            text-green-600
+          ">
+            ✓
+          </div>
+
+          <h3 className="mt-4 text-lg font-semibold text-zinc-900">
+            Report submitted
+          </h3>
+
+          <p className="mt-1 text-sm text-zinc-500">
+            Thank you. Our team will review this
+            comment.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => {
+              setShowReport(false);
+              setReportSuccess(false);
+              setReportError("");
+            }}
+            className="
+              mt-5
+              w-full
+              rounded-xl
+              bg-zinc-900
+              py-2.5
+              text-sm
+              font-semibold
+              text-white
+              transition
+              hover:bg-zinc-700
+            "
+          >
+            Done
+          </button>
+
         </div>
       )}
+
+    </div>
+  </div>
+)}
     </article>
   );
 }
@@ -1158,7 +1453,23 @@ function ReplyItem({
 
   const isOwner =
     currentUser?.uid === reply.userId;
+  const [showReport, setShowReport] =
+  useState(false);
 
+const [reportReason, setReportReason] =
+  useState<CommentReportReason | "">("");
+
+const [reportDetails, setReportDetails] =
+  useState("");
+
+const [reportLoading, setReportLoading] =
+  useState(false);
+
+const [reportError, setReportError] =
+  useState("");
+
+const [reportSuccess, setReportSuccess] =
+  useState(false);
   // ==========================================
   // LOAD REACTION
   // ==========================================
@@ -1340,6 +1651,78 @@ function ReplyItem({
       );
     }
   }
+  async function handleReport() {
+  const user =
+    commentsAuth.currentUser;
+
+  if (!user) {
+    setReportError(
+      "Report karne ke liye Google se login karein."
+    );
+
+    return;
+  }
+
+  if (!reportReason) {
+    setReportError(
+      "Please select a reason."
+    );
+
+    return;
+  }
+
+  if (reportLoading) {
+    return;
+  }
+
+  try {
+    setReportLoading(true);
+    setReportError("");
+
+    await createCommentReport({
+      commentId: reply.id,
+
+      articleId,
+
+      articleSlug,
+
+      reporterId:
+        user.uid,
+
+      reporterName:
+        user.displayName ||
+        "User",
+
+      reporterEmail:
+        user.email ||
+        "",
+
+      reason:
+        reportReason,
+
+      details:
+        reportDetails,
+    });
+    
+
+    setReportSuccess(true);
+    setReportReason("");
+    setReportDetails("");
+  } catch (error) {
+    console.error(
+      "REPORT REPLY ERROR:",
+      error
+    );
+
+    setReportError(
+      error instanceof Error
+        ? error.message
+        : "Report submit nahi ho paaya."
+    );
+  } finally {
+    setReportLoading(false);
+  }
+}
 
   if (deleted) {
     return (
@@ -1354,6 +1737,7 @@ function ReplyItem({
       </div>
     );
   }
+  
 
   return (
     <div className="group flex gap-3">
@@ -1513,11 +1897,10 @@ function ReplyItem({
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setMenuOpen(
-                      false
-                    )
-                  }
+                  onClick={() => {
+    setMenuOpen(false);
+    setShowReport(true);
+  }}
                   className="
                     w-full
                     px-4
@@ -1760,7 +2143,251 @@ function ReplyItem({
           </div>
         )}
       </div>
+    
+             {showReport && (
+  <div
+    className="
+      fixed
+      inset-0
+      z-50
+      flex
+      items-center
+      justify-center
+      bg-black/40
+      p-4
+    "
+    onClick={() => {
+      if (!reportLoading) {
+        setShowReport(false);
+        setReportError("");
+        setReportSuccess(false);
+      }
+    }}
+  >
+    <div
+      className="
+        w-full
+        max-w-md
+        rounded-2xl
+        bg-white
+        p-5
+        shadow-2xl
+      "
+      onClick={(event) =>
+        event.stopPropagation()
+      }
+    >
+      {!reportSuccess ? (
+        <>
+          <h3 className="text-lg font-semibold text-zinc-900">
+            Report reply
+          </h3>
+
+          <p className="mt-1 text-sm text-zinc-500">
+            Why are you reporting this reply?
+          </p>
+
+          <div className="mt-4 space-y-2">
+            {[
+              {
+                value: "spam",
+                label: "Spam",
+              },
+              {
+                value: "harassment",
+                label: "Harassment or abuse",
+              },
+              {
+                value: "hate_speech",
+                label: "Hate speech",
+              },
+              {
+                value: "misinformation",
+                label: "Misinformation",
+              },
+              {
+                value: "inappropriate",
+                label: "Inappropriate content",
+              },
+              {
+                value: "other",
+                label: "Other",
+              },
+            ].map((item) => (
+              <label
+                key={item.value}
+                className="
+                  flex
+                  cursor-pointer
+                  items-center
+                  gap-3
+                  rounded-xl
+                  border
+                  border-zinc-200
+                  px-3
+                  py-2.5
+                  hover:bg-zinc-50
+                "
+              >
+                <input
+                  type="radio"
+                  name={`reply-report-${reply.id}`}
+                  value={item.value}
+                  checked={
+                    reportReason ===
+                    item.value
+                  }
+                  onChange={() =>
+                    setReportReason(
+                      item.value as CommentReportReason
+                    )
+                  }
+                  disabled={reportLoading}
+                  className="accent-red-600"
+                />
+
+                <span className="text-sm text-zinc-800">
+                  {item.label}
+                </span>
+              </label>
+            ))}
+          </div>
+
+          <textarea
+            value={reportDetails}
+            onChange={(event) =>
+              setReportDetails(
+                event.target.value
+              )
+            }
+            maxLength={1000}
+            rows={3}
+            disabled={reportLoading}
+            placeholder="Additional details (optional)"
+            className="
+              mt-4
+              w-full
+              resize-none
+              rounded-xl
+              border
+              border-zinc-300
+              px-3
+              py-2.5
+              text-sm
+              outline-none
+              focus:border-zinc-900
+            "
+          />
+
+          <div className="mt-1 text-right text-[11px] text-zinc-400">
+            {reportDetails.length}/1000
+          </div>
+
+          {reportError && (
+            <p className="mt-2 text-sm text-red-600">
+              {reportError}
+            </p>
+          )}
+
+          <div className="mt-5 flex gap-2">
+            <button
+              type="button"
+              disabled={reportLoading}
+              onClick={() => {
+                setShowReport(false);
+                setReportReason("");
+                setReportDetails("");
+                setReportError("");
+              }}
+              className="
+                flex-1
+                rounded-xl
+                bg-zinc-100
+                py-2.5
+                text-sm
+                font-semibold
+                text-zinc-800
+                hover:bg-zinc-200
+              "
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              disabled={
+                reportLoading ||
+                !reportReason
+              }
+              onClick={handleReport}
+              className="
+                flex-1
+                rounded-xl
+                bg-red-600
+                py-2.5
+                text-sm
+                font-semibold
+                text-white
+                hover:bg-red-700
+                disabled:opacity-40
+              "
+            >
+              {reportLoading
+                ? "Submitting..."
+                : "Submit report"}
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="py-4 text-center">
+          <div className="
+            mx-auto
+            flex
+            h-12
+            w-12
+            items-center
+            justify-center
+            rounded-full
+            bg-green-100
+            text-xl
+            text-green-600
+          ">
+            ✓
+          </div>
+
+          <h3 className="mt-4 text-lg font-semibold">
+            Report submitted
+          </h3>
+
+          <p className="mt-1 text-sm text-zinc-500">
+            Thank you. Our team will review this reply.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => {
+              setShowReport(false);
+              setReportSuccess(false);
+              setReportError("");
+            }}
+            className="
+              mt-5
+              w-full
+              rounded-xl
+              bg-zinc-900
+              py-2.5
+              text-sm
+              font-semibold
+              text-white
+            "
+          >
+            Done
+          </button>
+        </div>
+      )}
     </div>
+  </div>
+)}</div>
   );
 }
 

@@ -49,6 +49,8 @@ export default function CommentComposer({
 
   const [error, setError] =
     useState("");
+    const [loginLoading, setLoginLoading] =
+  useState(false);
 
   // ==========================================
   // AUTH STATE
@@ -73,21 +75,39 @@ export default function CommentComposer({
   // ==========================================
 
   async function handleLogin() {
-    try {
-      setError("");
-
-      await signInToComments();
-    } catch (error) {
-      console.error(
-        "COMMENT LOGIN ERROR:",
-        error
-      );
-
-      setError(
-        "Login nahi ho paaya. Please try again."
-      );
-    }
+  if (loginLoading) {
+    return;
   }
+
+  try {
+    setLoginLoading(true);
+
+    await signInToComments();
+  } catch (error: any) {
+    console.error(
+      "COMMENT LOGIN ERROR:",
+      error
+    );
+
+    if (
+      error?.code ===
+      "auth/cancelled-popup-request"
+    ) {
+      return;
+    }
+
+    if (
+      error?.code ===
+      "auth/popup-closed-by-user"
+    ) {
+      return;
+    }
+
+    // yahan tumhara existing error handling
+  } finally {
+    setLoginLoading(false);
+  }
+}
 
   // ==========================================
   // SUBMIT COMMENT
@@ -219,9 +239,8 @@ export default function CommentComposer({
 
           <button
             type="button"
-            onClick={
-              handleLogin
-            }
+            onClick={handleLogin}
+  disabled={loginLoading}
             className="
               rounded-full
               bg-zinc-900
@@ -234,7 +253,9 @@ export default function CommentComposer({
               hover:bg-zinc-700
             "
           >
-            Sign in
+           {loginLoading
+    ? "Signing in..."
+    : "Continue with Google"}
           </button>
         </div>
 
