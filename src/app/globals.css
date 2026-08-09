@@ -1083,3 +1083,134 @@ iframe {
 .animate-logo-shine {
   animation: logo-shine 2.6s ease-in-out infinite;
 }
+
+/* ==========================================
+   RESPONSIVE ARTICLE CONTENT
+========================================== */
+
+.article-content {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* ==========================================
+   IMAGES
+========================================== */
+
+.article-content img {
+  display: block;
+
+  max-width: 100% !important;
+  width: auto;
+  height: auto !important;
+
+  margin-left: auto;
+  margin-right: auto;
+
+  object-fit: contain;
+}
+
+/* ==========================================
+   VERY LARGE IMAGES
+========================================== */
+
+.article-content figure {
+  width: 100%;
+  max-width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.article-content figure img {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* ==========================================
+   VIDEOS
+========================================== */
+
+.article-content video {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+}
+
+/* ==========================================
+   IFRAMES / EMBEDS
+========================================== */
+
+.article-content iframe {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* ==========================================
+   TABLES
+========================================== */
+
+.article-content table {
+  display: block;
+
+  width: 100%;
+  max-width: 100%;
+
+  overflow-x: auto;
+
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ==========================================
+   PRE / CODE
+========================================== */
+
+.article-content pre {
+  max-width: 100%;
+  overflow-x: auto;
+
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ==========================================
+   LONG LINKS
+========================================== */
+
+.article-content a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media (max-width: 640px) {
+  .article-content {
+    font-size: 1rem;
+    line-height: 1.75;
+
+    overflow-x: hidden;
+  }
+
+  .article-content img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  .article-content iframe {
+    max-width: 100% !important;
+  }
+
+  .article-content table {
+    font-size: 0.9rem;
+  }
+}

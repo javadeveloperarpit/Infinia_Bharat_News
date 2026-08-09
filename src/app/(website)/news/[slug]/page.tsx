@@ -62,8 +62,8 @@ const articleUrl =
 
 return (
   <main className="container-news py-8 ">
-    <div className="mx-auto w-full max-w-[1500px] px-4 sm:px-6 lg:px-8">
-    <div className="grid grid-cols-12 gap-8">
+    
+    <div className="grid min-w-0 grid-cols-12 gap-4 lg:gap-8">
 
       {/* Share */}
       <aside className="hidden lg:block lg:col-span-1">
@@ -75,7 +75,7 @@ return (
       </aside>
 
       {/* Article */}
-      <article className="col-span-12 lg:col-span-8">
+      <article className="col-span-12 min-w-0 lg:col-span-8">
 
         <ArticleHeader article={article} />
 
@@ -111,12 +111,11 @@ return (
       </article>
 
       {/* Sidebar */}
-      <aside className="hidden lg:block lg:col-span-3">
+      <aside className="hidden min-w-0 lg:block lg:col-span-3">
         <ArticleSidebar related={related} />
       </aside>
 
     </div>
-   </div>
   </main>
 );
 

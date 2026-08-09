@@ -870,30 +870,37 @@ function handleScreenClick() {
 
             {/* LOGO */}
 
-            <div
-              className="
-                flex
-                h-9
-                w-9
-                shrink-0
-                items-center
-                justify-center
-                overflow-hidden
-                rounded-full
-                border
-                border-white/30
-                bg-red-600
-              "
-            >
-              <span
-                className="
-                  text-[10px]
-                  font-black
-                "
-              >
-                IBN
-              </span>
-            </div>
+            <a
+  href="https://www.instagram.com/infiniabharatnews?igsh=eHptM29kbGV3ZXlw"
+  target="_blank"
+  rel="noopener noreferrer"
+  onClick={(event) => {
+    event.stopPropagation();
+  }}
+  aria-label="Visit Infinia Bharat News on Instagram"
+  className="
+    flex
+    h-9
+    w-9
+    shrink-0
+    items-center
+    justify-center
+    overflow-hidden
+    rounded-full
+    border
+    border-white/30
+    bg-red-600
+    transition
+    hover:scale-105
+    active:scale-95
+  "
+>
+  <img
+    src="/logos/logo-light.png"
+    alt="Infinia Bharat News"
+    className="h-full w-full object-cover"
+  />
+</a>
 
 
             {/* CHANNEL */}
@@ -930,25 +937,30 @@ function handleScreenClick() {
 
             {/* FOLLOW */}
 
-            <button
-              type="button"
-              className="
-                shrink-0
-                rounded-full
-                bg-white
-                px-3
-                py-1.5
-                text-[11px]
-                font-bold
-                text-black
+            <a
+  href="https://www.instagram.com/infiniabharatnews?igsh=eHptM29kbGV3ZXlw"
+  target="_blank"
+  rel="noopener noreferrer"
+  onClick={(event) => {
+    event.stopPropagation();
+  }}
+  className="
+    shrink-0
+    rounded-full
+    bg-white
+    px-3
+    py-1.5
+    text-[11px]
+    font-bold
+    text-black
 
-                transition
-                hover:bg-zinc-200
-                active:scale-95
-              "
-            >
-              Follow
-            </button>
+    transition
+    hover:bg-zinc-200
+    active:scale-95
+  "
+>
+  Follow
+</a>
 
           </div>
 
