@@ -5,6 +5,7 @@ import "./globals.css";
 
 import Providers from "./providers";
 import { siteConfig } from "@/config/site";
+import PageLoadingBar from "@/components/navigation/PageLoadingBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -89,6 +90,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable}`}
     >
       <body className="min-h-screen antialiased">
+        <PageLoadingBar />
         <Providers>
           {children}
         </Providers>

@@ -933,3 +933,153 @@ iframe {
   }
 
 }
+/* ==========================================
+   INFINIA PREMIUM LOGO LOADER
+========================================== */
+
+@keyframes loader-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-loader-fade-in {
+  animation: loader-fade-in 0.15s ease-out;
+}
+
+
+/* ==========================================
+   LOGO BREATHING
+========================================== */
+
+@keyframes logo-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.035);
+  }
+}
+
+.animate-logo-breathe {
+  animation: logo-breathe 1.8s ease-in-out infinite;
+}
+
+
+/* ==========================================
+   SOFT RED GLOW
+========================================== */
+
+@keyframes logo-glow {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.95);
+  }
+
+  50% {
+    opacity: 0.75;
+    transform: scale(1.08);
+  }
+}
+
+.animate-logo-glow {
+  animation: logo-glow 1.8s ease-in-out infinite;
+}
+
+
+/* ==========================================
+   CRYSTAL RING
+========================================== */
+
+@keyframes crystal-ring {
+  0% {
+    transform: rotate(0deg);
+    background:
+      conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        transparent 250deg,
+        rgba(239, 68, 68, 0.05) 270deg,
+        rgba(239, 68, 68, 0.75) 305deg,
+        rgba(250, 204, 21, 0.9) 325deg,
+        transparent 350deg,
+        transparent 360deg
+      );
+    -webkit-mask:
+      radial-gradient(
+        farthest-side,
+        transparent calc(100% - 2px),
+        #000 calc(100% - 1px)
+      );
+    mask:
+      radial-gradient(
+        farthest-side,
+        transparent calc(100% - 2px),
+        #000 calc(100% - 1px)
+      );
+  }
+
+  100% {
+    transform: rotate(360deg);
+    background:
+      conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        transparent 250deg,
+        rgba(239, 68, 68, 0.05) 270deg,
+        rgba(239, 68, 68, 0.75) 305deg,
+        rgba(250, 204, 21, 0.9) 325deg,
+        transparent 350deg,
+        transparent 360deg
+      );
+    -webkit-mask:
+      radial-gradient(
+        farthest-side,
+        transparent calc(100% - 2px),
+        #000 calc(100% - 1px)
+      );
+    mask:
+      radial-gradient(
+        farthest-side,
+        transparent calc(100% - 2px),
+        #000 calc(100% - 1px)
+      );
+  }
+}
+
+.animate-crystal-ring {
+  animation: crystal-ring 2.2s linear infinite;
+}
+
+
+/* ==========================================
+   LOGO GLASS SHINE
+========================================== */
+
+@keyframes logo-shine {
+  0% {
+    left: -100%;
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 0.8;
+  }
+
+  45%,
+  100% {
+    left: 160%;
+    opacity: 0;
+  }
+}
+
+.animate-logo-shine {
+  animation: logo-shine 2.6s ease-in-out infinite;
+}
