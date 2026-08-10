@@ -1,434 +1,449 @@
-
 "use client";
 
 import {
-  useEffect,
+  useCallback,
+  useMemo,
   useState,
 } from "react";
 
-import {
-  createAd,
-  getAds,
-  deleteAd,
-} from "@/services/ads.service";
+import AdFilters, {
+  DEFAULT_AD_FILTERS,
+  type AdFilterState,
+} from "@/components/admin/ads/AdFilters";
+
+import AdModal from "@/components/admin/ads/AdModal";
+import AdsGrid from "@/components/admin/ads/AdsGrid";
+import AdsHeader from "@/components/admin/ads/AdsHeader";
+import AdsStats from "@/components/admin/ads/AdsStats";
+import DeleteAdModal from "@/components/admin/ads/DeleteAdModal";
+
+import type { AdsData } from "@/components/admin/ads/types";
+
+import { useAds } from "@/components/admin/ads/useAds";
+
+// ======================================================
+// PAGE
+// ======================================================
 
 export default function AdsPage() {
-  const [ads, setAds] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  // ====================================================
+  // FILTERS
+  // ====================================================
 
-  const [form, setForm] = useState({
-    title: "",
-    image: "",
-    link: "",
-    position: "homepage_top",
-    active: true,
-  });
-
-  async function loadAds() {
-    try {
-      setLoading(true);
-
-      const data = await getAds();
-
-      setAds(data || []);
-    } catch (error) {
-      console.error("Ads Load Error:", error);
-      setAds([]);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    loadAds();
-  }, []);
-
-  function handleChange(e: any) {
-    const {
-      name,
-      value,
-      type,
-      checked,
-    } = e.target;
-
-    setForm((prev) => ({
-      ...prev,
-      [name]:
-        type === "checkbox"
-          ? checked
-          : value,
-    }));
-  }
-
-  async function saveAd() {
-    if (!form.title.trim()) {
-      alert("Please enter ad title.");
-      return;
-    }
-
-    if (!form.image.trim()) {
-      alert("Please enter ad image URL.");
-      return;
-    }
-
-    try {
-      setSaving(true);
-
-      await createAd(form);
-
-      alert("Advertisement Added Successfully");
-
-      setForm({
-        title: "",
-        image: "",
-        link: "",
-        position: "homepage_top",
-        active: true,
-      });
-
-      await loadAds();
-    } catch (error) {
-      console.error("Ad Create Error:", error);
-      alert("Failed to add advertisement.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function remove(id: string) {
-    const confirmed = confirm(
-      "Are you sure you want to delete this advertisement?"
+  const [filters, setFilters] =
+    useState<AdFilterState>(
+      DEFAULT_AD_FILTERS
     );
 
-    if (!confirmed) return;
+  // ====================================================
+  // MODALS
+  // ====================================================
+
+  const [showAdModal, setShowAdModal] =
+    useState(false);
+
+  const [editingAd, setEditingAd] =
+    useState<AdsData | null>(null);
+
+  const [deletingAd, setDeletingAd] =
+    useState<AdsData | null>(null);
+
+  // ====================================================
+  // ADS HOOK
+  // ====================================================
+
+  const {
+  ads,
+  loading,
+  saving,
+  deletingId,
+  refresh,
+  create,
+  update,
+  remove,
+  toggle,
+} = useAds();
+  // ====================================================
+  // FILTER + SORT
+  // ====================================================
+
+  const filteredAds = useMemo(() => {
+    let result = [...ads];
+
+    // --------------------------------------------------
+    // SEARCH
+    // --------------------------------------------------
+
+    const search =
+      filters.search
+        .trim()
+        .toLowerCase();
+
+    if (search) {
+      result = result.filter((ad) => {
+        return (
+          ad.name
+            .toLowerCase()
+            .includes(search) ||
+          ad.type
+            .toLowerCase()
+            .includes(search) ||
+          ad.position
+            .toLowerCase()
+            .includes(search)
+        );
+      });
+    }
+
+    // --------------------------------------------------
+    // TYPE
+    // --------------------------------------------------
+
+    if (filters.type !== "all") {
+      result = result.filter(
+        (ad) =>
+          ad.type === filters.type
+      );
+    }
+
+    // --------------------------------------------------
+    // POSITION
+    // --------------------------------------------------
+
+    if (filters.position !== "all") {
+      result = result.filter(
+        (ad) =>
+          ad.position ===
+          filters.position
+      );
+    }
+
+    // --------------------------------------------------
+    // STATUS
+    // --------------------------------------------------
+
+    if (filters.status === "active") {
+      result = result.filter(
+        (ad) => ad.active
+      );
+    }
+
+    if (
+      filters.status === "inactive"
+    ) {
+      result = result.filter(
+        (ad) => !ad.active
+      );
+    }
+
+    // --------------------------------------------------
+    // SORT
+    // --------------------------------------------------
+
+    result.sort((a, b) => {
+      switch (filters.sort) {
+        case "priority-asc":
+          return (
+            a.priority - b.priority
+          );
+
+        case "priority-desc":
+          return (
+            b.priority - a.priority
+          );
+
+        case "name-asc":
+          return a.name.localeCompare(
+            b.name
+          );
+
+        case "name-desc":
+          return b.name.localeCompare(
+            a.name
+          );
+
+        case "newest":
+          return (
+            new Date(
+              b.createdAt ?? 0
+            ).getTime() -
+            new Date(
+              a.createdAt ?? 0
+            ).getTime()
+          );
+
+        case "oldest":
+          return (
+            new Date(
+              a.createdAt ?? 0
+            ).getTime() -
+            new Date(
+              b.createdAt ?? 0
+            ).getTime()
+          );
+
+        default:
+          return (
+            b.priority - a.priority
+          );
+      }
+    });
+
+    return result;
+  }, [ads, filters]);
+
+  // ====================================================
+  // CREATE
+  // ====================================================
+
+  function handleCreate() {
+    setEditingAd(null);
+    setShowAdModal(true);
+  }
+
+  // ====================================================
+  // EDIT
+  // ====================================================
+
+  function handleEdit(ad: AdsData) {
+    setEditingAd(ad);
+    setShowAdModal(true);
+  }
+
+  // ====================================================
+  // DELETE
+  // ====================================================
+
+  function handleDelete(id: string) {
+    const ad = ads.find(
+      (item) => item.id === id
+    );
+
+    if (!ad) return;
+
+    setDeletingAd(ad);
+  }
+
+  // ====================================================
+  // CONFIRM DELETE
+  // ====================================================
+
+  async function handleConfirmDelete() {
+    if (!deletingAd) return;
 
     try {
-      await deleteAd(id);
+      await remove(deletingAd.id);
 
-      await loadAds();
+      setDeletingAd(null);
     } catch (error) {
-      console.error("Ad Delete Error:", error);
-      alert("Failed to delete advertisement.");
+      console.error(
+        "Failed to delete advertisement:",
+        error
+      );
     }
   }
 
+  // ====================================================
+  // TOGGLE
+  // ====================================================
+
+  async function handleToggle(
+    id: string,
+    active: boolean
+  ) {
+    try {
+      await toggle(id, active);
+    } catch (error) {
+      console.error(
+        "Failed to toggle advertisement:",
+        error
+      );
+    }
+  }
+
+  // ====================================================
+  // SAVE
+  // ====================================================
+
+  async function handleSave(
+    data: Parameters<
+      typeof create
+    >[0]
+  ) {
+    try {
+      if (editingAd) {
+        await update(
+          editingAd.id,
+          data
+        );
+      } else {
+        await create(data);
+      }
+
+      setShowAdModal(false);
+      setEditingAd(null);
+
+      await refresh();
+    } catch (error) {
+      console.error(
+        "Failed to save advertisement:",
+        error
+      );
+
+      throw error;
+    }
+  }
+
+  // ====================================================
+  // REFRESH
+  // ====================================================
+
+  const handleRefresh =
+    useCallback(async () => {
+      try {
+        await refresh();
+      } catch (error) {
+        console.error(
+          "Failed to refresh advertisements:",
+          error
+        );
+      }
+    }, [refresh]);
+
+  // ====================================================
+  // CANCEL MODAL
+  // ====================================================
+
+  function handleCloseModal() {
+    if (saving) return;
+
+    setShowAdModal(false);
+    setEditingAd(null);
+  }
+
+  // ====================================================
+  // RENDER
+  // ====================================================
+
   return (
-    <div className="w-full max-w-6xl space-y-6">
+    <main
+      className="
+        min-h-screen
+        bg-zinc-950
+        px-3
+        py-4
+        text-white
+        sm:px-5
+        sm:py-6
+        lg:px-8
+        lg:py-8
+      "
+    >
+      <div
+        className="
+          mx-auto
+          w-full
+          max-w-[1800px]
+          space-y-5
+        "
+      >
+        {/* ==================================================
+            HEADER
+        ================================================== */}
 
-      {/* HEADER */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900">
-          Ads Management
-        </h1>
+        <AdsHeader
+          onCreate={handleCreate}
+          onRefresh={handleRefresh}
+          loading={loading}
+        />
 
-        <p className="mt-1 text-sm text-zinc-500">
-          Create and manage advertisements across the website.
-        </p>
-      </div>
+        {/* ==================================================
+            STATS
+        ================================================== */}
 
-      {/* CREATE AD */}
-      <div className="bg-white border border-zinc-200 rounded-xl shadow-sm p-4 sm:p-6">
-
-        <h2 className="text-lg font-bold text-zinc-900 mb-5">
-          Create Advertisement
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-          {/* TITLE */}
-          <div className="md:col-span-2">
-            <label className="block text-sm font-semibold text-zinc-700 mb-2">
-              Ad Title
-            </label>
-
-            <input
-              name="title"
-              value={form.title}
-              onChange={handleChange}
-              placeholder="Advertisement Title"
-              className="
-                w-full
-                border
-                border-zinc-300
-                rounded-lg
-                px-4
-                py-3
-                text-sm
-                outline-none
-                focus:border-red-500
-                focus:ring-2
-                focus:ring-red-500/10
-              "
-            />
-          </div>
-
-          {/* IMAGE */}
-          <div>
-            <label className="block text-sm font-semibold text-zinc-700 mb-2">
-              Image URL
-            </label>
-
-            <input
-              name="image"
-              value={form.image}
-              onChange={handleChange}
-              placeholder="https://example.com/ad.jpg"
-              className="
-                w-full
-                border
-                border-zinc-300
-                rounded-lg
-                px-4
-                py-3
-                text-sm
-                outline-none
-                focus:border-red-500
-                focus:ring-2
-                focus:ring-red-500/10
-              "
-            />
-          </div>
-
-          {/* LINK */}
-          <div>
-            <label className="block text-sm font-semibold text-zinc-700 mb-2">
-              Advertisement Link
-            </label>
-
-            <input
-              name="link"
-              value={form.link}
-              onChange={handleChange}
-              placeholder="https://example.com"
-              className="
-                w-full
-                border
-                border-zinc-300
-                rounded-lg
-                px-4
-                py-3
-                text-sm
-                outline-none
-                focus:border-red-500
-                focus:ring-2
-                focus:ring-red-500/10
-              "
-            />
-          </div>
-
-          {/* POSITION */}
-          <div>
-            <label className="block text-sm font-semibold text-zinc-700 mb-2">
-              Advertisement Position
-            </label>
-
-            <select
-              name="position"
-              value={form.position}
-              onChange={handleChange}
-              className="
-                w-full
-                border
-                border-zinc-300
-                rounded-lg
-                px-4
-                py-3
-                text-sm
-                bg-white
-                outline-none
-                focus:border-red-500
-                focus:ring-2
-                focus:ring-red-500/10
-              "
-            >
-              <option value="homepage_top">
-                Homepage Top
-              </option>
-
-              <option value="homepage_middle">
-                Homepage Middle
-              </option>
-
-              <option value="article_between">
-                Article Between
-              </option>
-
-              <option value="sidebar">
-                Sidebar
-              </option>
-            </select>
-          </div>
-
-          {/* ACTIVE */}
-          <div className="flex items-center md:pt-7">
-
-            <label className="flex items-center gap-3 cursor-pointer">
-
-              <input
-                type="checkbox"
-                name="active"
-                checked={form.active}
-                onChange={handleChange}
-                className="
-                  w-5
-                  h-5
-                  accent-red-600
-                  cursor-pointer
-                "
-              />
-
-              <span className="text-sm font-semibold text-zinc-700">
-                Active Advertisement
-              </span>
-
-            </label>
-
-          </div>
-
-        </div>
-
-        {/* BUTTON */}
-        <button
-          onClick={saveAd}
-          disabled={saving}
+        <section
           className="
-            mt-6
-            w-full
-            sm:w-auto
-            bg-red-600
-            hover:bg-red-700
-            disabled:bg-zinc-300
-            disabled:cursor-not-allowed
-            text-white
-            px-6
-            py-3
-            rounded-lg
-            font-semibold
-            text-sm
-            transition
+            grid
+            grid-cols-1
+            gap-3
+            sm:grid-cols-2
+            lg:grid-cols-3
+            xl:grid-cols-6
           "
         >
-          {saving
-            ? "Adding Advertisement..."
-            : "Add Advertisement"}
-        </button>
+          <AdsStats ads={ads} />
+        </section>
 
+        {/* ==================================================
+            FILTERS
+        ================================================== */}
+
+        <section
+          className="
+            overflow-hidden
+            rounded-2xl
+            border
+            border-zinc-800
+            bg-zinc-950
+          "
+        >
+          <AdFilters
+            filters={filters}
+            onChange={setFilters}
+            totalCount={ads.length}
+            filteredCount={
+              filteredAds.length
+            }
+          />
+        </section>
+
+        {/* ==================================================
+            ADS GRID
+        ================================================== */}
+
+        <section>
+          <AdsGrid
+            ads={filteredAds}
+            loading={loading}
+            deletingId={deletingId}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onToggle={handleToggle}
+            onCreate={handleCreate}
+            onRefresh={handleRefresh}
+          />
+        </section>
       </div>
 
-      {/* ADS LIST */}
-      <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
+      {/* ==================================================
+          CREATE / EDIT MODAL
+      ================================================== */}
 
-        <div className="px-4 sm:px-6 py-4 border-b border-zinc-200">
-          <h2 className="text-lg font-bold text-zinc-900">
-            Advertisements
-          </h2>
-        </div>
+      <AdModal
+        open={showAdModal}
+        ad={editingAd}
+        loading={saving}
+        onClose={handleCloseModal}
+        onSubmit={handleSave}
+      />
 
-        {loading ? (
-          <div className="p-8 text-center text-zinc-500">
-            Loading advertisements...
-          </div>
-        ) : ads.length === 0 ? (
-          <div className="p-8 text-center text-zinc-500">
-            No advertisements found.
-          </div>
-        ) : (
-          <div className="divide-y divide-zinc-200">
+      {/* ==================================================
+          DELETE MODAL
+      ================================================== */}
 
-            {ads.map((ad) => (
-              <div
-                key={ad.id}
-                className="
-                  p-4
-                  sm:p-5
-                  flex
-                  flex-col
-                  lg:flex-row
-                  lg:items-center
-                  lg:justify-between
-                  gap-4
-                "
-              >
-
-                {/* AD INFO */}
-                <div className="min-w-0">
-
-                  <h3 className="font-bold text-zinc-900 break-words">
-                    {ad.title}
-                  </h3>
-
-                  <div className="mt-2 flex flex-wrap gap-2">
-
-                    <span className="
-                      inline-flex
-                      items-center
-                      px-3
-                      py-1
-                      rounded-full
-                      bg-zinc-100
-                      text-zinc-700
-                      text-xs
-                      font-semibold
-                    ">
-                      {ad.position}
-                    </span>
-
-                    <span
-                      className={`
-                        inline-flex
-                        items-center
-                        px-3
-                        py-1
-                        rounded-full
-                        text-xs
-                        font-semibold
-                        ${
-                          ad.active
-                            ? "bg-green-100 text-green-700"
-                            : "bg-zinc-100 text-zinc-500"
-                        }
-                      `}
-                    >
-                      {ad.active
-                        ? "Active"
-                        : "Inactive"}
-                    </span>
-
-                  </div>
-
-                </div>
-
-                {/* ACTION */}
-                <button
-                  onClick={() => remove(ad.id)}
-                  className="
-                    w-full
-                    sm:w-auto
-                    shrink-0
-                    border
-                    border-red-200
-                    text-red-600
-                    hover:bg-red-50
-                    px-4
-                    py-2
-                    rounded-lg
-                    text-sm
-                    font-semibold
-                    transition
-                  "
-                >
-                  Delete
-                </button>
-
-              </div>
-            ))}
-
-          </div>
-        )}
-
-      </div>
-
-    </div>
+      <DeleteAdModal
+        open={Boolean(deletingAd)}
+        ad={deletingAd}
+        deleting={
+  deletingId === deletingAd?.id
+}
+        onClose={() =>
+          setDeletingAd(null)
+        }
+        onConfirm={
+          handleConfirmDelete
+        }
+      />
+    </main>
   );
 }

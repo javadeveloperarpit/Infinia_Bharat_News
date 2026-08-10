@@ -792,6 +792,7 @@ iframe {
 
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
 
   overflow: hidden;
@@ -1212,14 +1213,5 @@ iframe {
 
   .article-content table {
     font-size: 0.9rem;
-  }
-}
-@keyframes cubeSpin {
-  from {
-    transform: rotateY(0deg);
-  }
-
-  to {
-    transform: rotateY(360deg);
   }
 }
