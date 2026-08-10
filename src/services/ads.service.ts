@@ -1,236 +1,255 @@
-"use client";
+// ======================================================
+// ADS SERVICE
+// Collection: businessAds
+// ======================================================
 
 import {
   addDoc,
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
-  orderBy,
-  query,
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
 
 import { db } from "@/lib/firebase/firebase";
 
-import type {
-  AdsData,
-  CreateAdData,
-  UpdateAdData,
-  AdsCubeFaces,
-  AdCubeFace,
-} from "@/components/admin/ads/types";
-
 // ======================================================
 // COLLECTION
 // ======================================================
 
-const ADS_COLLECTION = "businessAds";
+const COLLECTION = "businessAds";
 
 // ======================================================
-// HELPERS
+// AD TYPES
 // ======================================================
 
-function normalizeCubeFaces(
-  value: unknown
-): AdsCubeFaces | undefined {
-  if (
-    !value ||
-    typeof value !== "object"
-  ) {
-    return undefined;
-  }
+export type AdType =
+  | "banner"
+  | "cube"
+  | "popup"
+  | "page_transition"
+  | "shorts_video"
+  | "floating_tv"
+  | "sticky_bottom"
+  | "native";
 
-  const data =
-    value as Record<string, unknown>;
+// ======================================================
+// AD POSITIONS
+// ======================================================
 
-  const normalizeFace = (
-    face: string
-  ) => {
-    const faceData =
-      data[face];
+export type AdPosition =
+  | "homepage_top"
+  | "homepage_middle"
+  | "homepage_bottom"
+  | "article_top"
+  | "article_after_intro"
+  | "article_middle"
+  | "article_before_related"
+  | "sidebar_top"
+  | "sidebar_middle"
+  | "sidebar_bottom"
+  | "shorts_between"
+  | "shorts_after_3"
+  | "global_popup"
+  | "page_transition"
+  | "floating_tv"
+  | "sticky_bottom";
 
-    if (
-      !faceData ||
-      typeof faceData !== "object"
-    ) {
-      return {
-        imageUrl: "",
-        targetUrl: "",
-      };
-    }
+// ======================================================
+// FREQUENCY
+// ======================================================
 
-    const faceObject =
-      faceData as Record<
-        string,
-        unknown
-      >;
+export type AdFrequency =
+  | "always"
+  | "once_session"
+  | "once_day"
+  | "once";
 
-    return {
-      imageUrl:
-        typeof faceObject.imageUrl ===
-        "string"
-          ? faceObject.imageUrl
-          : "",
+// ======================================================
+// VIDEO TYPE
+// ======================================================
 
-      targetUrl:
-        typeof faceObject.targetUrl ===
-        "string"
-          ? faceObject.targetUrl
-          : "",
-    };
-  };
+export type AdVideoType =
+  | "youtube"
+  | "mp4";
 
-  return {
-    front: normalizeFace("front"),
-    back: normalizeFace("back"),
-    left: normalizeFace("left"),
-    right: normalizeFace("right"),
-    top: normalizeFace("top"),
-    bottom: normalizeFace("bottom"),
-  };
-}
+// ======================================================
+// VIDEO ORIENTATION
+// ======================================================
 
-function normalizeAd(
-  id: string,
-  data: Record<string, unknown>
-): AdsData {
-  return {
-    id,
+export type AdVideoOrientation =
+  | "vertical"
+  | "horizontal"
+  | "auto";
 
-    name:
-      typeof data.name === "string"
-        ? data.name
-        : "",
+// ======================================================
+// CUBE FACE
+// ======================================================
 
-    type:
-      (data.type ?? "image") as
-        AdsData["type"],
-
-    position:
-      (data.position ?? "top") as
-        AdsData["position"],
-
-    active:
-      Boolean(data.active ?? false),
-
-    priority:
-      Number(data.priority ?? 0),
-
-    targetUrl:
-      typeof data.targetUrl === "string"
-        ? data.targetUrl
-        : "",
-
-    imageUrl:
-      typeof data.imageUrl === "string"
-        ? data.imageUrl
-        : "",
-
-    mobileImageUrl:
-      typeof data.mobileImageUrl ===
-      "string"
-        ? data.mobileImageUrl
-        : "",
-
-    videoType:
-      typeof data.videoType === "string"
-        ? (data.videoType as AdsData["videoType"])
-        : undefined,
-
-    videoUrl:
-      typeof data.videoUrl === "string"
-        ? data.videoUrl
-        : "",
-
-    htmlCode:
-      typeof data.htmlCode === "string"
-        ? data.htmlCode
-        : "",
-
-    text:
-      typeof data.text === "string"
-        ? data.text
-        : "",
-
-    cubeFace:
-      typeof data.cubeFace === "string"
-        ? (data.cubeFace as AdCubeFace)
-        : undefined,
-
-    cubeFaces:
-      normalizeCubeFaces(
-        data.cubeFaces
-      ),
-
-    frequency:
-      (data.frequency ?? "always") as
-        AdsData["frequency"],
-
-    startDate:
-      typeof data.startDate === "string"
-        ? data.startDate
-        : null,
-
-    endDate:
-      typeof data.endDate === "string"
-        ? data.endDate
-        : null,
-
-    openInNewTab:
-      Boolean(
-        data.openInNewTab ?? true
-      ),
-
-    impressions:
-      Number(data.impressions ?? 0),
-
-    clicks:
-      Number(data.clicks ?? 0),
-
-    createdAt:
-      typeof data.createdAt === "string"
-        ? data.createdAt
-        : undefined,
-
-    updatedAt:
-      typeof data.updatedAt === "string"
-        ? data.updatedAt
-        : undefined,
-  };
+export interface AdCubeFace {
+  image: string;
+  link: string;
 }
 
 // ======================================================
-// GET ADS
+// DEVICE LAYOUT
 // ======================================================
 
-export async function getAds(): Promise<
-  AdsData[]
-> {
-  const adsRef = collection(
-    db,
-    ADS_COLLECTION
-  );
+export interface DeviceLayout {
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+  scale: number;
+}
 
-  const adsQuery = query(
-    adsRef,
-    orderBy("priority", "desc")
-  );
+// ======================================================
+// RESPONSIVE LAYOUT
+// ======================================================
 
-  const snapshot =
-    await getDocs(adsQuery);
+export interface AdLayout {
+  desktop: DeviceLayout;
+  mobile: DeviceLayout;
+}
 
-  return snapshot.docs.map(
-    (item) =>
-      normalizeAd(
-        item.id,
-        item.data() as Record<
-          string,
-          unknown
-        >
-      )
-  );
+// ======================================================
+// ADS DATA
+// ======================================================
+
+export interface AdsData {
+  // ----------------------------------------------------
+  // BASIC
+  // ----------------------------------------------------
+
+  title: string;
+
+  type: AdType;
+
+  // ----------------------------------------------------
+  // IMAGE
+  // ----------------------------------------------------
+  //
+  // Used by:
+  // banner
+  // popup
+  // native
+  // sticky_bottom
+  // page_transition
+  //
+  // Also usable as thumbnail/poster for shorts.
+  //
+
+  image: string;
+
+  // ----------------------------------------------------
+  // DESTINATION
+  // ----------------------------------------------------
+
+  link: string;
+
+  // ----------------------------------------------------
+  // POSITION
+  // ----------------------------------------------------
+
+  position: AdPosition;
+
+  // ----------------------------------------------------
+  // STATUS
+  // ----------------------------------------------------
+
+  active: boolean;
+
+  priority?: number;
+
+  // ----------------------------------------------------
+  // DEVICE TARGETING
+  // ----------------------------------------------------
+
+  mobileEnabled?: boolean;
+
+  desktopEnabled?: boolean;
+
+  openInNewTab?: boolean;
+
+  // ----------------------------------------------------
+  // POPUP / PAGE TRANSITION
+  // ----------------------------------------------------
+
+  delay?: number;
+
+  frequency?: AdFrequency;
+
+  closeable?: boolean;
+
+  // ----------------------------------------------------
+  // VIDEO
+  // ----------------------------------------------------
+
+  videoUrl?: string;
+
+  videoType?: AdVideoType;
+
+  /**
+   * Shorts video can be:
+   *
+   * vertical   = 9:16
+   * horizontal = 16:9
+   * auto       = source decides
+   */
+  videoOrientation?: AdVideoOrientation;
+
+  /**
+   * Optional image/poster for video ads.
+   */
+  videoPoster?: string;
+
+  duration?: number;
+
+  autoplay?: boolean;
+
+  muted?: boolean;
+
+  // ----------------------------------------------------
+  // FLOATING TV
+  // ----------------------------------------------------
+
+  width?: number;
+
+  // ----------------------------------------------------
+  // 3D CUBE
+  // ----------------------------------------------------
+
+  cubeFaces?: AdCubeFace[];
+
+  rotationSpeed?: number;
+
+  cubeSameImage?: boolean;
+
+  // ----------------------------------------------------
+  // RESPONSIVE POSITIONING
+  // ----------------------------------------------------
+
+  layout?: AdLayout;
+
+  // ----------------------------------------------------
+  // FIRESTORE
+  // ----------------------------------------------------
+
+  createdAt?: unknown;
+
+  updatedAt?: unknown;
+}
+
+// ======================================================
+// FIRESTORE RESULT
+// ======================================================
+
+export interface BusinessAd
+  extends AdsData {
+  id: string;
 }
 
 // ======================================================
@@ -238,40 +257,127 @@ export async function getAds(): Promise<
 // ======================================================
 
 export async function createAd(
-  data: CreateAdData
+  data: AdsData
 ): Promise<string> {
-  const adsRef = collection(
-    db,
-    ADS_COLLECTION
-  );
+  const payload: AdsData = {
+    ...data,
 
-  const docRef = await addDoc(
-    adsRef,
-    {
-      ...data,
+    priority:
+      data.priority ?? 1,
 
-      active:
-        data.active ?? true,
+    mobileEnabled:
+      data.mobileEnabled ?? true,
 
-      priority:
-        data.priority ?? 0,
+    desktopEnabled:
+      data.desktopEnabled ?? true,
 
-      frequency:
-        data.frequency ?? "always",
+    openInNewTab:
+      data.openInNewTab ?? true,
 
-      impressions: 0,
+    delay:
+      data.delay ?? 5,
 
-      clicks: 0,
+    frequency:
+      data.frequency ?? "once_session",
 
-      createdAt:
-        serverTimestamp(),
+    closeable:
+      data.closeable ?? true,
 
-      updatedAt:
-        serverTimestamp(),
-    }
-  );
+    duration:
+      data.duration ?? 10,
+
+    autoplay:
+      data.autoplay ?? true,
+
+    muted:
+      data.muted ?? true,
+
+    width:
+      data.width ?? 320,
+
+    videoType:
+      data.videoType ?? "youtube",
+
+    videoOrientation:
+      data.videoOrientation ?? "auto",
+
+    videoPoster:
+      data.videoPoster ?? "",
+
+    rotationSpeed:
+      data.rotationSpeed ?? 4,
+
+    cubeSameImage:
+      data.cubeSameImage ?? false,
+  };
+
+  const docRef =
+    await addDoc(
+      collection(
+        db,
+        COLLECTION
+      ),
+      {
+        ...payload,
+
+        createdAt:
+          serverTimestamp(),
+
+        updatedAt:
+          serverTimestamp(),
+      }
+    );
 
   return docRef.id;
+}
+
+// ======================================================
+// GET ALL ADS
+// ======================================================
+
+export async function getAds(): Promise<
+  BusinessAd[]
+> {
+  const snapshot =
+    await getDocs(
+      collection(
+        db,
+        COLLECTION
+      )
+    );
+
+  return snapshot.docs.map(
+    (item) => ({
+      id: item.id,
+      ...(item.data() as AdsData),
+    })
+  );
+}
+
+// ======================================================
+// GET SINGLE AD
+// ======================================================
+
+export async function getAd(
+  id: string
+): Promise<BusinessAd | null> {
+  const snapshot =
+    await getDoc(
+      doc(
+        db,
+        COLLECTION,
+        id
+      )
+    );
+
+  if (!snapshot.exists()) {
+    return null;
+  }
+
+  return {
+    id: snapshot.id,
+    ...(snapshot.data() as AdsData),
+  };
 }
 
 // ======================================================
@@ -280,26 +386,21 @@ export async function createAd(
 
 export async function updateAd(
   id: string,
-  data: UpdateAdData
+  data: Partial<AdsData>
 ): Promise<void> {
-  if (!id) {
-    throw new Error(
-      "Ad ID is required."
-    );
-  }
+  await updateDoc(
+    doc(
+      db,
+      COLLECTION,
+      id
+    ),
+    {
+      ...data,
 
-  const adRef = doc(
-    db,
-    ADS_COLLECTION,
-    id
+      updatedAt:
+        serverTimestamp(),
+    }
   );
-
-  await updateDoc(adRef, {
-    ...data,
-
-    updatedAt:
-      serverTimestamp(),
-  });
 }
 
 // ======================================================
@@ -309,78 +410,12 @@ export async function updateAd(
 export async function deleteAd(
   id: string
 ): Promise<void> {
-  if (!id) {
-    throw new Error(
-      "Ad ID is required."
-    );
-  }
-
-  const adRef = doc(
-    db,
-    ADS_COLLECTION,
-    id
+  await deleteDoc(
+    doc(
+      db,
+      COLLECTION,
+      id
+    )
   );
-
-  await deleteDoc(adRef);
 }
 
-// ======================================================
-// TOGGLE ACTIVE STATUS
-// ======================================================
-
-export async function toggleAdStatus(
-  id: string,
-  active: boolean
-): Promise<void> {
-  if (!id) {
-    throw new Error(
-      "Ad ID is required."
-    );
-  }
-
-  const adRef = doc(
-    db,
-    ADS_COLLECTION,
-    id
-  );
-
-  await updateDoc(adRef, {
-    active,
-
-    updatedAt:
-      serverTimestamp(),
-  });
-}
-
-// ======================================================
-// UPDATE AD ANALYTICS
-// ======================================================
-
-export async function updateAdAnalytics(
-  id: string,
-  type:
-    | "impression"
-    | "click"
-): Promise<void> {
-  if (!id) {
-    return;
-  }
-
-  const adRef = doc(
-    db,
-    ADS_COLLECTION,
-    id
-  );
-
-  const field =
-    type === "impression"
-      ? "impressions"
-      : "clicks";
-
-  await updateDoc(adRef, {
-    [field]: 1,
-
-    updatedAt:
-      serverTimestamp(),
-  });
-}
