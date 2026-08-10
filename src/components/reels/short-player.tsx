@@ -20,6 +20,8 @@ import {
   VolumeX,
   Bookmark,
   BookmarkCheck,
+  Play,
+  Pause,
 } from "lucide-react";
 
 interface ShortPlayerProps {
@@ -529,16 +531,27 @@ function handleScreenClick() {
     "
   >
     <span
-      className="
-        flex
-        items-center
-        justify-center
-        text-[28px]
-        leading-none
-      "
-    >
-      {isPlaying ? "Ⅱ" : "▶"}
-    </span>
+  className="
+    flex
+    items-center
+    justify-center
+  "
+>
+  {isPlaying ? (
+    <Pause
+      size={30}
+      strokeWidth={3}
+      className="text-white"
+    />
+  ) : (
+    <Play
+      size={30}
+      strokeWidth={3}
+      fill="currentColor"
+      className="ml-0.5 text-white"
+    />
+  )}
+</span>
   </button>
 )}
 

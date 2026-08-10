@@ -6,7 +6,9 @@ import {
 } from "react";
 
 import {
+  GoogleAuthProvider,
   onAuthStateChanged,
+  signInWithPopup,
 } from "firebase/auth";
 
 import {
@@ -35,6 +37,11 @@ export default function ShortsJsonEditor() {
 
   const [error, setError] =
     useState("");
+  const [loginLoading, setLoginLoading] =
+    useState(false);
+
+  const [user, setUser] =
+    useState<any>(null);
 
   const [success, setSuccess] =
     useState("");
@@ -60,26 +67,63 @@ export default function ShortsJsonEditor() {
   // ==========================================
 
   useEffect(() => {
-    const unsubscribe =
-      onAuthStateChanged(
-        commentsAuth,
-        (user) => {
-          if (!user) {
-            setLoading(false);
-            setError(
-              "Admin login required."
-            );
-            return;
-          }
+  const unsubscribe =
+    onAuthStateChanged(
+      commentsAuth,
+      (currentUser) => {
 
-          loadShorts();
+        setUser(currentUser);
+
+        if (!currentUser) {
+          setLoading(false);
+          return;
         }
-      );
 
-    return () => {
-      unsubscribe();
-    };
-  }, []);
+        loadShorts();
+      }
+    );
+
+  return () => {
+    unsubscribe();
+  };
+}, []);
+
+async function handleGoogleLogin() {
+  try {
+    setLoginLoading(true);
+    setError("");
+
+    const provider =
+      new GoogleAuthProvider();
+
+    provider.setCustomParameters({
+      prompt: "select_account",
+    });
+
+    await signInWithPopup(
+      commentsAuth,
+      provider
+    );
+
+    setSuccess(
+      "Login successful. Shorts loading..."
+    );
+
+  } catch (error) {
+    console.error(
+      "GOOGLE LOGIN ERROR:",
+      error
+    );
+
+    setError(
+      error instanceof Error
+        ? error.message
+        : "Google login nahi ho paaya."
+    );
+  } finally {
+    setLoginLoading(false);
+  }
+}
 
   async function loadShorts() {
     try {
@@ -553,7 +597,108 @@ export default function ShortsJsonEditor() {
       </div>
     );
   }
+  if (!user) {
+  return (
+    <div className="flex min-h-[500px] items-center justify-center rounded-2xl border border-zinc-200 bg-white p-6">
+      <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-8 text-center shadow-xl">
 
+        {/* Logo */}
+        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+          <img
+            src="/loader.png"
+            alt="Infinia Bharat News"
+            className="h-full w-full object-contain p-2"
+          />
+        </div>
+
+        {/* Heading */}
+        <h2 className="text-2xl font-bold text-zinc-900">
+          Shorts Manager
+        </h2>
+
+        <p className="mt-2 text-sm leading-6 text-zinc-500">
+          YouTube Shorts manage karne ke liye
+          pehle Google account se login karein.
+        </p>
+
+        {/* Error */}
+        {error && (
+          <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-left text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        {/* Google Login */}
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          disabled={loginLoading}
+          className="
+            mt-6
+            flex
+            w-full
+            items-center
+            justify-center
+            gap-3
+            rounded-xl
+            border
+            border-zinc-300
+            bg-white
+            px-5
+            py-3.5
+            text-sm
+            font-bold
+            text-zinc-800
+            shadow-sm
+            transition
+            hover:bg-zinc-50
+            hover:shadow-md
+            active:scale-[0.98]
+            disabled:cursor-not-allowed
+            disabled:opacity-60
+          "
+        >
+
+          {/* Google Icon */}
+          {!loginLoading && (
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                fill="#4285F4"
+                d="M21.35 12.27c0-.78-.07-1.53-.22-2.27H12v4.3h5.24a4.48 4.48 0 0 1-1.94 2.94v2.45h3.14c1.84-1.69 2.91-4.18 2.91-7.42Z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 21.75c2.63 0 4.84-.87 6.45-2.36l-3.14-2.45c-.87.58-1.98.93-3.31.93-2.54 0-4.69-1.72-5.46-4.03H3.3v2.53A9.75 9.75 0 0 0 12 21.75Z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M6.54 13.84A5.86 5.86 0 0 1 6.23 12c0-.64.11-1.26.31-1.84V7.63H3.3A9.75 9.75 0 0 0 2.25 12c0 1.57.38 3.06 1.05 4.37l3.24-2.53Z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 6.13c1.43 0 2.72.49 3.73 1.45l2.8-2.8C16.84 3.18 14.63 2.25 12 2.25a9.75 9.75 0 0 0-8.7 5.38l3.24 2.53C7.31 7.85 9.46 6.13 12 6.13Z"
+              />
+            </svg>
+          )}
+
+          {loginLoading
+            ? "Google se login ho raha hai..."
+            : "Continue with Google"}
+        </button>
+
+        <p className="mt-5 text-xs text-zinc-400">
+          Secure Google authentication
+        </p>
+
+      </div>
+    </div>
+  );
+}
   // ==========================================
   // UI
   // ==========================================
