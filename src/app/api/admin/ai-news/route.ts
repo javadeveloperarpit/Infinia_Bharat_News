@@ -926,76 +926,130 @@ Title must be informative and strong without misleading readers.
 
 Use Hindi naturally while retaining official names, organizations, places and technical terms where appropriate.
 
-============================================================
-SEO
-============================================================
+// ============================================================
+// SEO
+// ============================================================
 
-Create:
+Create exactly these fields:
 
 - title
 - seoTitle
 - seoDescription
 - shortDescription
-- slug
 - suggestedCategory
 - content
 - imagePrompt
 
-SEO title:
+IMPORTANT:
 
-- approximately 50-60 characters when practical
-- main keyword near the beginning
+The field "seoTitle" is NOT a normal Hindi SEO title.
 
-SEO description:
+In this application, "seoTitle" is stored in Firebase and is used as the
+ARTICLE URL SLUG.
 
-- approximately 140-160 characters when practical
-- clearly communicate what the reader will learn
-- encourage clicks without clickbait
+Therefore:
 
-Short description:
+seoTitle = ENGLISH URL SLUG ONLY.
 
-- 2-3 concise sentences
-- suitable for article cards and social previews
+Do NOT write a Hindi SEO title in seoTitle.
 
-============================================================
-IMPORTANT: ENGLISH URL SLUG
-============================================================
+Do NOT write a Hindi sentence in seoTitle.
 
-The "slug" field is ONLY for the article URL.
+Do NOT write Devanagari characters in seoTitle.
 
-The article itself can remain completely Hindi.
+Do NOT write a human-readable SEO title in seoTitle.
 
-The slug MUST be written in English words high seo url only.
+The article title "title" MUST remain in natural Hindi.
 
-STRICT RULES FOR slug:
+The "seoTitle" MUST be a short, SEO-friendly English URL slug describing
+the main news topic.
 
-1. ONLY lowercase English letters a-z.
+STRICT seoTitle RULES:
+
+1. ONLY lowercase English ASCII letters a-z.
 2. Numbers 0-9 are allowed.
 3. Hyphens "-" are allowed.
-4. NEVER use Hindi characters.
-5. NEVER use Devanagari.
-6. NEVER use Unicode characters.
-7. NEVER use punctuation.
-8. NEVER use "/" or "\".
-9. NEVER use spaces.
-10. NEVER URL-encode the slug.
-11. NEVER transliterate Hindi characters directly into Unicode.
-12. Translate the important meaning of the Hindi title/topic into concise English words.
-13. Keep it short and SEO-friendly.
-14. Prefer keywords that are likely to be searched by readers in English.
-15. Do not include unnecessary words such as "latest", "news", "today" unless genuinely useful.
-16. Use the main news keyword near the beginning.
+4. NO spaces.
+5. NO Hindi characters.
+6. NO Devanagari.
+7. NO Unicode characters.
+8. NO punctuation.
+9. NO slash "/".
+10. NO backslash "\\".
+11. NO underscores "_".
+12. NO colon ":".
+13. NO brackets.
+14. NO quotes.
+15. NO question marks.
+16. NO emojis.
+17. NEVER URL-encode the value.
+18. NEVER transliterate Hindi text character-by-character.
+19. Translate the important meaning of the Hindi news into concise English.
+20. Use the most important searchable English keywords.
+21. Keep it short, normally 3-8 words.
+22. Do not add unnecessary words such as "latest", "today", "breaking",
+    "news" unless they are genuinely useful.
+23. The final value must already be ready to use directly inside an URL.
+24. The seoTitle MUST NOT contain a date or timestamp.
+25. The seoTitle MUST NOT contain the website name.
+26. The seoTitle MUST NOT contain the category name unless it is an important
+    part of the actual news topic.
 
-Example:
+Examples:
 
 Hindi title:
 "झारखंड में परीक्षाओं में देरी और रिश्वत के आरोपों पर प्रदर्शन"
 
-Correct slug:
+Correct seoTitle:
 "jharkhand-exam-delay-bribery-protests"
 
-The final slug MUST already be clean English words suitable for a URL.
+Hindi title:
+"एयर इंडिया की फ्लाइट में बड़ी तकनीकी खराबी"
 
+Correct seoTitle:
+"air-india-flight-technical-fault"
+
+Hindi title:
+"दिल्ली में भारी बारिश से कई इलाकों में जलभराव"
+
+Correct seoTitle:
+"delhi-heavy-rain-waterlogging"
+
+Hindi title:
+"भारत ने पाकिस्तान के खिलाफ बड़ी जीत दर्ज की"
+
+Correct seoTitle:
+"india-defeats-pakistan-major-win"
+
+WRONG seoTitle examples:
+
+"एयर इंडिया की फ्लाइट में बड़ी तकनीकी खराबी"
+"Air India की फ्लाइट में तकनीकी खराबी"
+"Air India Flight Technical Problem"
+"Air India Flight Technical Problem - Latest News"
+"air india flight technical problem?"
+"air_india_flight_technical_problem"
+
+The ONLY acceptable format is:
+
+"air-india-flight-technical-fault"
+
+IMPORTANT:
+
+Do not confuse "title" and "seoTitle".
+
+"title":
+Natural Hindi news headline.
+
+"seoTitle":
+English URL slug.
+
+For example:
+
+{
+  "title": "एयर इंडिया की फ्लाइट में बड़ी तकनीकी खराबी",
+  "seoTitle": "air-india-flight-technical-fault"
+}
 ============================================================
 CONTENT HTML
 ============================================================

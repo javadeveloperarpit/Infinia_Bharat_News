@@ -2,7 +2,7 @@
 // ARTICLE SLUG
 // ======================================
 
-export function createSlug(title: string) {
+export function createSlug(value: string) {
   const now = new Date();
 
   const date =
@@ -13,17 +13,45 @@ export function createSlug(title: string) {
   const time =
     `${String(now.getHours()).padStart(2, "0")}` +
     `${String(now.getMinutes()).padStart(2, "0")}` +
-    `${String(now.getSeconds()).padStart(2, "0")}`;
+    `${String(now.getSeconds()).padStart(2, "0")}` +
+    `${String(now.getMilliseconds()).padStart(3, "0")}`;
 
-  const slug = title
-    .toLowerCase()
-    .trim()
-    .replace(/[^\p{L}\p{N}\s-]/gu, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+  const slug =
+    String(value || "")
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+  if (!slug) {
+    return `article-${date}-${time}`;
+  }
 
   return `${slug}-${date}-${time}`;
+}
+
+
+// ======================================
+// ENGLISH SLUG
+// ======================================
+
+export function createEnglishSlug(
+  value: string
+) {
+  return String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
 }
 
 
@@ -32,12 +60,13 @@ export function createSlug(title: string) {
 // ======================================
 
 export function createAuthorSlug(name: string) {
-  return name
+  return String(name || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .trim()
-    .replace(/[^\p{L}\p{N}\s-]/gu, "")
+    .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+    .replace(/^-+|-+$/g, "");
 }
-
