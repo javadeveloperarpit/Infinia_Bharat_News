@@ -32,63 +32,70 @@ export default function CreateArticlePage() {
 
 
   // ======================================================
-  // STATES
+// STATES
+// ======================================================
+
+const [loading, setLoading] =
+  useState(false);
+
+const [categories, setCategories] =
+  useState<any[]>([]);
+
+const [categoriesLoading, setCategoriesLoading] =
+  useState(true);
+
+const [form, setForm] = useState({
+
+  title: "",
+
+  categoryId: "",
+
+  thumbnail: "",
+
+  shortDescription: "",
+
+  content: "",
+
+  seoTitle: "",
+
+  seoDescription: "",
+
+  featured: false,
+
+  breaking: false,
+
+  priority: 0,
+
+  status:
+    "draft" as
+    "draft" |
+    "published",
+
+});
+
   // ======================================================
+// LOAD CATEGORIES
+// ======================================================
 
-  const [loading, setLoading] =
-    useState(false);
+useEffect(() => {
 
-  const [categories, setCategories] =
-    useState<any[]>([]);
+  let mounted = true;
 
+  async function loadCategories() {
 
-  const [form, setForm] = useState({
+    try {
 
-    title: "",
+      setCategoriesLoading(true);
 
-    categoryId: "",
+      const data =
+        await getCategories();
 
-    thumbnail: "",
+      console.log(
+        "ARTICLE CATEGORIES:",
+        data
+      );
 
-    shortDescription: "",
-
-    content: "",
-
-    seoTitle: "",
-
-    seoDescription: "",
-
-    featured: false,
-
-    breaking: false,
-
-    priority: 0,
-
-    status:
-      "draft" as
-      "draft" |
-      "published",
-
-  });
-
-
-  // ======================================================
-  // LOAD CATEGORIES
-  // ======================================================
-
-  useEffect(() => {
-
-    async function loadCategories() {
-
-      try {
-
-        const data =
-          await getCategories();
-
-        console.log(
-          "ARTICLE CATEGORIES:",
-          data
-        );
+      if (mounted) {
 
         setCategories(
           Array.isArray(data)
@@ -96,69 +103,190 @@ export default function CreateArticlePage() {
             : []
         );
 
-      } catch (error) {
+      }
 
-        console.error(
-          "Categories Load Error:",
-          error
-        );
+    } catch (error) {
+
+      console.error(
+        "Categories Load Error:",
+        error
+      );
+
+      if (mounted) {
+
+        setCategories([]);
+
+      }
+
+    } finally {
+
+      if (mounted) {
+
+        setCategoriesLoading(false);
 
       }
 
     }
 
+  }
 
-    loadCategories();
+  loadCategories();
 
-  }, []);
+  return () => {
+
+    mounted = false;
+
+  };
+
+}, []);
 
 
   // ======================================================
-  // LOAD AI GENERATED ARTICLE
-  // ======================================================
+// LOAD AI GENERATED ARTICLE
+// ======================================================
 
-  useEffect(() => {
+useEffect(() => {
+
+  // AI source nahi hai
+  if (
+    searchParams.get("from") !== "ai"
+  ) {
+
+    return;
+
+  }
+
+
+  // Categories abhi load nahi hui hain
+  // Is point par bilkul kuch mat karo.
+  //
+  // IMPORTANT:
+  // sessionStorage bhi remove nahi karna hai.
+  //
+  if (categoriesLoading) {
+
+    console.log(
+      "Waiting for categories before loading AI article..."
+    );
+
+    return;
+
+  }
+
+
+  const saved =
+    sessionStorage.getItem(
+      "ai_article"
+    );
+
+
+  if (!saved) {
+
+    return;
+
+  }
+
+
+  try {
+
+    const aiArticle =
+      JSON.parse(saved);
+
+
+    console.log(
+      "AI ARTICLE RECEIVED:",
+      aiArticle
+    );
+
+
+    // ==================================================
+    // FIND CATEGORY
+    // ==================================================
+
+    const suggestedCategory =
+      String(
+        aiArticle.suggestedCategory ||
+        aiArticle.category ||
+        ""
+      )
+        .trim()
+        .toLowerCase();
+
+
+    let matchedCategory = null;
+
 
     if (
-      searchParams.get("from") !== "ai"
+      suggestedCategory &&
+      categories.length > 0
     ) {
-      return;
+
+      matchedCategory =
+        categories.find(
+          (category) => {
+
+            const categoryName =
+              String(
+                category?.name ||
+                ""
+              )
+                .trim()
+                .toLowerCase();
+
+
+            const categorySlug =
+              String(
+                category?.slug ||
+                ""
+              )
+                .trim()
+                .toLowerCase();
+
+
+            return (
+
+              categoryName ===
+              suggestedCategory ||
+
+              categorySlug ===
+              suggestedCategory
+
+            );
+
+          }
+        ) || null;
+
     }
 
 
-    const saved =
-      sessionStorage.getItem(
-        "ai_article"
-      );
+    console.log(
+      "AI SUGGESTED CATEGORY:",
+      suggestedCategory
+    );
 
 
-    if (!saved) {
-      return;
-    }
+    console.log(
+      "MATCHED CATEGORY:",
+      matchedCategory
+    );
 
 
-    try {
+    // ==================================================
+    // SET COMPLETE FORM
+    // ==================================================
 
-      const aiArticle =
-        JSON.parse(saved);
-
-
-      console.log(
-        "AI ARTICLE RECEIVED:",
-        aiArticle
-      );
-
-
-      // ==================================================
-      // BASIC AI DATA
-      // ==================================================
-
-      setForm((previous) => ({
+    setForm(
+      (previous) => ({
 
         ...previous,
 
         title:
           aiArticle.title ||
+          "",
+
+        categoryId:
+          matchedCategory?.id ||
+          aiArticle.categoryId ||
           "",
 
         thumbnail:
@@ -202,141 +330,68 @@ export default function CreateArticlePage() {
             ? "published"
             : "draft",
 
-      }));
+      })
+    );
 
 
-      // ==================================================
-      // CATEGORY AUTO MATCH
-      // ==================================================
-      //
-      // AI JSON:
-      //
-      // {
-      //   "suggestedCategory": "National"
-      // }
-      //
-      // Existing category:
-      //
-      // {
-      //   id: "...",
-      //   name: "National"
-      // }
-      //
-      // categoryId automatically set hoga.
-      //
-      // ==================================================
+    // ==================================================
+    // CATEGORY RESULT
+    // ==================================================
 
-      const suggestedCategory =
-        String(
-          aiArticle.suggestedCategory ||
-          aiArticle.category ||
-          ""
-        )
-          .trim()
-          .toLowerCase();
+    if (
+      matchedCategory
+    ) {
 
-
-      if (
-        suggestedCategory
-      ) {
-
-        const matchedCategory =
-          categories.find(
-            (category) => {
-
-              const categoryName =
-                String(
-                  category?.name ||
-                  ""
-                )
-                  .trim()
-                  .toLowerCase();
-
-
-              const categorySlug =
-                String(
-                  category?.slug ||
-                  ""
-                )
-                  .trim()
-                  .toLowerCase();
-
-
-              return (
-                categoryName ===
-                suggestedCategory ||
-
-                categorySlug ===
-                suggestedCategory
-              );
-
-            }
-          );
-
-
-        if (
-          matchedCategory
-        ) {
-
-          console.log(
-            "AI CATEGORY MATCHED:",
-            matchedCategory
-          );
-
-
-          setForm(
-            (previous) => ({
-
-              ...previous,
-
-              categoryId:
-                matchedCategory.id,
-
-            })
-          );
-
-        } else {
-
-          console.warn(
-            "AI CATEGORY NOT FOUND:",
-            suggestedCategory,
-
-            "Available categories:",
-            categories
-              .map(
-                (category) =>
-                  category.name
-              )
-          );
-
-        }
-
-      }
-
-
-      // ==================================================
-      // REMOVE SESSION DATA
-      // ==================================================
-
-      sessionStorage.removeItem(
-        "ai_article"
+      console.log(
+        "AI CATEGORY MATCHED:",
+        matchedCategory.name,
+        matchedCategory.id
       );
 
+    } else if (
+      suggestedCategory
+    ) {
 
-    } catch (error) {
+      console.warn(
+        "AI CATEGORY NOT FOUND:",
+        suggestedCategory,
 
-      console.error(
-        "AI Article Load Error:",
-        error
+        "Available categories:",
+        categories.map(
+          (category) =>
+            category.name
+        )
       );
 
     }
 
-  }, [
-    searchParams,
-    categories,
-  ]);
 
+    // ==================================================
+    // REMOVE SESSION DATA
+    // ==================================================
+    //
+    // IMPORTANT:
+    // Ye tabhi hoga jab categories load ho chuki hain.
+    //
+    sessionStorage.removeItem(
+      "ai_article"
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "AI Article Load Error:",
+      error
+    );
+
+  }
+
+}, [
+  searchParams,
+  categories,
+  categoriesLoading,
+]);
 
   // ======================================================
   // INPUT CHANGE
@@ -651,73 +706,67 @@ export default function CreateArticlePage() {
 
 
           <select
-            name="categoryId"
-            value={
-              form.categoryId
-            }
-            onChange={
-              handleChange
-            }
-            className="
-              w-full
-              border
-              border-zinc-300
-              p-3
-              rounded-lg
-              outline-none
-              focus:ring-2
-              focus:ring-red-500
-              bg-white
-            "
-          >
+  name="categoryId"
+  value={form.categoryId}
+  onChange={handleChange}
+  disabled={categoriesLoading}
+  className="
+    w-full
+    border
+    border-zinc-300
+    p-3
+    rounded-lg
+    outline-none
+    focus:ring-2
+    focus:ring-red-500
+    bg-white
+    disabled:bg-zinc-100
+    disabled:cursor-wait
+  "
+>
 
-            <option value="">
-              Select Category
-            </option>
+  <option value="">
+    {categoriesLoading
+      ? "Loading categories..."
+      : "Select Category"
+    }
+  </option>
 
 
-            {categories.map(
-              (cat) => (
+  {categories.map(
+    (cat) => (
 
-                <option
-                  key={
-                    cat.id
-                  }
-                  value={
-                    cat.id
-                  }
-                >
-                  {
-                    cat.name
-                  }
-                </option>
+      <option
+        key={cat.id}
+        value={cat.id}
+      >
+        {cat.name}
+      </option>
 
-              )
-            )}
+    )
+  )}
 
-          </select>
+</select>
 
 
           {/* AI CATEGORY STATUS */}
 
-          {searchParams.get(
-            "from"
-          ) === "ai" &&
-            form.categoryId && (
+          {searchParams.get("from") === "ai" &&
+  categoriesLoading && (
 
-              <p
-                className="
-                  mt-2
-                  text-xs
-                  font-semibold
-                  text-green-600
-                "
-              >
-                ✓ Category automatically
-                selected from AI suggestion
-              </p>
+    <p
+      className="
+        mt-2
+        text-xs
+        font-semibold
+        text-zinc-500
+      "
+    >
+      Loading categories and matching
+      AI suggestion...
+    </p>
 
-            )}
+)}
 
         </div>
 

@@ -1142,7 +1142,6 @@ Use exactly:
   "seoTitle": "",
   "seoDescription": "",
   "shortDescription": "",
-  "slug": "",
   "content": "",
   "suggestedCategory": "",
   "imagePrompt": ""
@@ -1150,9 +1149,14 @@ Use exactly:
 
 IMPORTANT:
 
-suggestedCategory MUST contain ONLY the exact Firestore category slug.
+"seoTitle" is the article URL slug.
 
-slug MUST contain ONLY lowercase ASCII English characters, numbers and hyphens.
+"seoTitle" MUST contain ONLY lowercase ASCII English characters,
+numbers and hyphens.
+
+"seoTitle" MUST NEVER contain Hindi or Devanagari characters.
+
+Do not return a separate "slug" field.
 `;
 
   // ----------------------------------------------------------
@@ -1358,89 +1362,81 @@ slug MUST contain ONLY lowercase ASCII English characters, numbers and hyphens.
   }
 
   // ==========================================================
-  // SANITIZE GEMINI SLUG
-  // ==========================================================
+// SANITIZE SEO TITLE AS URL SLUG
+// ==========================================================
 
-  let slug =
-    sanitizeEnglishSlug(
-      article.slug
-    );
-
-  // ----------------------------------------------------------
-  // FALLBACK IF GEMINI RETURNS BAD/EMPTY SLUG
-  // ----------------------------------------------------------
-
-  if (!slug) {
-    throw new Error(
-      "AI generated an invalid English slug"
-    );
-  }
-
-  console.log(
-    "Generated English slug:",
-    slug
+const seoTitle =
+  sanitizeEnglishSlug(
+    article.seoTitle
   );
 
+// ----------------------------------------------------------
+// VALIDATE SEO TITLE
+// ----------------------------------------------------------
+
+if (!seoTitle) {
+  throw new Error(
+    "AI generated an invalid English seoTitle slug"
+  );
+}
+
+console.log(
+  "Generated English SEO URL slug:",
+  seoTitle
+);
   // ==========================================================
   // FINAL RESULT
   // ==========================================================
 
   return {
-    title:
-      String(
-        article.title || ""
-      ),
+  title:
+    String(
+      article.title || ""
+    ),
 
-    seoTitle:
-      String(
-        article.seoTitle || ""
-      ),
+  seoTitle,
 
-    seoDescription:
-      String(
-        article.seoDescription ||
-          ""
-      ),
+  seoDescription:
+    String(
+      article.seoDescription ||
+        ""
+    ),
 
-    shortDescription:
-      String(
-        article.shortDescription ||
-          ""
-      ),
+  shortDescription:
+    String(
+      article.shortDescription ||
+        ""
+    ),
 
-    content:
-      String(
-        article.content || ""
-      ),
+  content:
+    String(
+      article.content || ""
+    ),
 
-    // IMPORTANT:
-    // This is the clean English URL slug.
-    slug,
+  suggestedCategory:
+    selectedCategory.slug,
 
-    suggestedCategory:
-      selectedCategory.slug,
+  categoryId:
+    selectedCategory.id,
 
-    categoryId:
-      selectedCategory.id,
+  categoryName:
+    selectedCategory.name,
 
-    categoryName:
-      selectedCategory.name,
+  categoryNameHi:
+    selectedCategory.nameHi,
 
-    categoryNameHi:
-      selectedCategory.nameHi,
+  categorySlug:
+    selectedCategory.slug,
 
-    categorySlug:
-      selectedCategory.slug,
+  imagePrompt:
+    String(
+      article.imagePrompt ||
+        ""
+    ),
 
-    imagePrompt:
-      String(
-        article.imagePrompt ||
-          ""
-      ),
-
-    sourceImageUrl:
-      originalImageUrl || "",
-  };
+  sourceImageUrl:
+    originalImageUrl || "",
+};
 }
 
 // ============================================================
