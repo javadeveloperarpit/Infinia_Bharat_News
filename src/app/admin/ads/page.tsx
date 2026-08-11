@@ -90,11 +90,11 @@ type FormState = {
 // CONSTANTS
 // ======================================================
 
-const DESKTOP_WIDTH = 1920;
-const DESKTOP_HEIGHT = 1080;
+const DESKTOP_WIDTH = 1366;
+const DESKTOP_HEIGHT = 768;
 
-const MOBILE_WIDTH = 1080;
-const MOBILE_HEIGHT = 1920;
+const MOBILE_WIDTH = 440;
+const MOBILE_HEIGHT = 956;
 
 // ======================================================
 // DEFAULT LAYOUTS
@@ -1864,33 +1864,30 @@ export default function AdsPage() {
   // ====================================================
 
   const baseWidth =
-    previewDevice ===
-    "desktop"
-      ? DESKTOP_WIDTH
-      : MOBILE_WIDTH;
+  previewDevice === "desktop"
+    ? DESKTOP_WIDTH
+    : MOBILE_WIDTH;
 
-  const baseHeight =
-    previewDevice ===
-    "desktop"
-      ? DESKTOP_HEIGHT
-      : MOBILE_HEIGHT;
+const baseHeight =
+  previewDevice === "desktop"
+    ? DESKTOP_HEIGHT
+    : MOBILE_HEIGHT;
 
-  const availableWidth =
-    Math.max(
-      260,
-      previewWidth - 32
-    );
+const availableWidth = Math.max(
+  260,
+  previewWidth - 32
+);
 
-  const canvasScale =
-    Math.min(
-      availableWidth /
-        baseWidth,
-      0.95
-    );
+const canvasScale = Math.min(
+  availableWidth / baseWidth,
+  1
+);
 
-  const displayedHeight =
-    baseHeight *
-    canvasScale;
+const displayedWidth =
+  baseWidth * canvasScale;
+
+const displayedHeight =
+  baseHeight * canvasScale;
 
   // ====================================================
   // RENDER
@@ -2783,32 +2780,18 @@ export default function AdsPage() {
           >
             <div className="grid grid-cols-2 gap-2 rounded-xl bg-zinc-100 p-1">
               <DeviceTab
-                active={
-                  previewDevice ===
-                  "desktop"
-                }
-                onClick={() =>
-                  setPreviewDevice(
-                    "desktop"
-                  )
-                }
-                label="Desktop"
-                dimensions="1920 × 1080"
-              />
+  active={previewDevice === "desktop"}
+  onClick={() => setPreviewDevice("desktop")}
+  label="Desktop"
+  dimensions="1366 × 768"
+/>
 
-              <DeviceTab
-                active={
-                  previewDevice ===
-                  "mobile"
-                }
-                onClick={() =>
-                  setPreviewDevice(
-                    "mobile"
-                  )
-                }
-                label="Mobile"
-                dimensions="1080 × 1920"
-              />
+<DeviceTab
+  active={previewDevice === "mobile"}
+  onClick={() => setPreviewDevice("mobile")}
+  label="Mobile"
+  dimensions="440 × 956"
+/>
             </div>
 
             <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
@@ -2993,32 +2976,18 @@ export default function AdsPage() {
 
               <div className="mt-4 grid grid-cols-2 gap-1 rounded-xl bg-zinc-100 p-1">
                 <DeviceTab
-                  active={
-                    previewDevice ===
-                    "desktop"
-                  }
-                  onClick={() =>
-                    setPreviewDevice(
-                      "desktop"
-                    )
-                  }
-                  label="Desktop"
-                  dimensions="1920 × 1080"
-                />
+  active={previewDevice === "desktop"}
+  onClick={() => setPreviewDevice("desktop")}
+  label="Desktop"
+  dimensions="1366 × 768"
+/>
 
-                <DeviceTab
-                  active={
-                    previewDevice ===
-                    "mobile"
-                  }
-                  onClick={() =>
-                    setPreviewDevice(
-                      "mobile"
-                    )
-                  }
-                  label="Mobile"
-                  dimensions="1080 × 1920"
-                />
+<DeviceTab
+  active={previewDevice === "mobile"}
+  onClick={() => setPreviewDevice("mobile")}
+  label="Mobile"
+  dimensions="440 × 956"
+/>
               </div>
             </div>
 
@@ -3044,21 +3013,16 @@ export default function AdsPage() {
                 </div>
 
                 <div
-                  className={`relative mx-auto overflow-hidden bg-white shadow-2xl ${
-                    previewDevice ===
-                    "mobile"
-                      ? "rounded-[28px] border-[5px] border-zinc-900"
-                      : "rounded-xl border border-zinc-300"
-                  }`}
-                  style={{
-                    width:
-                      baseWidth *
-                      canvasScale,
-
-                    height:
-                      displayedHeight,
-                  }}
-                >
+  className={`relative mx-auto overflow-hidden bg-white shadow-2xl ${
+    previewDevice === "mobile"
+      ? "rounded-[28px] border-[5px] border-zinc-900"
+      : "rounded-xl border border-zinc-300"
+  }`}
+  style={{
+    width: displayedWidth,
+    height: displayedHeight,
+  }}
+>
                   <div
                     className="absolute left-0 top-0 origin-top-left"
                     style={{

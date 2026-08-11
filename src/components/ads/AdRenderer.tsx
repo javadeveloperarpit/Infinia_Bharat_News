@@ -6,615 +6,1226 @@ import {
   useState,
 } from "react";
 
-import type {
-  BusinessAd,
-  AdType,
-  FloatingAdLayout,
-} from "@/services/ads.service";
+import {
+  usePathname,
+  useSearchParams,
+} from "next/navigation";
+
+import { X } from "lucide-react";
+
+import type { BusinessAd } from "@/services/ads.service";
+
+// ======================================================
+// TYPES
+// ======================================================
 
 interface AdRendererProps {
   ads: BusinessAd[];
-  type?: AdType;
-  position?: BusinessAd["position"];
-  className?: string;
+
+  type?:
+    | "popup"
+    | "page_transition"
+    | "floating_tv"
+    | "cube"
+    | "sticky_bottom"
+    | "banner"
+    | "native"
+    | "shorts_video";
+
+  position?: string;
 }
+
+type Device = "desktop" | "mobile";
+
+type FloatingAdType = "cube" | "floating_tv";
+
+// ======================================================
+// CLOSED ADS
+//
+// IMPORTANT:
+//
+// This is intentionally MEMORY ONLY.
+//
+// Closing an ad:
+// - survives React re-renders
+// - survives component remounts
+// - survives Next.js client-side route changes
+//
+// But:
+//
+// Browser refresh / full reload
+// -> JavaScript memory resets
+// -> Set becomes empty
+// -> ads appear again
+//
+// NO localStorage
+// NO sessionStorage
+// ======================================================
+
+const closedFloatingAds = new Set<string>();
+
+function getClosedAdKey(
+  type: FloatingAdType,
+  adId: string
+) {
+  return `${type}:${adId}`;
+}
+
+function isFloatingAdClosed(
+  type: FloatingAdType,
+  adId: string
+): boolean {
+  return closedFloatingAds.has(
+    getClosedAdKey(type, adId)
+  );
+}
+
+function markFloatingAdClosed(
+  type: FloatingAdType,
+  adId: string
+) {
+  closedFloatingAds.add(
+    getClosedAdKey(type, adId)
+  );
+}
+
+// ======================================================
+// FLOATING LAYOUT
+// ======================================================
+
+interface FloatingLayout {
+  width?: number;
+  height?: number;
+  x?: number;
+  y?: number;
+  scale?: number;
+}
+
+// ======================================================
+// CUBE FIELDS
+// ======================================================
+
+interface CubeAdFields {
+  cubeFaces?: Array<{
+    image?: string;
+    link?: string;
+  }>;
+
+  width?: number;
+
+  rotationSpeed?: number;
+}
+
+// ======================================================
+// FLOATING TV FIELDS
+// ======================================================
+
+interface FloatingTVFields {
+  width?: number;
+
+  videoUrl?: string;
+
+  autoplay?: boolean;
+
+  muted?: boolean;
+
+  videoPoster?: string;
+}
+
+// ======================================================
+// ROTATION STATE
+// ======================================================
+
+interface RotationState {
+  lastAdId: string | null;
+
+  recentIds: string[];
+
+  lastUrl: string | null;
+}
+
+// ======================================================
+// REFERENCE CANVAS
+// ======================================================
+
+const DESKTOP_REFERENCE_WIDTH = 1366;
+
+const DESKTOP_REFERENCE_HEIGHT = 768;
+
+const MOBILE_REFERENCE_WIDTH = 440;
+
+const MOBILE_REFERENCE_HEIGHT = 956;
+
+// ======================================================
+// ROTATION STORAGE
+//
+// Rotation state can remain in localStorage.
+// This is separate from CLOSE state.
+//
+// If you also want rotation to reset after refresh,
+// remove this storage later.
+// ======================================================
+
+function getRotationStorageKey(
+  type: FloatingAdType
+) {
+  return `infinia-floating-ad-rotation-${type}`;
+}
+
+// ======================================================
+// HELPER
+// ======================================================
+
+function clamp(
+  value: number,
+  min: number,
+  max: number
+) {
+  return Math.min(
+    Math.max(value, min),
+    max
+  );
+}
+
+function getAdField<
+  T extends object,
+  K extends keyof T
+>(
+  ad: BusinessAd,
+  key: K
+): T[K] | undefined {
+  return (ad as BusinessAd & T)[key];
+}
+
+// ======================================================
+// ROTATION STATE
+// ======================================================
+
+function readRotationState(
+  type: FloatingAdType
+): RotationState {
+  if (
+    typeof window === "undefined"
+  ) {
+    return {
+      lastAdId: null,
+      recentIds: [],
+      lastUrl: null,
+    };
+  }
+
+  try {
+    const raw =
+      localStorage.getItem(
+        getRotationStorageKey(type)
+      );
+
+    if (!raw) {
+      return {
+        lastAdId: null,
+        recentIds: [],
+        lastUrl: null,
+      };
+    }
+
+    const parsed = JSON.parse(raw);
+
+    return {
+      lastAdId:
+        typeof parsed?.lastAdId ===
+        "string"
+          ? parsed.lastAdId
+          : null,
+
+      recentIds:
+        Array.isArray(
+          parsed?.recentIds
+        )
+          ? parsed.recentIds.filter(
+              (
+                id: unknown
+              ): id is string =>
+                typeof id === "string"
+            )
+          : [],
+
+      lastUrl:
+        typeof parsed?.lastUrl ===
+        "string"
+          ? parsed.lastUrl
+          : null,
+    };
+  } catch {
+    return {
+      lastAdId: null,
+      recentIds: [],
+      lastUrl: null,
+    };
+  }
+}
+
+// ======================================================
+// SAVE ROTATION STATE
+// ======================================================
+
+function saveRotationState(
+  type: FloatingAdType,
+  state: RotationState
+) {
+  if (
+    typeof window === "undefined"
+  ) {
+    return;
+  }
+
+  try {
+    localStorage.setItem(
+      getRotationStorageKey(type),
+      JSON.stringify(state)
+    );
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+// ======================================================
+// SELECT FLOATING AD
+// ======================================================
+
+function selectFloatingAd(
+  ads: BusinessAd[],
+  type: FloatingAdType,
+  currentUrl: string
+): BusinessAd | null {
+  // ----------------------------------------------------
+  // CLOSED DURING CURRENT SPA SESSION
+  //
+  // IMPORTANT:
+  // No sessionStorage.
+  // No localStorage.
+  //
+  // Full browser refresh clears this automatically.
+  // ----------------------------------------------------
+
+  const candidates = ads
+    .filter(
+      (ad) =>
+        ad.type === type &&
+        !isFloatingAdClosed(
+          type,
+          ad.id
+        )
+    )
+    .sort(
+      (a, b) =>
+        (a.priority ?? 999) -
+        (b.priority ?? 999)
+    );
+
+  if (!candidates.length) {
+    return null;
+  }
+
+  // ----------------------------------------------------
+  // Only one ad
+  // ----------------------------------------------------
+
+  if (candidates.length === 1) {
+    return candidates[0];
+  }
+
+  const state =
+    readRotationState(type);
+
+  // ----------------------------------------------------
+  // Same URL
+  //
+  // Keep same advertisement.
+  // ----------------------------------------------------
+
+  if (
+    state.lastUrl === currentUrl &&
+    state.lastAdId
+  ) {
+    const existing =
+      candidates.find(
+        (ad) =>
+          ad.id ===
+          state.lastAdId
+      );
+
+    if (existing) {
+      return existing;
+    }
+  }
+
+  // ----------------------------------------------------
+  // First selection
+  // ----------------------------------------------------
+
+  if (!state.lastAdId) {
+    return candidates[0];
+  }
+
+  // ----------------------------------------------------
+  // Find previous advertisement
+  // ----------------------------------------------------
+
+  const currentIndex =
+    candidates.findIndex(
+      (ad) =>
+        ad.id ===
+        state.lastAdId
+    );
+
+  if (currentIndex === -1) {
+    return candidates[0];
+  }
+
+  // ----------------------------------------------------
+  // Next advertisement
+  // ----------------------------------------------------
+
+  const nextIndex =
+    (currentIndex + 1) %
+    candidates.length;
+
+  return candidates[nextIndex];
+}
+
+// ======================================================
+// MAIN AD RENDERER
+// ======================================================
 
 export default function AdRenderer({
   ads,
   type,
   position,
-  className = "",
 }: AdRendererProps) {
-  const [isMobile, setIsMobile] = useState(false);
+  const pathname =
+    usePathname();
 
-  // ======================================================
+  const searchParams =
+    useSearchParams();
+
+  const [
+    device,
+    setDevice,
+  ] = useState<Device>(
+    "desktop"
+  );
+
+  // ====================================================
   // DEVICE DETECTION
-  // ======================================================
+  // ====================================================
 
   useEffect(() => {
-    const checkDevice = () => {
-      setIsMobile(window.innerWidth < 768);
+    const updateDevice = () => {
+      setDevice(
+        window.innerWidth <= 768
+          ? "mobile"
+          : "desktop"
+      );
     };
 
-    checkDevice();
+    updateDevice();
 
     window.addEventListener(
       "resize",
-      checkDevice
+      updateDevice
     );
 
     return () => {
       window.removeEventListener(
         "resize",
-        checkDevice
+        updateDevice
       );
     };
   }, []);
 
-  // ======================================================
-  // FILTER ADS
-  // ======================================================
+  // ====================================================
+  // CURRENT URL
+  // ====================================================
 
-  const filteredAds = useMemo(() => {
-    return ads.filter((ad) => {
-      if (!ad.active) {
-        return false;
-      }
+  const currentUrl =
+    useMemo(() => {
+      const query =
+        searchParams?.toString();
 
-      if (type && ad.type !== type) {
-        return false;
-      }
+      return query
+        ? `${pathname}?${query}`
+        : pathname;
+    }, [
+      pathname,
+      searchParams,
+    ]);
+
+  // ====================================================
+  // VISIBLE ADS
+  // ====================================================
+
+  const visibleAds =
+    useMemo(() => {
+      return ads
+        .filter(
+          (ad) =>
+            ad.active === true
+        )
+
+        .filter((ad) => {
+          if (
+            device === "desktop"
+          ) {
+            return (
+              ad.desktopEnabled !==
+              false
+            );
+          }
+
+          return (
+            ad.mobileEnabled !==
+            false
+          );
+        })
+
+        .filter((ad) => {
+          if (
+            type &&
+            ad.type !== type
+          ) {
+            return false;
+          }
+
+          if (
+            position &&
+            ad.position !== position
+          ) {
+            return false;
+          }
+
+          // Default renderer:
+          // only floating ads
+
+          if (
+            !type &&
+            !position
+          ) {
+            return (
+              ad.type === "cube" ||
+              ad.type ===
+                "floating_tv"
+            );
+          }
+
+          return true;
+        })
+
+        .sort(
+          (a, b) =>
+            (a.priority ?? 999) -
+            (b.priority ?? 999)
+        );
+    }, [
+      ads,
+      device,
+      type,
+      position,
+    ]);
+
+  // ====================================================
+  // SELECT FLOATING ADS
+  // ====================================================
+
+  const selectedFloatingAds =
+    useMemo(() => {
+      const result: {
+        cube:
+          | BusinessAd
+          | null;
+
+        floatingTv:
+          | BusinessAd
+          | null;
+      } = {
+        cube: null,
+
+        floatingTv: null,
+      };
+
+      const cubeAds =
+        visibleAds.filter(
+          (ad) =>
+            ad.type === "cube"
+        );
+
+      const floatingTvAds =
+        visibleAds.filter(
+          (ad) =>
+            ad.type ===
+            "floating_tv"
+        );
+
+      // ------------------------------------------------
+      // Cube
+      // ------------------------------------------------
 
       if (
-        position &&
-        ad.position !== position
+        cubeAds.length
       ) {
-        return false;
+        result.cube =
+          selectFloatingAd(
+            cubeAds,
+            "cube",
+            currentUrl
+          );
       }
+
+      // ------------------------------------------------
+      // Floating TV
+      // ------------------------------------------------
 
       if (
-        isMobile &&
-        ad.mobileEnabled === false
+        floatingTvAds.length
       ) {
-        return false;
+        result.floatingTv =
+          selectFloatingAd(
+            floatingTvAds,
+            "floating_tv",
+            currentUrl
+          );
       }
+
+      return result;
+    }, [
+      visibleAds,
+      currentUrl,
+    ]);
+
+  // ====================================================
+  // SAVE ROTATION STATE
+  // ====================================================
+
+  useEffect(() => {
+    const cube =
+      selectedFloatingAds.cube;
+
+    if (cube) {
+      const state =
+        readRotationState(
+          "cube"
+        );
 
       if (
-        !isMobile &&
-        ad.desktopEnabled === false
+        state.lastUrl !==
+        currentUrl
       ) {
-        return false;
-      }
+        saveRotationState(
+          "cube",
+          {
+            lastAdId:
+              cube.id,
 
-      return true;
-    });
+            recentIds: [
+              ...state.recentIds,
+              cube.id,
+            ].slice(-5),
+
+            lastUrl:
+              currentUrl,
+          }
+        );
+      }
+    }
+
+    const floatingTv =
+      selectedFloatingAds.floatingTv;
+
+    if (floatingTv) {
+      const state =
+        readRotationState(
+          "floating_tv"
+        );
+
+      if (
+        state.lastUrl !==
+        currentUrl
+      ) {
+        saveRotationState(
+          "floating_tv",
+          {
+            lastAdId:
+              floatingTv.id,
+
+            recentIds: [
+              ...state.recentIds,
+              floatingTv.id,
+            ].slice(-5),
+
+            lastUrl:
+              currentUrl,
+          }
+        );
+      }
+    }
   }, [
-    ads,
-    type,
-    position,
-    isMobile,
+    selectedFloatingAds,
+    currentUrl,
   ]);
 
-  // ======================================================
-  // PRIORITY
-  // ======================================================
+  // ====================================================
+  // NO ADS
+  // ====================================================
 
-  const sortedAds = useMemo(() => {
-    return [...filteredAds].sort(
-      (a, b) =>
-        (b.priority ?? 1) -
-        (a.priority ?? 1)
-    );
-  }, [filteredAds]);
-
-  if (!sortedAds.length) {
+  if (
+    !visibleAds.length
+  ) {
     return null;
   }
 
+  // ====================================================
+  // RENDER
+  // ====================================================
+
   return (
-    <div
-      className={`ads-renderer ${className}`}
-    >
-      {sortedAds.map((ad) => (
-        <AdItem
-          key={ad.id}
-          ad={ad}
-          isMobile={isMobile}
-        />
-      ))}
-    </div>
-  );
-}
-
-
-// ======================================================
-// AD ITEM
-// ======================================================
-
-function AdItem({
-  ad,
-  isMobile,
-}: {
-  ad: BusinessAd;
-  isMobile: boolean;
-}) {
-  switch (ad.type) {
-    case "banner":
-      return (
-        <BannerAd
-          ad={ad}
-          isMobile={isMobile}
-        />
-      );
-
-    case "native":
-      return (
-        <NativeAd
-          ad={ad}
-          isMobile={isMobile}
-        />
-      );
-
-    case "popup":
-      return (
-        <PopupAd
-          ad={ad}
-          isMobile={isMobile}
-        />
-      );
-
-    case "page_transition":
-      return (
-        <PageTransitionAd
-          ad={ad}
-          isMobile={isMobile}
-        />
-      );
-
-    case "sticky_bottom":
-      return (
-        <StickyBottomAd
-          ad={ad}
-          isMobile={isMobile}
-        />
-      );
-
-    case "cube":
-      return (
+    <>
+      {selectedFloatingAds.cube && (
         <CubeAd
-          ad={ad}
-          isMobile={isMobile}
-        />
-      );
-
-    case "floating_tv":
-      return (
-        <FloatingTvAd
-          ad={ad}
-          isMobile={isMobile}
-        />
-      );
-
-    case "shorts_video":
-      return (
-        <ShortsVideoAd
-          ad={ad}
-          isMobile={isMobile}
-        />
-      );
-
-    default:
-      return null;
-  }
-}
-function getFloatingLayout(
-  ad: BusinessAd,
-  isMobile: boolean
-): FloatingAdLayout["desktop"] | undefined {
-  const layout = ad.layout;
-
-  if (!layout) {
-    return undefined;
-  }
-
-  // NormalAdLayout has only scale.
-  // FloatingAdLayout has width, height, x, y and scale.
-  const deviceLayout = isMobile
-    ? layout.mobile
-    : layout.desktop;
-
-  if (
-    typeof deviceLayout !== "object" ||
-    deviceLayout === null ||
-    !("width" in deviceLayout) ||
-    !("height" in deviceLayout) ||
-    !("x" in deviceLayout) ||
-    !("y" in deviceLayout) ||
-    !("scale" in deviceLayout)
-  ) {
-    return undefined;
-  }
-
-  return {
-    width: Number(deviceLayout.width),
-    height: Number(deviceLayout.height),
-    x: Number(deviceLayout.x),
-    y: Number(deviceLayout.y),
-    scale: Number(deviceLayout.scale),
-  };
-}
-// ======================================================
-// COMMON LINK
-// ======================================================
-
-function AdLink({
-  href,
-  openInNewTab,
-  children,
-  className = "",
-}: {
-  href?: string;
-  openInNewTab?: boolean;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  if (!href) {
-    return (
-      <div className={className}>
-        {children}
-      </div>
-    );
-  }
-
-  return (
-    <a
-      href={href}
-      target={
-        openInNewTab
-          ? "_blank"
-          : undefined
-      }
-      rel={
-        openInNewTab
-          ? "noopener noreferrer"
-          : undefined
-      }
-      className={className}
-    >
-      {children}
-    </a>
-  );
-}
-
-// ======================================================
-// NORMAL SCALE
-// ======================================================
-
-function getScale(
-  ad: BusinessAd,
-  isMobile: boolean
-) {
-  const layout = ad.layout;
-
-  if (!layout) {
-    return 1;
-  }
-
-  const deviceLayout = isMobile
-    ? layout.mobile
-    : layout.desktop;
-
-  if (
-    deviceLayout &&
-    "scale" in deviceLayout
-  ) {
-    return deviceLayout.scale ?? 1;
-  }
-
-  return 1;
-}
-
-// ======================================================
-// BANNER
-// ======================================================
-
-function BannerAd({
-  ad,
-  isMobile,
-}: {
-  ad: Extract<
-    BusinessAd,
-    { type: "banner" }
-  >;
-  isMobile: boolean;
-}) {
-  const scale = getScale(
-    ad,
-    isMobile
-  );
-
-  return (
-    <div
-      className="flex w-full justify-center overflow-hidden"
-      style={{
-        transform: `scale(${scale})`,
-        transformOrigin: "center",
-      }}
-    >
-      <AdLink
-        href={ad.link}
-        openInNewTab={
-          ad.openInNewTab
-        }
-        className="block"
-      >
-        <img
-          src={ad.image}
-          alt={ad.title}
-          className="block max-w-full h-auto"
-        />
-      </AdLink>
-    </div>
-  );
-}
-
-// ======================================================
-// NATIVE
-// ======================================================
-
-function NativeAd({
-  ad,
-  isMobile,
-}: {
-  ad: Extract<
-    BusinessAd,
-    { type: "native" }
-  >;
-  isMobile: boolean;
-}) {
-  const scale = getScale(
-    ad,
-    isMobile
-  );
-
-  return (
-    <div
-      className="flex justify-center"
-      style={{
-        transform: `scale(${scale})`,
-        transformOrigin: "center",
-      }}
-    >
-      <AdLink
-        href={ad.link}
-        openInNewTab={
-          ad.openInNewTab
-        }
-        className="block"
-      >
-        <img
-          src={ad.image}
-          alt={ad.title}
-          className="max-w-full h-auto"
-        />
-      </AdLink>
-    </div>
-  );
-}
-
-// ======================================================
-// POPUP
-// ======================================================
-
-function PopupAd({
-  ad,
-  isMobile,
-}: {
-  ad: Extract<
-    BusinessAd,
-    { type: "popup" }
-  >;
-  isMobile: boolean;
-}) {
-  const [visible, setVisible] =
-    useState(false);
-
-  useEffect(() => {
-    const timer = window.setTimeout(
-      () => {
-        setVisible(true);
-      },
-      (ad.delay ?? 5) * 1000
-    );
-
-    return () =>
-      window.clearTimeout(timer);
-  }, [ad.delay]);
-
-  if (!visible) {
-    return null;
-  }
-
-  const scale = getScale(
-    ad,
-    isMobile
-  );
-
-  return (
-    <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 p-4">
-      <div
-        className="relative max-w-[95vw] max-h-[90vh]"
-        style={{
-          transform: `scale(${scale})`,
-          transformOrigin: "center",
-        }}
-      >
-        {ad.closeable !== false && (
-          <button
-            type="button"
-            onClick={() =>
-              setVisible(false)
-            }
-            className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/80 text-white"
-            aria-label="Close advertisement"
-          >
-            ×
-          </button>
-        )}
-
-        <AdLink
-          href={ad.link}
-          openInNewTab={
-            ad.openInNewTab
+          key={`cube-${selectedFloatingAds.cube.id}`}
+          ad={
+            selectedFloatingAds.cube
           }
-        >
-          <img
-            src={ad.image}
-            alt={ad.title}
-            className="max-h-[90vh] max-w-[95vw] rounded-lg object-contain"
-          />
-        </AdLink>
-      </div>
-    </div>
-  );
-}
-
-// ======================================================
-// PAGE TRANSITION
-// ======================================================
-
-function PageTransitionAd({
-  ad,
-  isMobile,
-}: {
-  ad: Extract<
-    BusinessAd,
-    { type: "page_transition" }
-  >;
-  isMobile: boolean;
-}) {
-  const [visible, setVisible] =
-    useState(false);
-
-  useEffect(() => {
-    const timer = window.setTimeout(
-      () => {
-        setVisible(true);
-      },
-      (ad.delay ?? 5) * 1000
-    );
-
-    return () =>
-      window.clearTimeout(timer);
-  }, [ad.delay]);
-
-  if (!visible) {
-    return null;
-  }
-
-  const scale = getScale(
-    ad,
-    isMobile
-  );
-
-  return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black">
-      {ad.closeable !== false && (
-        <button
-          type="button"
-          onClick={() =>
-            setVisible(false)
-          }
-          className="absolute right-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-2xl text-white backdrop-blur"
-        >
-          ×
-        </button>
+          device={device}
+        />
       )}
 
-      <div
-        style={{
-          transform: `scale(${scale})`,
-          transformOrigin: "center",
-        }}
-      >
-        <AdLink
-          href={ad.link}
-          openInNewTab={
-            ad.openInNewTab
+      {selectedFloatingAds.floatingTv && (
+        <FloatingTVAd
+          key={`floating-tv-${selectedFloatingAds.floatingTv.id}`}
+          ad={
+            selectedFloatingAds.floatingTv
           }
-        >
-          <img
-            src={ad.image}
-            alt={ad.title}
-            className="max-h-screen max-w-screen object-contain"
-          />
-        </AdLink>
-      </div>
+          device={device}
+        />
+      )}
+    </>
+  );
+}
+
+// ======================================================
+// REFERENCE COORDINATE SYSTEM
+// ======================================================
+
+function getFloatingCoordinates(
+  layout:
+    | FloatingLayout
+    | undefined,
+  device: Device
+) {
+  const referenceWidth =
+    device === "desktop"
+      ? DESKTOP_REFERENCE_WIDTH
+      : MOBILE_REFERENCE_WIDTH;
+
+  const referenceHeight =
+    device === "desktop"
+      ? DESKTOP_REFERENCE_HEIGHT
+      : MOBILE_REFERENCE_HEIGHT;
+
+  const viewportWidth =
+    typeof window !==
+    "undefined"
+      ? window.innerWidth
+      : referenceWidth;
+
+  const viewportHeight =
+    typeof window !==
+    "undefined"
+      ? window.innerHeight
+      : referenceHeight;
+
+  const x = Number(
+    layout?.x ?? 0
+  );
+
+  const y = Number(
+    layout?.y ?? 0
+  );
+
+  const scale =
+    typeof layout?.scale ===
+    "number"
+      ? layout.scale
+      : 1;
+
+  const xRatio =
+    viewportWidth /
+    referenceWidth;
+
+  const yRatio =
+    viewportHeight /
+    referenceHeight;
+
+  const actualX =
+    x * xRatio;
+
+  const actualY =
+    y * yRatio;
+
+  return {
+    actualX,
+    actualY,
+    scale,
+  };
+}
+
+// ======================================================
+// CLOSE BUTTON
+// ======================================================
+
+function AdCloseButton({
+  onClose,
+}: {
+  onClose: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label="Close advertisement"
+      title="Close advertisement"
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        onClose();
+      }}
+      style={{
+        position: "absolute",
+
+        top: -40,
+        right: -100,
+
+        width: 60,
+        height: 60,
+
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+
+        padding: 0,
+
+        border:
+          "2px solid rgba(255,255,255,0.9)",
+
+        borderRadius: "50%",
+
+        background:
+          "rgba(0,0,0,0.88)",
+
+        color: "#fff",
+
+        cursor: "pointer",
+
+        zIndex: 999999,
+
+        boxShadow:
+          "0 5px 20px rgba(0,0,0,0.45)",
+
+        backdropFilter:
+          "blur(6px)",
+
+        WebkitBackdropFilter:
+          "blur(6px)",
+
+        pointerEvents: "auto",
+      }}
+    >
+      <X
+        size={24}
+        strokeWidth={2.8}
+      />
+    </button>
+  );
+}
+
+// ======================================================
+// CUBE AD
+// ======================================================
+
+function CubeAd({
+  ad,
+  device,
+}: {
+  ad: BusinessAd;
+  device: Device;
+}) {
+  const [
+    closed,
+    setClosed,
+  ] = useState(() =>
+    isFloatingAdClosed(
+      "cube",
+      ad.id
+    )
+  );
+
+  const layout =
+    device === "desktop"
+      ? ad.layout?.desktop
+      : ad.layout?.mobile;
+
+  if (closed) {
+    return null;
+  }
+
+  const cubeFacesValue =
+    getAdField<
+      CubeAdFields,
+      "cubeFaces"
+    >(
+      ad,
+      "cubeFaces"
+    );
+
+  const cubeFaces =
+    Array.isArray(cubeFacesValue)
+      ? cubeFacesValue
+      : [];
+
+  if (!cubeFaces.length) {
+    return null;
+  }
+
+  const configuredWidth =
+    Number(
+      getAdField<
+        CubeAdFields,
+        "width"
+      >(
+        ad,
+        "width"
+      )
+    ) || 160;
+
+  const safeWidth =
+    clamp(
+      configuredWidth,
+      80,
+      400
+    );
+
+  const {
+    actualX,
+    actualY,
+    scale,
+  } =
+    getFloatingCoordinates(
+      layout,
+      device
+    );
+
+  const safeScale =
+    clamp(
+      scale,
+      0.25,
+      2
+    );
+
+  const handleClose = () => {
+    markFloatingAdClosed(
+      "cube",
+      ad.id
+    );
+
+    setClosed(true);
+  };
+
+  return (
+    <div
+      className="infinia-floating-ad infinia-cube-ad"
+      style={{
+        position: "fixed",
+
+        left: "50%",
+        top: "50%",
+
+        width: safeWidth + 30,
+        height: safeWidth + 30,
+
+        transform:
+          `translate(-50%, -50%) ` +
+          `translate(${actualX}px, ${actualY}px) ` +
+          `scale(${safeScale})`,
+
+        transformOrigin:
+          "center center",
+
+        zIndex: 99990,
+
+        overflow: "visible",
+
+        pointerEvents: "auto",
+      }}
+    >
+      <AdCloseButton
+        onClose={handleClose}
+      />
+
+      <CubeAdVisual
+        faces={cubeFaces}
+        size={safeWidth}
+        rotationSpeed={
+          Number(
+            getAdField<
+              CubeAdFields,
+              "rotationSpeed"
+            >(
+              ad,
+              "rotationSpeed"
+            )
+          ) || 4
+        }
+        openInNewTab={
+          ad.openInNewTab !== false
+        }
+      />
     </div>
   );
 }
 
 // ======================================================
-// STICKY BOTTOM
+// CUBE VISUAL
 // ======================================================
 
-function StickyBottomAd({
-  ad,
-  isMobile,
+function CubeAdVisual({
+  faces,
+  size,
+  rotationSpeed,
+  openInNewTab,
 }: {
-  ad: Extract<
-    BusinessAd,
-    { type: "sticky_bottom" }
-  >;
-  isMobile: boolean;
+  faces: Array<{
+    image?: string;
+    link?: string;
+  }>;
+
+  size: number;
+
+  rotationSpeed: number;
+
+  openInNewTab: boolean;
 }) {
-  const [visible, setVisible] =
-    useState(true);
+  const depth =
+    size / 2;
 
-  if (!visible) {
-    return null;
-  }
+  const transforms = [
+    `rotateY(0deg) translateZ(${depth}px)`,
 
-  const scale = getScale(
-    ad,
-    isMobile
-  );
+    `rotateY(90deg) translateZ(${depth}px)`,
+
+    `rotateY(180deg) translateZ(${depth}px)`,
+
+    `rotateY(-90deg) translateZ(${depth}px)`,
+  ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[9990] flex justify-center px-2 pb-2 pointer-events-none">
+    <>
+      <style>
+        {`
+          @keyframes infiniaCubeSpin {
+            from {
+              transform:
+                rotateX(-8deg)
+                rotateY(0deg);
+            }
+
+            to {
+              transform:
+                rotateX(-8deg)
+                rotateY(360deg);
+            }
+          }
+
+          .infinia-cube-stage {
+            position: relative;
+
+            width: 100%;
+            height: 100%;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            transform-style: preserve-3d;
+
+            -webkit-transform-style:
+              preserve-3d;
+          }
+
+          .infinia-cube {
+            position: relative;
+
+            width: ${size}px;
+            height: ${size}px;
+
+            transform-style:
+              preserve-3d;
+
+            -webkit-transform-style:
+              preserve-3d;
+
+            animation:
+              infiniaCubeSpin
+              ${Math.max(
+                rotationSpeed,
+                1
+              )}s
+              linear
+              infinite;
+          }
+
+          .infinia-cube-face {
+            position: absolute;
+
+            inset: 0;
+
+            width: ${size}px;
+            height: ${size}px;
+
+            overflow: hidden;
+
+            background: #111;
+
+            backface-visibility:
+              hidden;
+
+            -webkit-backface-visibility:
+              hidden;
+
+            transform-style:
+              preserve-3d;
+
+            -webkit-transform-style:
+              preserve-3d;
+
+            box-shadow:
+              0 20px 50px
+              rgba(0,0,0,0.35);
+          }
+
+          .infinia-cube-face img {
+            display: block;
+
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover;
+
+            user-select: none;
+
+            -webkit-user-drag: none;
+          }
+        `}
+      </style>
+
       <div
-        className="relative pointer-events-auto"
+        className="infinia-cube-stage"
         style={{
-          transform: `scale(${scale})`,
-          transformOrigin: "bottom center",
+          width:
+            size + 30,
+
+          height:
+            size + 30,
+
+          perspective:
+            "800px",
         }}
       >
-        {ad.closeable !== false && (
-          <button
-            type="button"
-            onClick={() =>
-              setVisible(false)
-            }
-            className="absolute -right-2 -top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black text-white shadow"
-          >
-            ×
-          </button>
-        )}
+        <div className="infinia-cube">
+          {faces
+            .slice(0, 4)
+            .map(
+              (
+                face,
+                index
+              ) => {
+                if (
+                  !face?.image
+                ) {
+                  return null;
+                }
 
-        <AdLink
-          href={ad.link}
-          openInNewTab={
-            ad.openInNewTab
-          }
-        >
-          <img
-            src={ad.image}
-            alt={ad.title}
-            className="max-w-[96vw] h-auto rounded-lg shadow-2xl"
-          />
-        </AdLink>
+                return (
+                  <div
+                    key={`${index}-${face.image}`}
+                    className="infinia-cube-face"
+                    style={{
+                      transform:
+                        transforms[
+                          index
+                        ],
+                    }}
+                  >
+                    {face.link ? (
+                      <a
+                        href={
+                          face.link
+                        }
+                        target={
+                          openInNewTab
+                            ? "_blank"
+                            : "_self"
+                        }
+                        rel={
+                          openInNewTab
+                            ? "noopener noreferrer"
+                            : undefined
+                        }
+                        aria-label={`Advertisement face ${
+                          index + 1
+                        }`}
+                        style={{
+                          display:
+                            "block",
+
+                          width:
+                            "100%",
+
+                          height:
+                            "100%",
+                        }}
+                      >
+                        <img
+                          src={
+                            face.image
+                          }
+                          alt={`Advertisement face ${
+                            index + 1
+                          }`}
+                          draggable={
+                            false
+                          }
+                        />
+                      </a>
+                    ) : (
+                      <img
+                        src={
+                          face.image
+                        }
+                        alt={`Advertisement face ${
+                          index + 1
+                        }`}
+                        draggable={
+                          false
+                        }
+                      />
+                    )}
+                  </div>
+                );
+              }
+            )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -622,310 +1233,408 @@ function StickyBottomAd({
 // FLOATING TV
 // ======================================================
 
-function FloatingTvAd({
+function FloatingTVAd({
   ad,
-  isMobile,
+  device,
 }: {
-  ad: Extract<
-    BusinessAd,
-    { type: "floating_tv" }
-  >;
-  isMobile: boolean;
+  ad: BusinessAd;
+  device: Device;
 }) {
-  const deviceLayout =
-    getFloatingLayout(ad, isMobile);
-
-  const width =
-    deviceLayout?.width ??
-    ad.width ??
-    (isMobile ? 240 : 320);
-
-  const height =
-    deviceLayout?.height ??
-    (isMobile ? 135 : 180);
-
-  const x =
-    deviceLayout?.x ?? 0;
-
-  const y =
-    deviceLayout?.y ?? 0;
-
-  const scale =
-    deviceLayout?.scale ?? 1;
-
-  const videoUrl = getVideoUrl(
-    ad.videoUrl,
-    ad.videoType
+  const [
+    closed,
+    setClosed,
+  ] = useState(() =>
+    isFloatingAdClosed(
+      "floating_tv",
+      ad.id
+    )
   );
 
-  if (!videoUrl) {
+  if (closed) {
     return null;
   }
 
-  return (
-    <div
-      className="fixed z-9980"
-      style={{
-        width,
-        height,
-        left: x,
-        top: y,
-        transform: `scale(${scale})`,
-        transformOrigin: "top left",
-      }}
-    >
-      <video
-        src={videoUrl}
-        poster={ad.videoPoster}
-        autoPlay={ad.autoplay !== false}
-        muted={ad.muted !== false}
-        loop
-        playsInline
-        controls={false}
-        className="h-full w-full rounded-xl object-cover shadow-2xl"
-      />
-    </div>
-  );
-}
+  const layout =
+    device === "desktop"
+      ? ad.layout?.desktop
+      : ad.layout?.mobile;
 
-// ======================================================
-// CUBE
-// ======================================================
+  const {
+    actualX,
+    actualY,
+    scale,
+  } =
+    getFloatingCoordinates(
+      layout,
+      device
+    );
 
-function CubeAd({
-  ad,
-  isMobile,
-}: {
-  ad: Extract<
-    BusinessAd,
-    { type: "cube" }
-  >;
-  isMobile: boolean;
-}) {
-  const deviceLayout =
-    getFloatingLayout(ad, isMobile);
+  // ====================================================
+  // WIDTH
+  // ====================================================
 
-  const width =
-    deviceLayout?.width ??
-    ad.width ??
-    (isMobile ? 140 : 160);
-
-  const height =
-    deviceLayout?.height ??
-    width;
-
-  const x =
-    deviceLayout?.x ?? 0;
-
-  const y =
-    deviceLayout?.y ?? 0;
-
-  const scale =
-    deviceLayout?.scale ?? 1;
-
-  const faces = ad.cubeFaces;
-
-  if (!faces.length) {
-    return null;
-  }
-
-  const faceImages = ad.cubeSameImage
-    ? Array(6).fill(
-        faces[0]?.image
+  const configuredWidth =
+    Number(
+      getAdField<
+        FloatingTVFields,
+        "width"
+      >(
+        ad,
+        "width"
       )
-    : [
-        faces[0]?.image,
-        faces[1]?.image,
-        faces[2]?.image,
-        faces[3]?.image,
-        faces[4]?.image,
-        faces[5]?.image,
-      ];
+    ) || 320;
 
-  const depth = width / 2;
+  const width =
+    clamp(
+      configuredWidth,
+      180,
+      800
+    );
+
+  // ====================================================
+  // HEIGHT
+  // ====================================================
+
+  const height =
+    Math.round(
+      width * 0.5625
+    );
+
+  // ====================================================
+  // SCALE
+  // ====================================================
+
+  const safeScale =
+    clamp(
+      scale,
+      0.25,
+      2
+    );
+
+  // ====================================================
+  // VIDEO DATA
+  // ====================================================
+
+  const videoUrl =
+    String(
+      getAdField<
+        FloatingTVFields,
+        "videoUrl"
+      >(
+        ad,
+        "videoUrl"
+      ) || ""
+    );
+
+  const autoplay =
+    getAdField<
+      FloatingTVFields,
+      "autoplay"
+    >(
+      ad,
+      "autoplay"
+    ) !== false;
+
+  const muted =
+    getAdField<
+      FloatingTVFields,
+      "muted"
+    >(
+      ad,
+      "muted"
+    ) !== false;
+
+  const videoPoster =
+    getAdField<
+      FloatingTVFields,
+      "videoPoster"
+    >(
+      ad,
+      "videoPoster"
+    );
+
+  const youtubeId =
+    getYouTubeId(
+      videoUrl
+    );
+
+  // ====================================================
+  // CLOSE
+  // ====================================================
+
+  const handleClose = () => {
+    markFloatingAdClosed(
+      "floating_tv",
+      ad.id
+    );
+
+    setClosed(true);
+  };
+
+  // ====================================================
+  // RENDER
+  // ====================================================
 
   return (
     <div
-      className="fixed z-9970"
       style={{
-        left: x,
-        top: y,
+        position: "fixed",
+
+        left:
+          `calc(50% + ${actualX}px)`,
+
+        top:
+          `calc(50% + ${actualY}px)`,
+
         width,
+
         height,
-        transform: `scale(${scale})`,
-        transformOrigin: "top left",
-        perspective: 1000,
+
+        transform:
+          `translate(-50%, -50%) ` +
+          `scale(${safeScale})`,
+
+        transformOrigin:
+          "center center",
+
+        zIndex: 99990,
+
+        overflow: "visible",
+
+        pointerEvents: "auto",
       }}
     >
-      <div
-        className="relative h-full w-full"
+      <button
+        type="button"
+        aria-label="Close advertisement"
+        title="Close advertisement"
+        onClick={(event) => {
+          event.preventDefault();
+
+          event.stopPropagation();
+
+          handleClose();
+        }}
         style={{
-          transformStyle: "preserve-3d",
-          animation: `adsCubeRotate ${
-            Math.max(
-              ad.rotationSpeed ?? 4,
-              0.5
-            )
-          }s linear infinite`,
+          position: "absolute",
+
+          top: -18,
+          right: -18,
+
+          width: 42,
+          height: 42,
+
+          padding: 0,
+
+          display: "flex",
+
+          alignItems: "center",
+
+          justifyContent:
+            "center",
+
+          border:
+            "2px solid rgba(255,255,255,0.9)",
+
+          borderRadius: "50%",
+
+          background:
+            "rgba(0,0,0,0.88)",
+
+          color: "#fff",
+
+          cursor: "pointer",
+
+          zIndex: 100000,
+
+          boxShadow:
+            "0 5px 18px rgba(0,0,0,0.45)",
+
+          backdropFilter:
+            "blur(6px)",
+
+          WebkitBackdropFilter:
+            "blur(6px)",
+
+          pointerEvents: "auto",
         }}
       >
-        <CubeFace
-          image={faceImages[0]}
-          transform={`rotateY(0deg) translateZ(${depth}px)`}
+        <X
+          size={24}
+          strokeWidth={2.8}
         />
+      </button>
 
-        <CubeFace
-          image={faceImages[1]}
-          transform={`rotateY(90deg) translateZ(${depth}px)`}
-        />
+      <div
+        style={{
+          position: "relative",
 
-        <CubeFace
-          image={faceImages[2]}
-          transform={`rotateY(180deg) translateZ(${depth}px)`}
-        />
+          width: "100%",
+          height: "100%",
 
-        <CubeFace
-          image={faceImages[3]}
-          transform={`rotateY(-90deg) translateZ(${depth}px)`}
-        />
+          overflow: "hidden",
 
-        <CubeFace
-          image={faceImages[4]}
-          transform={`rotateX(90deg) translateZ(${depth}px)`}
-        />
+          borderRadius: 16,
 
-        <CubeFace
-          image={faceImages[5]}
-          transform={`rotateX(-90deg) translateZ(${depth}px)`}
-        />
+          background: "#000",
+
+          boxShadow:
+            "0 25px 70px rgba(0,0,0,0.35)",
+        }}
+      >
+        {youtubeId ? (
+          <iframe
+            src={
+              `https://www.youtube.com/embed/${youtubeId}` +
+              `?autoplay=${
+                autoplay ? 1 : 0
+              }` +
+              `&mute=${
+                muted ? 1 : 0
+              }` +
+              `&controls=1` +
+              `&rel=0` +
+              `&playsinline=1`
+            }
+            title={
+              ad.title ||
+              "Floating Advertisement"
+            }
+            style={{
+              width: "100%",
+
+              height: "100%",
+
+              border: 0,
+
+              display: "block",
+            }}
+            allow={
+              "autoplay; encrypted-media; " +
+              "picture-in-picture; fullscreen"
+            }
+            allowFullScreen
+          />
+        ) : videoUrl ? (
+          <video
+            src={videoUrl}
+            poster={
+              videoPoster ||
+              undefined
+            }
+            autoPlay={autoplay}
+            muted={muted}
+            loop
+            playsInline
+            controls
+            style={{
+              width: "100%",
+
+              height: "100%",
+
+              objectFit: "cover",
+
+              display: "block",
+            }}
+          />
+        ) : null}
       </div>
-
-      <style jsx>{`
-        @keyframes adsCubeRotate {
-          from {
-            transform: rotateX(0deg)
-              rotateY(0deg);
-          }
-
-          to {
-            transform: rotateX(360deg)
-              rotateY(360deg);
-          }
-        }
-      `}</style>
-    </div>
-  );
-}
-// ======================================================
-// CUBE FACE
-// ======================================================
-
-function CubeFace({
-  image,
-  transform,
-}: {
-  image?: string;
-  transform: string;
-}) {
-  if (!image) {
-    return null;
-  }
-
-  return (
-    <div
-      className="absolute inset-0 overflow-hidden bg-black"
-      style={{
-        transform,
-        backfaceVisibility:
-          "hidden",
-      }}
-    >
-      <img
-        src={image}
-        alt=""
-        className="h-full w-full object-cover"
-      />
     </div>
   );
 }
 
 // ======================================================
-// SHORTS VIDEO AD
+// YOUTUBE ID EXTRACTOR
 // ======================================================
 
-function ShortsVideoAd({
-  ad,
-}: {
-  ad: Extract<
-    BusinessAd,
-    { type: "shorts_video" }
-  >;
-  isMobile: boolean;
-}) {
-  const videoUrl = getVideoUrl(
-    ad.videoUrl,
-    ad.videoType
-  );
-
-  if (!videoUrl) {
-    return null;
-  }
-
-  return (
-    <div className="relative mx-auto overflow-hidden rounded-xl">
-      <video
-        src={videoUrl}
-        poster={
-          ad.videoPoster ??
-          ad.image
-        }
-        autoPlay={
-          ad.autoplay !== false
-        }
-        muted={
-          ad.muted !== false
-        }
-        playsInline
-        loop
-        controls={false}
-        className="block max-h-[80vh] max-w-full object-contain"
-      />
-    </div>
-  );
-}
-
-// ======================================================
-// VIDEO URL
-// ======================================================
-
-function getVideoUrl(
-  url?: string,
-  type?: "youtube" | "mp4"
-) {
+function getYouTubeId(
+  url: string
+): string | null {
   if (!url) {
-    return "";
+    return null;
   }
 
-  if (type === "mp4") {
-    return url;
-  }
+  try {
+    const parsed =
+      new URL(url);
 
-  if (
-    type === "youtube" ||
-    url.includes("youtube.com") ||
-    url.includes("youtu.be")
-  ) {
-    const match =
-      url.match(
-        /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?/]+)/
+    const hostname =
+      parsed.hostname
+        .toLowerCase()
+        .replace(
+          /^www\./,
+          ""
+        );
+
+    // ==================================================
+    // youtu.be/VIDEO_ID
+    // ==================================================
+
+    if (
+      hostname ===
+      "youtu.be"
+    ) {
+      return (
+        parsed.pathname
+          .split("/")
+          .filter(Boolean)[0] ||
+        null
       );
-
-    if (!match?.[1]) {
-      return url;
     }
 
-    return `https://www.youtube.com/embed/${match[1]}?autoplay=1&mute=1&loop=1&playlist=${match[1]}&controls=0&playsinline=1`;
-  }
+    // ==================================================
+    // youtube.com
+    // ==================================================
 
-  return url;
+    if (
+      hostname ===
+        "youtube.com" ||
+      hostname ===
+        "m.youtube.com"
+    ) {
+      // ------------------------------------------------
+      // youtube.com/watch?v=ID
+      // ------------------------------------------------
+
+      const v =
+        parsed.searchParams.get(
+          "v"
+        );
+
+      if (v) {
+        return v;
+      }
+
+      // ------------------------------------------------
+      // youtube.com/shorts/ID
+      // ------------------------------------------------
+
+      const shorts =
+        parsed.pathname.match(
+          /^\/shorts\/([^/?]+)/
+        );
+
+      if (shorts) {
+        return shorts[1];
+      }
+
+      // ------------------------------------------------
+      // youtube.com/embed/ID
+      // ------------------------------------------------
+
+      const embed =
+        parsed.pathname.match(
+          /^\/embed\/([^/?]+)/
+        );
+
+      if (embed) {
+        return embed[1];
+      }
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
 }
+
