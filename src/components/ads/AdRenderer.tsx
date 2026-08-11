@@ -37,42 +37,60 @@ interface AdRendererProps {
 
 type Device = "desktop" | "mobile";
 
-type FloatingAdType = "cube" | "floating_tv";
+type RotationAdType =
+  | "cube"
+  | "floating_tv"
+  | "popup";
 
-// ======================================================
-// CLOSED ADS
-//
-// IMPORTANT:
-//
-// This is intentionally MEMORY ONLY.
-//
-// Closing an ad:
-// - survives React re-renders
-// - survives component remounts
-// - survives Next.js client-side route changes
-//
-// But:
-//
-// Browser refresh / full reload
-// -> JavaScript memory resets
-// -> Set becomes empty
-// -> ads appear again
-//
-// NO localStorage
-// NO sessionStorage
-// ======================================================
 
+type PopupTrigger =
+  | "article_open"
+  | "button_click"
+  | "scroll"
+  | "time"
+  | "exit_intent";
+
+interface PopupAdFields {
+  scale?: number;
+
+  trigger?: PopupTrigger;
+  triggerTime?: number;
+  scrollPercent?: number;
+}
 const closedFloatingAds = new Set<string>();
 
+
+// ======================================================
+// CLOSED POPUP ADS
+//
+// MEMORY ONLY
+//
+// Browser refresh:
+// -> resets
+//
+// SPA navigation:
+// -> remains closed
+// ======================================================
+
+const closedPopupAds = new Set<string>();
+
+function isPopupAdClosed(adId: string): boolean {
+  return closedPopupAds.has(adId);
+}
+
+function markPopupAdClosed(adId: string) {
+  closedPopupAds.add(adId);
+}
+
 function getClosedAdKey(
-  type: FloatingAdType,
+  type: RotationAdType,
   adId: string
 ) {
   return `${type}:${adId}`;
 }
 
 function isFloatingAdClosed(
-  type: FloatingAdType,
+  type: RotationAdType,
   adId: string
 ): boolean {
   return closedFloatingAds.has(
@@ -81,7 +99,7 @@ function isFloatingAdClosed(
 }
 
 function markFloatingAdClosed(
-  type: FloatingAdType,
+  type: RotationAdType,
   adId: string
 ) {
   closedFloatingAds.add(
@@ -167,7 +185,7 @@ const MOBILE_REFERENCE_HEIGHT = 956;
 // ======================================================
 
 function getRotationStorageKey(
-  type: FloatingAdType
+  type: RotationAdType
 ) {
   return `infinia-floating-ad-rotation-${type}`;
 }
@@ -202,7 +220,7 @@ function getAdField<
 // ======================================================
 
 function readRotationState(
-  type: FloatingAdType
+  type: RotationAdType
 ): RotationState {
   if (
     typeof window === "undefined"
@@ -269,7 +287,7 @@ function readRotationState(
 // ======================================================
 
 function saveRotationState(
-  type: FloatingAdType,
+  type: RotationAdType,
   state: RotationState
 ) {
   if (
@@ -294,7 +312,7 @@ function saveRotationState(
 
 function selectFloatingAd(
   ads: BusinessAd[],
-  type: FloatingAdType,
+  type: RotationAdType,
   currentUrl: string
 ): BusinessAd | null {
   // ----------------------------------------------------
@@ -393,6 +411,75 @@ function selectFloatingAd(
   return candidates[nextIndex];
 }
 
+
+// ======================================================
+// SELECT POPUP AD
+// ======================================================
+
+function selectPopupAd(
+  ads: BusinessAd[],
+  currentUrl: string
+): BusinessAd | null {
+  const candidates = ads
+    .filter(
+      (ad) =>
+        ad.type === "popup" &&
+        !isPopupAdClosed(ad.id)
+    )
+    .sort(
+      (a, b) =>
+        (a.priority ?? 999) -
+        (b.priority ?? 999)
+    );
+
+  if (!candidates.length) {
+    return null;
+  }
+
+  if (candidates.length === 1) {
+    return candidates[0];
+  }
+
+  const state =
+  readRotationState("popup");
+
+  // Same URL -> same popup
+  if (
+    state.lastUrl === currentUrl &&
+    state.lastAdId
+  ) {
+    const existing =
+      candidates.find(
+        (ad) =>
+          ad.id === state.lastAdId
+      );
+
+    if (existing) {
+      return existing;
+    }
+  }
+
+  // First popup
+  if (!state.lastAdId) {
+    return candidates[0];
+  }
+
+  const currentIndex =
+    candidates.findIndex(
+      (ad) =>
+        ad.id === state.lastAdId
+    );
+
+  if (currentIndex === -1) {
+    return candidates[0];
+  }
+
+  const nextIndex =
+    (currentIndex + 1) %
+    candidates.length;
+
+  return candidates[nextIndex];
+}
 // ======================================================
 // MAIN AD RENDERER
 // ======================================================
@@ -459,6 +546,12 @@ export default function AdRenderer({
       pathname,
       searchParams,
     ]);
+
+  const [popupAd, setPopupAd] =
+  useState<BusinessAd | null>(null);
+
+const [popupVisible, setPopupVisible] =
+  useState(false);
 
   // ====================================================
   // VISIBLE ADS
@@ -672,6 +765,213 @@ export default function AdRenderer({
     currentUrl,
   ]);
 
+
+  // ====================================================
+// POPUP AD
+// ====================================================
+
+useEffect(() => {
+  if (type && type !== "popup") {
+    return;
+  }
+
+  const selected = selectPopupAd(
+    visibleAds,
+    currentUrl
+  );
+
+  if (!selected) {
+    return;
+  }
+
+  const trigger =
+    getAdField<
+      PopupAdFields,
+      "trigger"
+    >(
+      selected,
+      "trigger"
+    ) || "time";
+
+  const triggerTime =
+    Number(
+      getAdField<
+        PopupAdFields,
+        "triggerTime"
+      >(
+        selected,
+        "triggerTime"
+      )
+    ) || 3;
+
+  const scrollPercent =
+    clamp(
+      Number(
+        getAdField<
+          PopupAdFields,
+          "scrollPercent"
+        >(
+          selected,
+          "scrollPercent"
+        )
+      ) || 50,
+      5,
+      95
+    );
+
+  let timer: ReturnType<
+    typeof setTimeout
+  > | null = null;
+
+  let triggered = false;
+
+  const showPopup = () => {
+    if (triggered) {
+      return;
+    }
+
+    triggered = true;
+
+    setPopupAd(selected);
+    setPopupVisible(true);
+
+    const state =
+      readRotationState("popup");
+
+    saveRotationState(
+      "popup",
+      {
+        lastAdId: selected.id,
+        recentIds: [
+          ...state.recentIds,
+          selected.id,
+        ].slice(-5),
+        lastUrl: currentUrl,
+      }
+    );
+  };
+
+  // --------------------------------------------------
+  // ARTICLE OPEN
+  // --------------------------------------------------
+
+  if (trigger === "article_open") {
+    showPopup();
+  }
+
+  // --------------------------------------------------
+  // TIME
+  // --------------------------------------------------
+
+  if (trigger === "time") {
+    timer = setTimeout(
+      showPopup,
+      Math.max(triggerTime, 1) * 1000
+    );
+  }
+
+  // --------------------------------------------------
+  // SCROLL
+  // --------------------------------------------------
+
+  const handleScroll = () => {
+    if (trigger !== "scroll") {
+      return;
+    }
+
+    const documentHeight =
+      document.documentElement
+        .scrollHeight;
+
+    const viewportHeight =
+      window.innerHeight;
+
+    const scrollable =
+      documentHeight -
+      viewportHeight;
+
+    if (scrollable <= 0) {
+      return;
+    }
+
+    const currentPercent =
+      (window.scrollY /
+        scrollable) *
+      100;
+
+    if (
+      currentPercent >=
+      scrollPercent
+    ) {
+      showPopup();
+      window.removeEventListener(
+        "scroll",
+        handleScroll
+      );
+    }
+  };
+
+  if (trigger === "scroll") {
+    window.addEventListener(
+      "scroll",
+      handleScroll,
+      { passive: true }
+    );
+  }
+
+  // --------------------------------------------------
+  // EXIT INTENT
+  // --------------------------------------------------
+
+  const handleMouseLeave = (
+    event: MouseEvent
+  ) => {
+    if (
+      trigger !== "exit_intent"
+    ) {
+      return;
+    }
+
+    if (
+      event.clientY <= 5
+    ) {
+      showPopup();
+
+      document.removeEventListener(
+        "mouseleave",
+        handleMouseLeave
+      );
+    }
+  };
+
+  if (trigger === "exit_intent") {
+    document.addEventListener(
+      "mouseleave",
+      handleMouseLeave
+    );
+  }
+
+  return () => {
+    if (timer) {
+      clearTimeout(timer);
+    }
+
+    window.removeEventListener(
+      "scroll",
+      handleScroll
+    );
+
+    document.removeEventListener(
+      "mouseleave",
+      handleMouseLeave
+    );
+  };
+}, [
+  visibleAds,
+  currentUrl,
+  type,
+]);
+
   // ====================================================
   // NO ADS
   // ====================================================
@@ -687,28 +987,45 @@ export default function AdRenderer({
   // ====================================================
 
   return (
-    <>
-      {selectedFloatingAds.cube && (
-        <CubeAd
-          key={`cube-${selectedFloatingAds.cube.id}`}
-          ad={
-            selectedFloatingAds.cube
-          }
-          device={device}
-        />
-      )}
+  <>
+    {selectedFloatingAds.cube && (
+      <CubeAd
+        key={`cube-${selectedFloatingAds.cube.id}`}
+        ad={
+          selectedFloatingAds.cube
+        }
+        device={device}
+      />
+    )}
 
-      {selectedFloatingAds.floatingTv && (
-        <FloatingTVAd
-          key={`floating-tv-${selectedFloatingAds.floatingTv.id}`}
-          ad={
-            selectedFloatingAds.floatingTv
-          }
+    {selectedFloatingAds.floatingTv && (
+      <FloatingTVAd
+        key={`floating-tv-${selectedFloatingAds.floatingTv.id}`}
+        ad={
+          selectedFloatingAds.floatingTv
+        }
+        device={device}
+      />
+    )}
+
+    {popupAd &&
+      popupVisible && (
+        <PopupAd
+          key={`popup-${popupAd.id}`}
+          ad={popupAd}
           device={device}
+          onClose={() => {
+            markPopupAdClosed(
+              popupAd.id
+            );
+
+            setPopupVisible(false);
+            setPopupAd(null);
+          }}
         />
       )}
-    </>
-  );
+  </>
+);
 }
 
 // ======================================================
@@ -1229,6 +1546,626 @@ function CubeAdVisual({
   );
 }
 
+
+
+
+// ======================================================
+// POPUP AD
+// ======================================================
+
+function PopupAd({
+  ad,
+  device,
+  onClose,
+}: {
+  ad: BusinessAd;
+  device: Device;
+  onClose: () => void;
+}) {
+  const image =
+    String(
+      getAdField<
+        {
+          image?: string;
+        },
+        "image"
+      >(
+        ad,
+        "image"
+      ) || ""
+    );
+
+  const link =
+    String(
+      getAdField<
+        {
+          link?: string;
+        },
+        "link"
+      >(
+        ad,
+        "link"
+      ) || ""
+    );
+
+  const description =
+    String(
+      getAdField<
+        {
+          description?: string;
+        },
+        "description"
+      >(
+        ad,
+        "description"
+      ) || ""
+    );
+
+  const buttonText =
+    String(
+      getAdField<
+        {
+          buttonText?: string;
+        },
+        "buttonText"
+      >(
+        ad,
+        "buttonText"
+      ) || "Learn More"
+    );
+
+  const scale =
+    Number(
+      getAdField<
+        PopupAdFields,
+        "scale"
+      >(
+        ad,
+        "scale"
+      )
+    ) || 1;
+
+  const safeScale =
+    clamp(
+      scale,
+      0.8,
+      1.2
+    );
+
+  const isMobile =
+    device === "mobile";
+
+  // ----------------------------------------------------
+  // ESC CLOSE
+  // ----------------------------------------------------
+
+  useEffect(() => {
+    const handleEscape = (
+      event: KeyboardEvent
+    ) => {
+      if (
+        event.key === "Escape"
+      ) {
+        onClose();
+      }
+    };
+
+    document.addEventListener(
+      "keydown",
+      handleEscape
+    );
+
+    document.body.style.overflow =
+      "hidden";
+
+    return () => {
+      document.removeEventListener(
+        "keydown",
+        handleEscape
+      );
+
+      document.body.style.overflow =
+        "";
+    };
+  }, [onClose]);
+
+  // ----------------------------------------------------
+  // CLICK OUTSIDE
+  // ----------------------------------------------------
+
+  const handleBackdropClick = (
+    event: React.MouseEvent<HTMLDivElement>
+  ) => {
+    if (
+      event.target ===
+      event.currentTarget
+    ) {
+      onClose();
+    }
+  };
+
+  // ----------------------------------------------------
+  // POPUP SIZE
+  // ----------------------------------------------------
+
+  const popupWidth = isMobile
+    ? "calc(100vw - 28px)"
+    : "min(720px, calc(100vw - 48px))";
+
+  return (
+    <>
+      <style>
+        {`
+          @keyframes infiniaPopupBackdrop {
+            from {
+              opacity: 0;
+            }
+
+            to {
+              opacity: 1;
+            }
+          }
+
+          @keyframes infiniaPopupEnter {
+            from {
+              opacity: 0;
+              transform:
+                translateY(25px)
+                scale(0.94);
+            }
+
+            to {
+              opacity: 1;
+              transform:
+                translateY(0)
+                scale(1);
+            }
+          }
+
+          .infinia-popup-backdrop {
+            position: fixed;
+            inset: 0;
+
+            z-index: 999999;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 14px;
+
+            background:
+              rgba(0, 0, 0, 0.72);
+
+            backdrop-filter:
+              blur(9px);
+
+            -webkit-backdrop-filter:
+              blur(9px);
+
+            animation:
+              infiniaPopupBackdrop
+              0.25s ease-out;
+          }
+
+          .infinia-popup-card {
+            position: relative;
+
+            width: ${popupWidth};
+
+            max-height:
+              calc(100vh - 28px);
+
+            overflow: hidden;
+
+            border-radius:
+              ${isMobile ? "18px" : "22px"};
+
+            background:
+              linear-gradient(
+                145deg,
+                #ffffff 0%,
+                #f8fafc 100%
+              );
+
+            box-shadow:
+              0 30px 100px
+              rgba(0,0,0,0.5);
+
+            animation:
+              infiniaPopupEnter
+              0.32s
+              cubic-bezier(
+                0.22,
+                1,
+                0.36,
+                1
+              );
+
+            transform:
+              scale(${safeScale});
+
+            transform-origin:
+              center center;
+          }
+
+          .infinia-popup-image {
+            display: block;
+
+            width: 100%;
+
+            height:
+              ${isMobile
+                ? "190px"
+                : "320px"};
+
+            object-fit: cover;
+
+            background:
+              #111827;
+          }
+
+          .infinia-popup-content {
+            padding:
+              ${isMobile
+                ? "18px 18px 20px"
+                : "24px 28px 26px"};
+          }
+
+          .infinia-popup-badge {
+            display: inline-flex;
+
+            align-items: center;
+
+            padding:
+              5px 10px;
+
+            margin-bottom: 9px;
+
+            border-radius: 999px;
+
+            background:
+              linear-gradient(
+                135deg,
+                #dc2626,
+                #991b1b
+              );
+
+            color: #ffffff;
+
+            font-size: 10px;
+
+            font-weight: 800;
+
+            letter-spacing:
+              0.12em;
+
+            text-transform:
+              uppercase;
+          }
+
+          .infinia-popup-title {
+            margin: 0;
+
+            color: #111827;
+
+            font-size:
+              ${isMobile
+                ? "21px"
+                : "28px"};
+
+            line-height: 1.2;
+
+            font-weight: 800;
+
+            letter-spacing:
+              -0.02em;
+          }
+
+          .infinia-popup-description {
+            margin:
+              10px 0 0;
+
+            color: #64748b;
+
+            font-size:
+              ${isMobile
+                ? "14px"
+                : "15px"};
+
+            line-height: 1.55;
+          }
+
+          .infinia-popup-action {
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            gap: 12px;
+
+            margin-top: 20px;
+          }
+
+          .infinia-popup-cta {
+            display: inline-flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            min-height: 44px;
+
+            padding:
+              0 20px;
+
+            border-radius: 10px;
+
+            background:
+              linear-gradient(
+                135deg,
+                #dc2626,
+                #b91c1c
+              );
+
+            color: #ffffff;
+
+            text-decoration: none;
+
+            font-size: 14px;
+
+            font-weight: 700;
+
+            box-shadow:
+              0 8px 22px
+              rgba(185,28,28,0.28);
+
+            transition:
+              transform 0.2s ease,
+              box-shadow 0.2s ease;
+          }
+
+          .infinia-popup-cta:hover {
+            transform:
+              translateY(-2px);
+
+            box-shadow:
+              0 12px 28px
+              rgba(185,28,28,0.35);
+          }
+
+          .infinia-popup-ad-label {
+            color: #94a3b8;
+
+            font-size: 10px;
+
+            letter-spacing:
+              0.08em;
+
+            text-transform:
+              uppercase;
+          }
+
+          .infinia-popup-close {
+            position: absolute;
+
+            top: 12px;
+            right: 12px;
+
+            z-index: 10;
+
+            width: 40px;
+            height: 40px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            padding: 0;
+
+            border:
+              1px solid
+              rgba(255,255,255,0.8);
+
+            border-radius: 50%;
+
+            background:
+              rgba(0,0,0,0.68);
+
+            color: #ffffff;
+
+            cursor: pointer;
+
+            box-shadow:
+              0 5px 18px
+              rgba(0,0,0,0.28);
+
+            backdrop-filter:
+              blur(8px);
+
+            -webkit-backdrop-filter:
+              blur(8px);
+
+            transition:
+              transform 0.2s ease,
+              background 0.2s ease;
+          }
+
+          .infinia-popup-close:hover {
+            transform:
+              rotate(90deg)
+              scale(1.05);
+
+            background:
+              rgba(0,0,0,0.9);
+          }
+
+          @media (max-width: 480px) {
+            .infinia-popup-backdrop {
+              padding: 10px;
+            }
+
+            .infinia-popup-card {
+              max-height:
+                calc(100vh - 20px);
+            }
+
+            .infinia-popup-image {
+              height: 175px;
+            }
+
+            .infinia-popup-action {
+              flex-direction: column;
+              align-items: stretch;
+            }
+
+            .infinia-popup-cta {
+              width: 100%;
+            }
+
+            .infinia-popup-ad-label {
+              text-align: center;
+            }
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            .infinia-popup-backdrop,
+            .infinia-popup-card {
+              animation: none;
+            }
+
+            .infinia-popup-cta,
+            .infinia-popup-close {
+              transition: none;
+            }
+          }
+        `}
+      </style>
+
+      <div
+        className="infinia-popup-backdrop"
+        role="dialog"
+        aria-modal="true"
+        aria-label={
+          ad.title ||
+          "Advertisement"
+        }
+        onMouseDown={
+          handleBackdropClick
+        }
+      >
+        <div
+          className="infinia-popup-card"
+          onMouseDown={(event) => {
+            event.stopPropagation();
+          }}
+        >
+          {/* CLOSE */}
+
+          <button
+            type="button"
+            className="infinia-popup-close"
+            onClick={onClose}
+            aria-label="Close advertisement"
+            title="Close advertisement"
+          >
+            <X
+              size={21}
+              strokeWidth={2.6}
+            />
+          </button>
+
+          {/* IMAGE */}
+
+          {image && (
+            <>
+              {link ? (
+                <a
+                  href={link}
+                  target={
+                    ad.openInNewTab !== false
+                      ? "_blank"
+                      : "_self"
+                  }
+                  rel={
+                    ad.openInNewTab !== false
+                      ? "noopener noreferrer"
+                      : undefined
+                  }
+                  style={{
+                    display: "block",
+                  }}
+                >
+                  <img
+                    src={image}
+                    alt={
+                      ad.title ||
+                      "Advertisement"
+                    }
+                    className="infinia-popup-image"
+                  />
+                </a>
+              ) : (
+                <img
+                  src={image}
+                  alt={
+                    ad.title ||
+                    "Advertisement"
+                  }
+                  className="infinia-popup-image"
+                />
+              )}
+            </>
+          )}
+
+          {/* CONTENT */}
+
+          <div className="infinia-popup-content">
+
+            <h2 className="infinia-popup-title">
+              {ad.title ||
+                "Special Offer"}
+            </h2>
+
+            {description && (
+              <p className="infinia-popup-description">
+                {description}
+              </p>
+            )}
+
+            <div className="infinia-popup-action">
+              <span className="infinia-popup-ad-label">
+                Sponsored
+              </span>
+
+              {link && (
+                <a
+                  href={link}
+                  target={
+                    ad.openInNewTab !== false
+                      ? "_blank"
+                      : "_self"
+                  }
+                  rel={
+                    ad.openInNewTab !== false
+                      ? "noopener noreferrer"
+                      : undefined
+                  }
+                  className="infinia-popup-cta"
+                >
+                  {buttonText}
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
 // ======================================================
 // FLOATING TV
 // ======================================================

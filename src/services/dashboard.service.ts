@@ -16,7 +16,21 @@ import {
 // DASHBOARD STATS
 // ==========================================
 
+// ==========================================
+// DASHBOARD STATS
+// ==========================================
+
 export async function getDashboardStats() {
+  const adTypes = [
+    "banner",
+    "cube",
+    "popup",
+    "page_transition",
+    "shorts_video",
+    "floating_tv",
+    "sticky_bottom",
+    "native",
+  ] as const;
 
   const [
     articlesSnapshot,
@@ -24,9 +38,8 @@ export async function getDashboardStats() {
     usersSnapshot,
     breakingNewsSnapshot,
     liveTvSnapshot,
-    adsSnapshot,
+    ...adSnapshots
   ] = await Promise.all([
-
     getCountFromServer(
       collection(db, "articles")
     ),
@@ -47,15 +60,25 @@ export async function getDashboardStats() {
       collection(db, "liveTv")
     ),
 
-    getCountFromServer(
-      collection(db, "businessAds")
+    ...adTypes.map((type) =>
+      getCountFromServer(
+        collection(
+          db,
+          "businessAds",
+          type,
+          "ads"
+        )
+      )
     ),
-
   ]);
 
+  const ads = adSnapshots.reduce(
+    (total, snapshot) =>
+      total + snapshot.data().count,
+    0
+  );
 
   return {
-
     articles:
       articlesSnapshot.data().count,
 
@@ -71,11 +94,8 @@ export async function getDashboardStats() {
     liveTv:
       liveTvSnapshot.data().count,
 
-    ads:
-      adsSnapshot.data().count,
-
+    ads,
   };
-
 }
 
 
