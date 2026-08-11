@@ -43,7 +43,6 @@ export default function BreakingNewsPage() {
         text: text.trim(),
         active: true,
         expiry: "24h",
-        id: "",
       });
 
       setText("");
