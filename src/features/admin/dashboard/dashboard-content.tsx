@@ -382,7 +382,7 @@ export default function DashboardContent() {
         />
 
         <StatCard
-          title="Business Ads"
+          title="Ads"
           value={
             loading
               ? "..."

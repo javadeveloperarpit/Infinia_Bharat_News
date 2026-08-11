@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { X } from "lucide-react";
 
 import {
   createAd,
@@ -16,119 +17,211 @@ import {
   type AdPosition,
   type AdFrequency,
   type AdCubeFace,
+  type NormalAdLayout,
+  type FloatingAdLayout,
 } from "@/services/ads.service";
+
+const LIVE_WEBSITE_URL = "/";
 
 // ======================================================
 // TYPES
 // ======================================================
 
-type DeviceLayout = {
-  width: number;
-  height: number;
-  x: number;
-  y: number;
-  scale: number;
-};
-
-type AdLayout = {
-  desktop: DeviceLayout;
-  mobile: DeviceLayout;
-};
-
-type VideoOrientation = "vertical" | "horizontal";
-
-type AdsForm = AdsData & {
-  cubeSameImage?: boolean;
-  layout: AdLayout;
-  videoOrientation?: VideoOrientation;
-};
-
 type PreviewDevice = "desktop" | "mobile";
 
+type FormState = {
+  title: string;
+
+  type: AdType;
+
+  image: string;
+
+  link: string;
+
+  position: AdPosition;
+
+  active: boolean;
+
+  priority: number;
+
+  mobileEnabled: boolean;
+
+  desktopEnabled: boolean;
+
+  openInNewTab: boolean;
+
+  delay: number;
+
+  frequency: AdFrequency;
+
+  closeable: boolean;
+
+  videoUrl: string;
+
+  videoType: "youtube" | "mp4";
+
+  videoOrientation:
+    | "vertical"
+    | "horizontal"
+    | "auto";
+
+  videoPoster: string;
+
+  duration: number;
+
+  autoplay: boolean;
+
+  muted: boolean;
+
+  width: number;
+
+  cubeFaces: AdCubeFace[];
+
+  rotationSpeed: number;
+
+  cubeSameImage: boolean;
+
+  normalLayout: NormalAdLayout;
+
+  floatingLayout: FloatingAdLayout;
+};
+
 // ======================================================
-// DEFAULTS
+// CONSTANTS
 // ======================================================
 
-const DEFAULT_LAYOUT: AdLayout = {
+const DESKTOP_WIDTH = 1920;
+const DESKTOP_HEIGHT = 1080;
+
+const MOBILE_WIDTH = 1080;
+const MOBILE_HEIGHT = 1920;
+
+// ======================================================
+// DEFAULT LAYOUTS
+// ======================================================
+
+const DEFAULT_NORMAL_LAYOUT: NormalAdLayout = {
   desktop: {
-    width: 1366,
-    height: 768,
+    scale: 1,
+  },
+
+  mobile: {
+    scale: 1,
+  },
+};
+
+const DEFAULT_FLOATING_LAYOUT: FloatingAdLayout = {
+  desktop: {
+    width: DESKTOP_WIDTH,
+    height: DESKTOP_HEIGHT,
     x: 0,
     y: 0,
     scale: 1,
   },
 
   mobile: {
-    width: 390,
-    height: 844,
+    width: MOBILE_WIDTH,
+    height: MOBILE_HEIGHT,
     x: 0,
     y: 0,
     scale: 1,
   },
 };
 
-const EMPTY_FACE = (): AdCubeFace => ({
-  image: "",
-  link: "",
-});
+// ======================================================
+// EMPTY FACE
+// ======================================================
 
-const DEFAULT_FORM: AdsForm = {
-  title: "",
-
-  type: "banner",
-
-  image: "",
-
-  link: "",
-
-  position: "homepage_top",
-
-  active: true,
-
-  priority: 1,
-
-  mobileEnabled: true,
-
-  desktopEnabled: true,
-
-  openInNewTab: true,
-
-  delay: 5,
-
-  frequency: "once_session",
-
-  closeable: true,
-
-  videoUrl: "",
-
-  videoType: "youtube",
-
-  duration: 10,
-
-  autoplay: true,
-
-  muted: true,
-
-  width: 320,
-
-  cubeFaces: [
-    EMPTY_FACE(),
-    EMPTY_FACE(),
-    EMPTY_FACE(),
-    EMPTY_FACE(),
-  ],
-
-  rotationSpeed: 4,
-
-  cubeSameImage: false,
-
-  layout: DEFAULT_LAYOUT,
-
-  videoOrientation: "horizontal",
-};
+function emptyFace(): AdCubeFace {
+  return {
+    image: "",
+    link: "",
+  };
+}
 
 // ======================================================
-// TYPES
+// DEFAULT FORM
+// ======================================================
+
+function createDefaultForm(): FormState {
+  return {
+    title: "",
+
+    type: "banner",
+
+    image: "",
+
+    link: "",
+
+    position: "homepage_top",
+
+    active: true,
+
+    priority: 1,
+
+    mobileEnabled: true,
+
+    desktopEnabled: true,
+
+    openInNewTab: true,
+
+    delay: 5,
+
+    frequency: "once_session",
+
+    closeable: true,
+
+    videoUrl: "",
+
+    videoType: "youtube",
+
+    videoOrientation: "horizontal",
+
+    videoPoster: "",
+
+    duration: 10,
+
+    autoplay: true,
+
+    muted: true,
+
+    width: 320,
+
+    cubeFaces: [
+      emptyFace(),
+      emptyFace(),
+      emptyFace(),
+      emptyFace(),
+    ],
+
+    rotationSpeed: 4,
+
+    cubeSameImage: false,
+
+    normalLayout: {
+      desktop: {
+        ...DEFAULT_NORMAL_LAYOUT.desktop,
+      },
+
+      mobile: {
+        ...DEFAULT_NORMAL_LAYOUT.mobile,
+      },
+    },
+
+    floatingLayout: {
+      desktop: {
+        ...DEFAULT_FLOATING_LAYOUT.desktop,
+      },
+
+      mobile: {
+        ...DEFAULT_FLOATING_LAYOUT.mobile,
+      },
+    },
+  };
+}
+
+// ======================================================
+// AD TYPES
 // ======================================================
 
 const AD_TYPES: {
@@ -143,42 +236,49 @@ const AD_TYPES: {
     description: "Premium display creative",
     icon: "▭",
   },
+
   {
     value: "cube",
     label: "3D Cube",
     description: "Four-face rotating creative",
     icon: "◇",
   },
+
   {
     value: "popup",
     label: "Popup",
     description: "Timed promotional overlay",
     icon: "▣",
   },
+
   {
     value: "page_transition",
     label: "Page Transition",
     description: "Pre-navigation promotion",
     icon: "→",
   },
+
   {
     value: "shorts_video",
     label: "Shorts Video",
-    description: "Vertical or horizontal video creative",
+    description: "Vertical or horizontal video",
     icon: "▶",
   },
+
   {
     value: "floating_tv",
     label: "Floating TV",
     description: "Floating video window",
     icon: "▣",
   },
+
   {
     value: "sticky_bottom",
     label: "Sticky Bottom",
     description: "Persistent bottom creative",
     icon: "▬",
   },
+
   {
     value: "native",
     label: "Native",
@@ -186,6 +286,10 @@ const AD_TYPES: {
     icon: "▤",
   },
 ];
+
+// ======================================================
+// POSITIONS
+// ======================================================
 
 const POSITIONS: {
   value: AdPosition;
@@ -195,67 +299,86 @@ const POSITIONS: {
     value: "homepage_top",
     label: "Homepage — Top",
   },
+
   {
     value: "homepage_middle",
     label: "Homepage — Middle",
   },
+
   {
     value: "homepage_bottom",
     label: "Homepage — Bottom",
   },
+
   {
     value: "article_top",
     label: "Article — Top",
   },
+
   {
     value: "article_after_intro",
     label: "Article — After Intro",
   },
+
   {
     value: "article_middle",
     label: "Article — Middle",
   },
+
   {
     value: "article_before_related",
     label: "Article — Before Related",
   },
+
   {
     value: "sidebar_top",
     label: "Sidebar — Top",
   },
+
   {
     value: "sidebar_middle",
     label: "Sidebar — Middle",
   },
+
   {
     value: "sidebar_bottom",
     label: "Sidebar — Bottom",
   },
+
   {
     value: "shorts_between",
     label: "Shorts — Between Videos",
   },
+
   {
     value: "shorts_after_3",
     label: "Shorts — After 3 Videos",
   },
+
   {
     value: "global_popup",
     label: "Global Popup",
   },
+
   {
     value: "page_transition",
     label: "Page Transition",
   },
+
   {
     value: "floating_tv",
     label: "Floating TV",
   },
+
   {
     value: "sticky_bottom",
     label: "Sticky Bottom",
   },
 ];
+
+// ======================================================
+// FREQUENCIES
+// ======================================================
 
 const FREQUENCIES: {
   value: AdFrequency;
@@ -265,14 +388,17 @@ const FREQUENCIES: {
     value: "always",
     label: "Every impression",
   },
+
   {
     value: "once_session",
     label: "Once per session",
   },
+
   {
     value: "once_day",
     label: "Once per day",
   },
+
   {
     value: "once",
     label: "One time only",
@@ -282,6 +408,13 @@ const FREQUENCIES: {
 // ======================================================
 // HELPERS
 // ======================================================
+
+function isFloatingAd(type: AdType) {
+  return (
+    type === "cube" ||
+    type === "floating_tv"
+  );
+}
 
 function isVideoAd(type: AdType) {
   return (
@@ -302,7 +435,6 @@ function needsImage(type: AdType) {
     type === "banner" ||
     type === "popup" ||
     type === "native" ||
-    type === "shorts_video" ||
     type === "sticky_bottom" ||
     type === "page_transition"
   );
@@ -319,7 +451,9 @@ function supportsLink(type: AdType) {
 }
 
 function isYouTubeUrl(url: string) {
-  if (!url?.trim()) return false;
+  if (!url?.trim()) {
+    return false;
+  }
 
   try {
     const parsed = new URL(url.trim());
@@ -339,7 +473,9 @@ function isYouTubeUrl(url: string) {
 }
 
 function getYouTubeEmbedUrl(url: string) {
-  if (!url?.trim()) return null;
+  if (!url?.trim()) {
+    return null;
+  }
 
   try {
     const parsed = new URL(url.trim());
@@ -387,7 +523,9 @@ function getYouTubeEmbedUrl(url: string) {
           .filter(Boolean)[0] || "";
     }
 
-    if (!videoId) return null;
+    if (!videoId) {
+      return null;
+    }
 
     return (
       `https://www.youtube.com/embed/${videoId}` +
@@ -402,33 +540,343 @@ function getYouTubeEmbedUrl(url: string) {
   }
 }
 
-function freshForm(): AdsForm {
-  return {
-    ...DEFAULT_FORM,
+// ======================================================
+// BUILD FIRESTORE PAYLOAD
+//
+// IMPORTANT:
+// Only relevant attributes are sent.
+// ======================================================
 
-    cubeFaces: [
-      EMPTY_FACE(),
-      EMPTY_FACE(),
-      EMPTY_FACE(),
-      EMPTY_FACE(),
-    ],
+function buildAdPayload(
+  form: FormState
+): AdsData {
+  const common = {
+    title: form.title.trim(),
+
+    position: form.position,
+
+    active: form.active,
+
+    priority: form.priority,
+
+    mobileEnabled:
+      form.mobileEnabled,
+
+    desktopEnabled:
+      form.desktopEnabled,
+
+    openInNewTab:
+      form.openInNewTab,
+  };
+
+  // ====================================================
+  // BANNER
+  // ====================================================
+
+  if (form.type === "banner") {
+    return {
+      ...common,
+
+      type: "banner",
+
+      image: form.image.trim(),
+
+      link: form.link.trim(),
+
+      layout: {
+        desktop: {
+          scale:
+            form.normalLayout.desktop.scale,
+        },
+
+        mobile: {
+          scale:
+            form.normalLayout.mobile.scale,
+        },
+      },
+    };
+  }
+
+  // ====================================================
+  // NATIVE
+  // ====================================================
+
+  if (form.type === "native") {
+    return {
+      ...common,
+
+      type: "native",
+
+      image: form.image.trim(),
+
+      link: form.link.trim(),
+
+      layout: {
+        desktop: {
+          scale:
+            form.normalLayout.desktop.scale,
+        },
+
+        mobile: {
+          scale:
+            form.normalLayout.mobile.scale,
+        },
+      },
+    };
+  }
+
+  // ====================================================
+  // POPUP
+  // ====================================================
+
+  if (form.type === "popup") {
+    return {
+      ...common,
+
+      type: "popup",
+
+      image: form.image.trim(),
+
+      link: form.link.trim(),
+
+      delay: form.delay,
+
+      frequency: form.frequency,
+
+      closeable: form.closeable,
+
+      layout: {
+        desktop: {
+          scale:
+            form.normalLayout.desktop.scale,
+        },
+
+        mobile: {
+          scale:
+            form.normalLayout.mobile.scale,
+        },
+      },
+    };
+  }
+
+  // ====================================================
+  // PAGE TRANSITION
+  // ====================================================
+
+  if (
+    form.type ===
+    "page_transition"
+  ) {
+    return {
+      ...common,
+
+      type: "page_transition",
+
+      image: form.image.trim(),
+
+      link: form.link.trim(),
+
+      delay: form.delay,
+
+      frequency: form.frequency,
+
+      closeable: form.closeable,
+
+      layout: {
+        desktop: {
+          scale:
+            form.normalLayout.desktop.scale,
+        },
+
+        mobile: {
+          scale:
+            form.normalLayout.mobile.scale,
+        },
+      },
+    };
+  }
+
+  // ====================================================
+  // STICKY BOTTOM
+  // ====================================================
+
+  if (
+    form.type ===
+    "sticky_bottom"
+  ) {
+    return {
+      ...common,
+
+      type: "sticky_bottom",
+
+      image: form.image.trim(),
+
+      link: form.link.trim(),
+
+      closeable: form.closeable,
+
+      layout: {
+        desktop: {
+          scale:
+            form.normalLayout.desktop.scale,
+        },
+
+        mobile: {
+          scale:
+            form.normalLayout.mobile.scale,
+        },
+      },
+    };
+  }
+
+  // ====================================================
+  // SHORTS VIDEO
+  // ====================================================
+
+  if (
+    form.type ===
+    "shorts_video"
+  ) {
+    return {
+      ...common,
+
+      type: "shorts_video",
+
+      videoUrl:
+        form.videoUrl.trim(),
+
+      videoType:
+        form.videoType,
+
+      videoOrientation:
+        form.videoOrientation,
+
+      ...(form.videoPoster.trim()
+        ? {
+            videoPoster:
+              form.videoPoster.trim(),
+          }
+        : {}),
+
+      duration:
+        form.duration,
+
+      autoplay:
+        form.autoplay,
+
+      muted:
+        form.muted,
+
+      layout: {
+        desktop: {
+          scale:
+            form.normalLayout.desktop.scale,
+        },
+
+        mobile: {
+          scale:
+            form.normalLayout.mobile.scale,
+        },
+      },
+    };
+  }
+
+  // ====================================================
+  // FLOATING TV
+  //
+  // X/Y AVAILABLE
+  // ====================================================
+
+  if (
+    form.type ===
+    "floating_tv"
+  ) {
+    return {
+      ...common,
+
+      type: "floating_tv",
+
+      videoUrl:
+        form.videoUrl.trim(),
+
+      videoType:
+        form.videoType,
+
+      videoOrientation:
+        form.videoOrientation,
+
+      ...(form.videoPoster.trim()
+        ? {
+            videoPoster:
+              form.videoPoster.trim(),
+          }
+        : {}),
+
+      duration:
+        form.duration,
+
+      autoplay:
+        form.autoplay,
+
+      muted:
+        form.muted,
+
+      width:
+        form.width,
+
+      layout: {
+        desktop: {
+          ...form.floatingLayout
+            .desktop,
+        },
+
+        mobile: {
+          ...form.floatingLayout
+            .mobile,
+        },
+      },
+    };
+  }
+
+  // ====================================================
+  // CUBE
+  //
+  // X/Y AVAILABLE
+  // ====================================================
+
+  return {
+    ...common,
+
+    type: "cube",
+
+    cubeFaces:
+      form.cubeFaces,
+
+    rotationSpeed:
+      form.rotationSpeed,
+
+    cubeSameImage:
+      form.cubeSameImage,
+
+    width:
+      form.width,
 
     layout: {
       desktop: {
-        ...DEFAULT_LAYOUT.desktop,
+        ...form.floatingLayout
+          .desktop,
       },
 
       mobile: {
-        ...DEFAULT_LAYOUT.mobile,
+        ...form.floatingLayout
+          .mobile,
       },
     },
-
-    videoOrientation: "horizontal",
   };
 }
 
 // ======================================================
-// UI
+// UI COMPONENTS
 // ======================================================
 
 function Section({
@@ -502,9 +950,148 @@ function Select({
   );
 }
 
+function Toggle({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (value: boolean) => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        onChange(!checked)
+      }
+      className="flex items-center gap-2"
+    >
+      <span
+        className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+          checked
+            ? "bg-red-600"
+            : "bg-zinc-200"
+        }`}
+      >
+        <span
+          className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition ${
+            checked
+              ? "left-6"
+              : "left-1"
+          }`}
+        />
+      </span>
+
+      <span className="text-xs font-bold text-zinc-700">
+        {label}
+      </span>
+    </button>
+  );
+}
+
+function ToggleCard({
+  checked,
+  onChange,
+  title,
+  description,
+}: {
+  checked: boolean;
+  onChange: (value: boolean) => void;
+  title: string;
+  description: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        onChange(!checked)
+      }
+      className={`rounded-2xl border p-4 text-left transition ${
+        checked
+          ? "border-green-200 bg-green-50"
+          : "border-zinc-200 bg-white"
+      }`}
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-black text-zinc-900">
+          {title}
+        </span>
+
+        <span
+          className={`h-2.5 w-2.5 rounded-full ${
+            checked
+              ? "bg-green-500"
+              : "bg-zinc-300"
+          }`}
+        />
+      </div>
+
+      <div className="mt-1 text-[10px] text-zinc-500">
+        {description}
+      </div>
+    </button>
+  );
+}
+
+function DeviceTab({
+  active,
+  onClick,
+  label,
+  dimensions,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  dimensions: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-lg px-4 py-3 transition ${
+        active
+          ? "bg-white text-zinc-950 shadow-sm"
+          : "text-zinc-500 hover:bg-white/60"
+      }`}
+    >
+      <div className="text-xs font-black">
+        {label}
+      </div>
+
+      <div className="mt-0.5 text-[8px] font-bold opacity-60">
+        {dimensions}
+      </div>
+    </button>
+  );
+}
+
 // ======================================================
-// POSITION CONTROL
+// POSITION ARROW
+// ONLY USED FOR FLOATING ADS
 // ======================================================
+
+function ArrowButton({
+  symbol,
+  label,
+  onClick,
+}: {
+  symbol: string;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      onClick={onClick}
+      className="flex h-9 items-center justify-center rounded-lg border border-zinc-200 bg-white text-sm font-black text-zinc-700 transition hover:bg-zinc-100"
+    >
+      {symbol}
+    </button>
+  );
+}
 
 function PositionControl({
   x,
@@ -520,7 +1107,8 @@ function PositionControl({
   ) => void;
   onCenter: () => void;
 }) {
-  const [step, setStep] = useState(10);
+  const [step, setStep] =
+    useState(10);
 
   return (
     <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
@@ -531,7 +1119,7 @@ function PositionControl({
           </div>
 
           <div className="mt-0.5 text-[10px] text-zinc-500">
-            Move the creative visually
+            X / Y screen coordinates
           </div>
         </div>
 
@@ -565,7 +1153,10 @@ function PositionControl({
             label="Move up"
             symbol="↑"
             onClick={() =>
-              onMove("y", -step)
+              onMove(
+                "y",
+                -step
+              )
             }
           />
 
@@ -575,15 +1166,17 @@ function PositionControl({
             label="Move left"
             symbol="←"
             onClick={() =>
-              onMove("x", -step)
+              onMove(
+                "x",
+                -step
+              )
             }
           />
 
           <button
             type="button"
             onClick={onCenter}
-            title="Center creative"
-            className="flex h-9 items-center justify-center rounded-lg bg-red-600 text-xs font-black text-white shadow-sm transition hover:bg-red-700"
+            className="flex h-9 items-center justify-center rounded-lg bg-red-600 text-xs font-black text-white"
           >
             ●
           </button>
@@ -592,7 +1185,10 @@ function PositionControl({
             label="Move right"
             symbol="→"
             onClick={() =>
-              onMove("x", step)
+              onMove(
+                "x",
+                step
+              )
             }
           />
 
@@ -602,7 +1198,10 @@ function PositionControl({
             label="Move down"
             symbol="↓"
             onClick={() =>
-              onMove("y", step)
+              onMove(
+                "y",
+                step
+              )
             }
           />
 
@@ -633,7 +1232,7 @@ function PositionControl({
           <button
             type="button"
             onClick={onCenter}
-            className="col-span-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[10px] font-black text-zinc-600 transition hover:bg-zinc-100"
+            className="col-span-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[10px] font-black text-zinc-600"
           >
             Center Creative
           </button>
@@ -643,34 +1242,13 @@ function PositionControl({
   );
 }
 
-function ArrowButton({
-  symbol,
-  label,
-  onClick,
-}: {
-  symbol: string;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      title={label}
-      aria-label={label}
-      onClick={onClick}
-      className="flex h-9 items-center justify-center rounded-lg border border-zinc-200 bg-white text-sm font-black text-zinc-700 transition hover:bg-zinc-100"
-    >
-      {symbol}
-    </button>
-  );
-}
-
 // ======================================================
-// PAGE
+// MAIN PAGE
 // ======================================================
 
 export default function AdsPage() {
-  const [ads, setAds] = useState<any[]>([]);
+  const [ads, setAds] =
+    useState<any[]>([]);
 
   const [loading, setLoading] =
     useState(false);
@@ -679,36 +1257,50 @@ export default function AdsPage() {
     useState(false);
 
   const [form, setForm] =
-    useState<AdsForm>(freshForm());
+    useState<FormState>(
+      createDefaultForm()
+    );
 
   const [preview, setPreview] =
     useState(true);
 
-  const [previewDevice, setPreviewDevice] =
-    useState<PreviewDevice>("desktop");
+  const [
+    previewDevice,
+    setPreviewDevice,
+  ] =
+    useState<PreviewDevice>(
+      "desktop"
+    );
 
   const previewFrameRef =
-    useRef<HTMLDivElement | null>(null);
+    useRef<HTMLDivElement | null>(
+      null
+    );
 
-  const [previewWidth, setPreviewWidth] =
-    useState(500);
+  const [
+    previewWidth,
+    setPreviewWidth,
+  ] = useState(500);
 
   // ====================================================
-  // RESPONSIVE PREVIEW WIDTH
+  // PREVIEW WIDTH
   // ====================================================
 
   useEffect(() => {
     const element =
       previewFrameRef.current;
 
-    if (!element) return;
+    if (!element) {
+      return;
+    }
 
     const observer =
       new ResizeObserver(
         (entries) => {
           const width =
-            entries[0]?.contentRect
-              .width || 500;
+            entries[0]
+              ?.contentRect.width ||
+            500;
 
           setPreviewWidth(
             Math.max(280, width)
@@ -723,14 +1315,15 @@ export default function AdsPage() {
   }, []);
 
   // ====================================================
-  // LOAD
+  // LOAD ADS
   // ====================================================
 
   async function loadAds() {
     try {
       setLoading(true);
 
-      const data = await getAds();
+      const data =
+        await getAds();
 
       setAds(data || []);
     } catch (error) {
@@ -750,14 +1343,14 @@ export default function AdsPage() {
   }, []);
 
   // ====================================================
-  // UPDATE
+  // FIELD UPDATE
   // ====================================================
 
   function updateField<
-    K extends keyof AdsForm
+    K extends keyof FormState
   >(
     key: K,
-    value: AdsForm[K]
+    value: FormState[K]
   ) {
     setForm((prev) => ({
       ...prev,
@@ -766,74 +1359,151 @@ export default function AdsPage() {
   }
 
   // ====================================================
-  // LAYOUT
+  // NORMAL SCALE
   // ====================================================
 
-  function updateLayout(
+  function updateNormalScale(
     device: PreviewDevice,
-    key: keyof DeviceLayout,
+    scale: number
+  ) {
+    setForm((prev) => ({
+      ...prev,
+
+      normalLayout: {
+        ...prev.normalLayout,
+
+        [device]: {
+          scale,
+        },
+      },
+    }));
+  }
+
+  // ====================================================
+  // FLOATING LAYOUT
+  // ====================================================
+
+  function updateFloatingLayout(
+    device: PreviewDevice,
+    key:
+      | "width"
+      | "height"
+      | "x"
+      | "y"
+      | "scale",
     value: number
   ) {
     setForm((prev) => ({
       ...prev,
 
-      layout: {
-        ...prev.layout,
+      floatingLayout: {
+        ...prev.floatingLayout,
 
         [device]: {
-          ...prev.layout[device],
+          ...prev.floatingLayout[
+            device
+          ],
+
           [key]: value,
         },
       },
     }));
   }
 
+  // ====================================================
+  // MOVE FLOATING CREATIVE
+  // ====================================================
+
   function moveCreative(
     axis: "x" | "y",
     amount: number
   ) {
-    const current =
-      form.layout[previewDevice];
+    if (
+      !isFloatingAd(
+        form.type
+      )
+    ) {
+      return;
+    }
 
-    updateLayout(
+    const current =
+      form.floatingLayout[
+        previewDevice
+      ];
+
+    updateFloatingLayout(
       previewDevice,
       axis,
       current[axis] + amount
     );
   }
 
+  // ====================================================
+  // CENTER FLOATING CREATIVE
+  // ====================================================
+
   function centerCreative() {
-    setForm((prev) => ({
-      ...prev,
+    if (
+      !isFloatingAd(
+        form.type
+      )
+    ) {
+      return;
+    }
 
-      layout: {
-        ...prev.layout,
+    updateFloatingLayout(
+      previewDevice,
+      "x",
+      0
+    );
 
-        [previewDevice]: {
-          ...prev.layout[
-            previewDevice
-          ],
-          x: 0,
-          y: 0,
-        },
-      },
-    }));
+    updateFloatingLayout(
+      previewDevice,
+      "y",
+      0
+    );
   }
 
-  function resetDeviceLayout() {
-    const defaults =
-      DEFAULT_LAYOUT[
-        previewDevice
-      ];
+  // ====================================================
+  // RESET LAYOUT
+  // ====================================================
+
+  function resetLayout() {
+    if (
+      isFloatingAd(
+        form.type
+      )
+    ) {
+      const defaults =
+        DEFAULT_FLOATING_LAYOUT[
+          previewDevice
+        ];
+
+      setForm((prev) => ({
+        ...prev,
+
+        floatingLayout: {
+          ...prev.floatingLayout,
+
+          [previewDevice]: {
+            ...defaults,
+          },
+        },
+      }));
+
+      return;
+    }
 
     setForm((prev) => ({
       ...prev,
 
-      layout: {
-        ...prev.layout,
+      normalLayout: {
+        ...prev.normalLayout,
 
         [previewDevice]: {
-          ...defaults,
+          ...DEFAULT_NORMAL_LAYOUT[
+            previewDevice
+          ],
         },
       },
     }));
@@ -843,28 +1513,49 @@ export default function AdsPage() {
   // CHANGE TYPE
   // ====================================================
 
-  function changeType(type: AdType) {
+  function changeType(
+    type: AdType
+  ) {
     let position =
       form.position;
 
-    if (type === "popup") {
-      position = "global_popup";
-    } else if (
-      type === "page_transition"
+    if (
+      type === "popup"
     ) {
-      position = "page_transition";
-    } else if (
-      type === "floating_tv"
+      position =
+        "global_popup";
+    }
+
+    if (
+      type ===
+      "page_transition"
     ) {
-      position = "floating_tv";
-    } else if (
-      type === "sticky_bottom"
+      position =
+        "page_transition";
+    }
+
+    if (
+      type ===
+      "floating_tv"
     ) {
-      position = "sticky_bottom";
-    } else if (
-      type === "shorts_video"
+      position =
+        "floating_tv";
+    }
+
+    if (
+      type ===
+      "sticky_bottom"
     ) {
-      position = "shorts_between";
+      position =
+        "sticky_bottom";
+    }
+
+    if (
+      type ===
+      "shorts_video"
+    ) {
+      position =
+        "shorts_between";
     }
 
     setForm((prev) => ({
@@ -874,29 +1565,31 @@ export default function AdsPage() {
 
       position,
 
-      image: needsImage(type)
-        ? prev.image
-        : "",
+      image:
+        needsImage(type)
+          ? prev.image
+          : "",
 
-      link: supportsLink(type)
-        ? prev.link
-        : "",
+      link:
+        supportsLink(type)
+          ? prev.link
+          : "",
 
-      videoUrl: isVideoAd(type)
-        ? prev.videoUrl
-        : "",
+      videoUrl:
+        isVideoAd(type)
+          ? prev.videoUrl
+          : "",
 
       videoOrientation:
-        type === "shorts_video"
-          ? prev.videoOrientation ||
-            "vertical"
-          : prev.videoOrientation ||
-            "horizontal",
+        type ===
+        "shorts_video"
+          ? "vertical"
+          : "horizontal",
     }));
   }
 
   // ====================================================
-  // CUBE
+  // CUBE FACE UPDATE
   // ====================================================
 
   function updateCubeFace(
@@ -911,7 +1604,7 @@ export default function AdsPage() {
 
       faces[index] = {
         ...(faces[index] ||
-          EMPTY_FACE()),
+          emptyFace()),
 
         [key]: value,
       };
@@ -940,23 +1633,25 @@ export default function AdsPage() {
     });
   }
 
+  // ====================================================
+  // SAME CUBE IMAGE
+  // ====================================================
+
   function toggleSameCubeImage(
     enabled: boolean
   ) {
     setForm((prev) => {
-      const faces = [
-        ...(prev.cubeFaces || []),
-      ];
-
       if (!enabled) {
         return {
           ...prev,
-          cubeSameImage: false,
+          cubeSameImage:
+            false,
         };
       }
 
       const first =
-        faces[0] || EMPTY_FACE();
+        prev.cubeFaces[0] ||
+        emptyFace();
 
       return {
         ...prev,
@@ -964,12 +1659,14 @@ export default function AdsPage() {
         cubeSameImage: true,
 
         cubeFaces:
-          faces.map(() => ({
-            image:
-              first.image || "",
-            link:
-              first.link || "",
-          })),
+          prev.cubeFaces.map(
+            () => ({
+              image:
+                first.image,
+              link:
+                first.link,
+            })
+          ),
       };
     });
   }
@@ -983,36 +1680,40 @@ export default function AdsPage() {
       alert(
         "Please enter a campaign title."
       );
+
       return;
     }
 
     if (
       needsImage(form.type) &&
-      !form.image?.trim()
+      !form.image.trim()
     ) {
       alert(
         "Please add the creative image URL."
       );
+
       return;
     }
 
     if (
       supportsLink(form.type) &&
-      !form.link?.trim()
+      !form.link.trim()
     ) {
       alert(
         "Please add the destination URL."
       );
+
       return;
     }
 
-    if (form.type === "cube") {
-      const faces =
-        form.cubeFaces || [];
-
+    if (
+      form.type ===
+      "cube"
+    ) {
       if (
-        faces.length !== 4 ||
-        faces.some(
+        form.cubeFaces.length !==
+          4 ||
+        form.cubeFaces.some(
           (face) =>
             !face.image.trim()
         )
@@ -1020,32 +1721,37 @@ export default function AdsPage() {
         alert(
           "Please add an image to all four cube faces."
         );
+
         return;
       }
     }
 
     if (
       isVideoAd(form.type) &&
-      !form.videoUrl?.trim()
+      !form.videoUrl.trim()
     ) {
       alert(
         "Please add a video URL."
       );
+
       return;
     }
 
     try {
       setSaving(true);
 
-      await createAd(
-        form as AdsData
-      );
+      const payload =
+        buildAdPayload(form);
+
+      await createAd(payload);
 
       alert(
         "Campaign created successfully."
       );
 
-      setForm(freshForm());
+      setForm(
+        createDefaultForm()
+      );
 
       await loadAds();
     } catch (error) {
@@ -1066,16 +1772,24 @@ export default function AdsPage() {
   // DELETE
   // ====================================================
 
-  async function remove(id: string) {
+  async function remove(
+    type: AdType,
+    id: string
+  ) {
     const confirmed =
       confirm(
         "Delete this campaign permanently?"
       );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     try {
-      await deleteAd(id);
+      await deleteAd(
+        type,
+        id
+      );
 
       await loadAds();
     } catch (error) {
@@ -1108,7 +1822,9 @@ export default function AdsPage() {
       () =>
         ads.filter(
           (ad) =>
-            isVideoAd(ad.type)
+            isVideoAd(
+              ad.type
+            )
         ).length,
       [ads]
     );
@@ -1118,29 +1834,46 @@ export default function AdsPage() {
       () =>
         ads.filter(
           (ad) =>
-            ad.type === "cube"
+            ad.type ===
+            "cube"
         ).length,
       [ads]
     );
 
-  const currentLayout =
-    form.layout[
+  // ====================================================
+  // CURRENT LAYOUT
+  // ====================================================
+
+  const currentFloatingLayout =
+    form.floatingLayout[
       previewDevice
     ];
 
+  const currentNormalLayout =
+    form.normalLayout[
+      previewDevice
+    ];
+
+  const currentScale =
+    isFloatingAd(form.type)
+      ? currentFloatingLayout.scale
+      : currentNormalLayout.scale;
+
   // ====================================================
-  // PREVIEW SCALE
+  // PREVIEW CANVAS
   // ====================================================
 
   const baseWidth =
-    previewDevice === "desktop"
-      ? 1366
-      : 390;
+    previewDevice ===
+    "desktop"
+      ? DESKTOP_WIDTH
+      : MOBILE_WIDTH;
 
   const baseHeight =
-    previewDevice === "desktop"
-      ? 768
-      : 844;
+    previewDevice ===
+    "desktop"
+      ? DESKTOP_HEIGHT
+      : MOBILE_HEIGHT;
 
   const availableWidth =
     Math.max(
@@ -1156,7 +1889,8 @@ export default function AdsPage() {
     );
 
   const displayedHeight =
-    baseHeight * canvasScale;
+    baseHeight *
+    canvasScale;
 
   // ====================================================
   // RENDER
@@ -1175,7 +1909,7 @@ export default function AdsPage() {
           <div className="relative flex flex-col gap-7 xl:flex-row xl:items-end xl:justify-between">
             <div>
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[9px] font-black tracking-[0.16em] text-zinc-300">
-                <span className="h-1.5 w-1.5 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.9)]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
                 ADS OPERATIONS
               </div>
 
@@ -1188,10 +1922,11 @@ export default function AdsPage() {
               </h1>
 
               <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
-                Design, position and deploy
-                premium advertising
-                experiences across every
-                device.
+                Design, position and
+                deploy premium
+                advertising
+                experiences across
+                every device.
               </p>
             </div>
 
@@ -1202,7 +1937,9 @@ export default function AdsPage() {
               />
 
               <Stat
-                value={activeCount}
+                value={
+                  activeCount
+                }
                 label="Active"
                 accent="green"
               />
@@ -1230,7 +1967,9 @@ export default function AdsPage() {
         {/* ================================================= */}
 
         <div className="space-y-6">
+          {/* ================================================= */}
           {/* TYPE */}
+          {/* ================================================= */}
 
           <Section
             title="Creative Format"
@@ -1296,7 +2035,9 @@ export default function AdsPage() {
             </div>
           </Section>
 
+          {/* ================================================= */}
           {/* CAMPAIGN */}
+          {/* ================================================= */}
 
           <Section
             title="Campaign Identity"
@@ -1315,7 +2056,8 @@ export default function AdsPage() {
                   onChange={(e) =>
                     updateField(
                       "title",
-                      e.target.value
+                      e.target
+                        .value
                     )
                   }
                   placeholder="e.g. Premium Membership Campaign"
@@ -1334,24 +2076,17 @@ export default function AdsPage() {
 
                   <Input
                     value={
-                      form.image ||
-                      ""
+                      form.image
                     }
                     onChange={(e) =>
                       updateField(
                         "image",
-                        e.target.value
+                        e.target
+                          .value
                       )
                     }
                     placeholder="https://cdn.example.com/creative.webp"
                   />
-
-                  <p className="mt-1.5 text-[9px] text-zinc-400">
-                    {form.type ===
-                    "shorts_video"
-                      ? "Optional promotional image/poster shown with the video."
-                      : "Image displayed as the campaign creative."}
-                  </p>
                 </div>
               )}
 
@@ -1367,13 +2102,13 @@ export default function AdsPage() {
 
                   <Input
                     value={
-                      form.link ||
-                      ""
+                      form.link
                     }
                     onChange={(e) =>
                       updateField(
                         "link",
-                        e.target.value
+                        e.target
+                          .value
                       )
                     }
                     placeholder="https://example.com/offer"
@@ -1417,6 +2152,12 @@ export default function AdsPage() {
                     )
                   )}
                 </Select>
+
+                <p className="mt-1.5 text-[9px] text-zinc-400">
+                  Placement decides
+                  where the ad is
+                  rendered.
+                </p>
               </div>
 
               {/* PRIORITY */}
@@ -1430,8 +2171,7 @@ export default function AdsPage() {
                   type="number"
                   min={1}
                   value={
-                    form.priority ??
-                    1
+                    form.priority
                   }
                   onChange={(e) =>
                     updateField(
@@ -1448,7 +2188,7 @@ export default function AdsPage() {
           </Section>
 
           {/* ================================================= */}
-          {/* SHORTS / VIDEO */}
+          {/* VIDEO */}
           {/* ================================================= */}
 
           {isVideoAd(
@@ -1461,16 +2201,9 @@ export default function AdsPage() {
                   ? "Floating Video"
                   : "Shorts Video"
               }
-              description={
-                form.type ===
-                "shorts_video"
-                  ? "Shorts ads support both vertical 9:16 and horizontal 16:9 video creatives. An image URL can also be supplied as the promotional creative/poster."
-                  : "Paste a YouTube or direct video URL."
-              }
+              description="Configure the video source and playback behaviour."
             >
               <div className="space-y-5">
-                {/* SHORTS ORIENTATION */}
-
                 {form.type ===
                   "shorts_video" && (
                   <div>
@@ -1478,75 +2211,56 @@ export default function AdsPage() {
                       Video Orientation
                     </FieldLabel>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          updateField(
-                            "videoOrientation",
-                            "vertical"
-                          )
-                        }
-                        className={`rounded-2xl border p-4 text-left transition ${
-                          form.videoOrientation ===
-                          "vertical"
-                            ? "border-red-500 bg-red-50"
-                            : "border-zinc-200 bg-white hover:bg-zinc-50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-12 w-8 items-center justify-center rounded-md bg-zinc-950 text-[8px] font-black text-white">
-                            9:16
-                          </div>
-
-                          <div>
-                            <div className="text-xs font-black text-zinc-900">
-                              Vertical
+                    <div className="grid grid-cols-3 gap-3">
+                      {(
+                        [
+                          "vertical",
+                          "horizontal",
+                          "auto",
+                        ] as const
+                      ).map(
+                        (
+                          orientation
+                        ) => (
+                          <button
+                            key={
+                              orientation
+                            }
+                            type="button"
+                            onClick={() =>
+                              updateField(
+                                "videoOrientation",
+                                orientation
+                              )
+                            }
+                            className={`rounded-2xl border p-4 text-left ${
+                              form.videoOrientation ===
+                              orientation
+                                ? "border-red-500 bg-red-50"
+                                : "border-zinc-200 bg-white"
+                            }`}
+                          >
+                            <div className="text-xs font-black capitalize">
+                              {
+                                orientation
+                              }
                             </div>
 
                             <div className="mt-1 text-[9px] text-zinc-500">
-                              Shorts / Reels style
+                              {orientation ===
+                              "vertical"
+                                ? "9:16"
+                                : orientation ===
+                                    "horizontal"
+                                  ? "16:9"
+                                  : "Source decides"}
                             </div>
-                          </div>
-                        </div>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          updateField(
-                            "videoOrientation",
-                            "horizontal"
-                          )
-                        }
-                        className={`rounded-2xl border p-4 text-left transition ${
-                          form.videoOrientation ===
-                          "horizontal"
-                            ? "border-red-500 bg-red-50"
-                            : "border-zinc-200 bg-white hover:bg-zinc-50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-14 items-center justify-center rounded-md bg-zinc-950 text-[8px] font-black text-white">
-                            16:9
-                          </div>
-
-                          <div>
-                            <div className="text-xs font-black text-zinc-900">
-                              Horizontal
-                            </div>
-
-                            <div className="mt-1 text-[9px] text-zinc-500">
-                              Standard video
-                            </div>
-                          </div>
-                        </div>
-                      </button>
+                          </button>
+                        )
+                      )}
                     </div>
                   </div>
                 )}
-
-                {/* VIDEO URL */}
 
                 <div>
                   <FieldLabel>
@@ -1555,16 +2269,16 @@ export default function AdsPage() {
 
                   <Input
                     value={
-                      form.videoUrl ??
-                      ""
+                      form.videoUrl
                     }
                     onChange={(e) =>
                       updateField(
                         "videoUrl",
-                        e.target.value
+                        e.target
+                          .value
                       )
                     }
-                    placeholder="YouTube URL or direct .mp4/.webm video URL"
+                    placeholder="YouTube URL or direct .mp4/.webm URL"
                   />
 
                   {form.videoUrl && (
@@ -1580,9 +2294,36 @@ export default function AdsPage() {
                   )}
                 </div>
 
-                {/* DURATION / WIDTH */}
-
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <FieldLabel>
+                      Video Type
+                    </FieldLabel>
+
+                    <Select
+                      value={
+                        form.videoType
+                      }
+                      onChange={(e) =>
+                        updateField(
+                          "videoType",
+                          e.target
+                            .value as
+                            | "youtube"
+                            | "mp4"
+                        )
+                      }
+                    >
+                      <option value="youtube">
+                        YouTube
+                      </option>
+
+                      <option value="mp4">
+                        MP4
+                      </option>
+                    </Select>
+                  </div>
+
                   <div>
                     <FieldLabel>
                       Playback Duration
@@ -1592,8 +2333,7 @@ export default function AdsPage() {
                       type="number"
                       min={1}
                       value={
-                        form.duration ??
-                        10
+                        form.duration
                       }
                       onChange={(e) =>
                         updateField(
@@ -1606,45 +2346,59 @@ export default function AdsPage() {
                       }
                     />
                   </div>
-
-                  {form.type ===
-                    "floating_tv" && (
-                    <div>
-                      <FieldLabel>
-                        Player Width
-                      </FieldLabel>
-
-                      <Input
-                        type="number"
-                        min={180}
-                        max={600}
-                        value={
-                          form.width ??
-                          320
-                        }
-                        onChange={(
-                          e
-                        ) =>
-                          updateField(
-                            "width",
-                            Number(
-                              e.target
-                                .value
-                            )
-                          )
-                        }
-                      />
-                    </div>
-                  )}
                 </div>
 
-                {/* VIDEO OPTIONS */}
+                {form.type ===
+                  "floating_tv" && (
+                  <div>
+                    <FieldLabel>
+                      Player Width
+                    </FieldLabel>
 
-                <div className="flex flex-wrap gap-3">
+                    <Input
+                      type="number"
+                      min={180}
+                      max={600}
+                      value={
+                        form.width
+                      }
+                      onChange={(e) =>
+                        updateField(
+                          "width",
+                          Number(
+                            e.target
+                              .value
+                          )
+                        )
+                      }
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <FieldLabel>
+                    Video Poster
+                  </FieldLabel>
+
+                  <Input
+                    value={
+                      form.videoPoster
+                    }
+                    onChange={(e) =>
+                      updateField(
+                        "videoPoster",
+                        e.target
+                          .value
+                      )
+                    }
+                    placeholder="Optional poster image URL"
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-5">
                   <Toggle
                     checked={
-                      form.autoplay ??
-                      true
+                      form.autoplay
                     }
                     onChange={(value) =>
                       updateField(
@@ -1657,8 +2411,7 @@ export default function AdsPage() {
 
                   <Toggle
                     checked={
-                      form.muted ??
-                      true
+                      form.muted
                     }
                     onChange={(value) =>
                       updateField(
@@ -1681,13 +2434,12 @@ export default function AdsPage() {
             "cube" && (
             <Section
               title="3D Cube Creative"
-              description="Four independent faces. No separate banner image is required."
+              description="Four independent faces. X/Y positioning is available because the cube is a floating creative."
             >
               <div className="rounded-2xl border border-purple-100 bg-purple-50/50 p-4">
                 <Toggle
                   checked={
-                    form.cubeSameImage ??
-                    false
+                    form.cubeSameImage
                   }
                   onChange={
                     toggleSameCubeImage
@@ -1697,10 +2449,7 @@ export default function AdsPage() {
               </div>
 
               <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {(
-                  form.cubeFaces ||
-                  []
-                ).map(
+                {form.cubeFaces.map(
                   (
                     face,
                     index
@@ -1738,11 +2487,9 @@ export default function AdsPage() {
                             face.image
                           }
                           disabled={
-                            !!(
-                              form.cubeSameImage &&
-                              index !==
-                                0
-                            )
+                            form.cubeSameImage &&
+                            index !==
+                              0
                           }
                           onChange={(
                             e
@@ -1762,11 +2509,9 @@ export default function AdsPage() {
                             face.link
                           }
                           disabled={
-                            !!(
-                              form.cubeSameImage &&
-                              index !==
-                                0
-                            )
+                            form.cubeSameImage &&
+                            index !==
+                              0
                           }
                           onChange={(
                             e
@@ -1789,12 +2534,6 @@ export default function AdsPage() {
                               }
                               alt=""
                               className="h-28 w-full object-cover"
-                              onError={(
-                                e
-                              ) => {
-                                e.currentTarget.style.display =
-                                  "none";
-                              }}
                             />
                           </div>
                         )}
@@ -1802,6 +2541,30 @@ export default function AdsPage() {
                     </div>
                   )
                 )}
+              </div>
+
+              <div className="mt-5">
+                <FieldLabel>
+                  Cube Size
+                </FieldLabel>
+
+                <Input
+                  type="number"
+                  min={80}
+                  max={400}
+                  value={
+                    form.width
+                  }
+                  onChange={(e) =>
+                    updateField(
+                      "width",
+                      Number(
+                        e.target
+                          .value
+                      )
+                    )
+                  }
+                />
               </div>
 
               <div className="mt-5">
@@ -1815,8 +2578,7 @@ export default function AdsPage() {
                     min="1"
                     max="20"
                     value={
-                      form.rotationSpeed ??
-                      4
+                      form.rotationSpeed
                     }
                     onChange={(e) =>
                       updateField(
@@ -1831,8 +2593,9 @@ export default function AdsPage() {
                   />
 
                   <span className="w-12 rounded-lg bg-zinc-100 px-2 py-2 text-center text-xs font-black">
-                    {form.rotationSpeed ??
-                      4}
+                    {
+                      form.rotationSpeed
+                    }
                     s
                   </span>
                 </div>
@@ -1849,7 +2612,7 @@ export default function AdsPage() {
           ) && (
             <Section
               title="Delivery Rules"
-              description="Control when the promotion appears and how frequently it can return."
+              description="Control when the promotion appears."
             >
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
@@ -1861,8 +2624,7 @@ export default function AdsPage() {
                     type="number"
                     min={0}
                     value={
-                      form.delay ??
-                      5
+                      form.delay
                     }
                     onChange={(e) =>
                       updateField(
@@ -1883,8 +2645,7 @@ export default function AdsPage() {
 
                   <Select
                     value={
-                      form.frequency ??
-                      "once_session"
+                      form.frequency
                     }
                     onChange={(e) =>
                       updateField(
@@ -1913,25 +2674,26 @@ export default function AdsPage() {
                   </Select>
                 </div>
 
-                <Toggle
-                  checked={
-                    form.closeable ??
-                    true
-                  }
-                  onChange={(value) =>
-                    updateField(
-                      "closeable",
-                      value
-                    )
-                  }
-                  label="Allow close"
-                />
+                <div className="flex items-end">
+                  <Toggle
+                    checked={
+                      form.closeable
+                    }
+                    onChange={(value) =>
+                      updateField(
+                        "closeable",
+                        value
+                      )
+                    }
+                    label="Allow close"
+                  />
+                </div>
               </div>
             </Section>
           )}
 
           {/* ================================================= */}
-          {/* DISPLAY */}
+          {/* AUDIENCE */}
           {/* ================================================= */}
 
           <Section
@@ -1955,8 +2717,7 @@ export default function AdsPage() {
 
               <ToggleCard
                 checked={
-                  form.mobileEnabled ??
-                  true
+                  form.mobileEnabled
                 }
                 onChange={(value) =>
                   updateField(
@@ -1970,8 +2731,7 @@ export default function AdsPage() {
 
               <ToggleCard
                 checked={
-                  form.desktopEnabled ??
-                  true
+                  form.desktopEnabled
                 }
                 onChange={(value) =>
                   updateField(
@@ -1990,8 +2750,7 @@ export default function AdsPage() {
                   "cube") && (
                 <ToggleCard
                   checked={
-                    form.openInNewTab ??
-                    true
+                    form.openInNewTab
                   }
                   onChange={(
                     value
@@ -2009,12 +2768,18 @@ export default function AdsPage() {
           </Section>
 
           {/* ================================================= */}
-          {/* LAYOUT */}
+          {/* RESPONSIVE LAYOUT */}
           {/* ================================================= */}
 
           <Section
-            title="Responsive Positioning"
-            description="Use the directional controls to position the creative. X/Y values are generated automatically."
+            title="Responsive Layout"
+            description={
+              isFloatingAd(
+                form.type
+              )
+                ? "X/Y position is available only for floating creatives. Scale is available for every creative."
+                : "This creative uses its placement automatically. Only scale can be adjusted."
+            }
           >
             <div className="grid grid-cols-2 gap-2 rounded-xl bg-zinc-100 p-1">
               <DeviceTab
@@ -2028,7 +2793,7 @@ export default function AdsPage() {
                   )
                 }
                 label="Desktop"
-                dimensions="1366 × 768"
+                dimensions="1920 × 1080"
               />
 
               <DeviceTab
@@ -2042,25 +2807,57 @@ export default function AdsPage() {
                   )
                 }
                 label="Mobile"
-                dimensions="390 × 844"
+                dimensions="1080 × 1920"
               />
             </div>
 
             <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
-              <PositionControl
-                x={
-                  currentLayout.x
-                }
-                y={
-                  currentLayout.y
-                }
-                onMove={
-                  moveCreative
-                }
-                onCenter={
-                  centerCreative
-                }
-              />
+              {/* POSITION ONLY FLOATING */}
+
+              {isFloatingAd(
+                form.type
+              ) ? (
+                <PositionControl
+                  x={
+                    currentFloatingLayout.x
+                  }
+                  y={
+                    currentFloatingLayout.y
+                  }
+                  onMove={
+                    moveCreative
+                  }
+                  onCenter={
+                    centerCreative
+                  }
+                />
+              ) : (
+                <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                  <div className="text-xs font-black text-zinc-900">
+                    Automatic Placement
+                  </div>
+
+                  <div className="mt-2 text-[10px] leading-5 text-zinc-500">
+                    This ad does not
+                    use free X/Y
+                    positioning.
+                    Its location is
+                    determined by:
+                  </div>
+
+                  <div className="mt-3 rounded-xl bg-white p-3 text-xs font-black text-red-600">
+                    {
+                      POSITIONS.find(
+                        (item) =>
+                          item.value ===
+                          form.position
+                      )?.label
+                    }
+                  </div>
+                </div>
+              )}
+
+              {/* SCALE */}
 
               <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
                 <div className="text-xs font-black text-zinc-900">
@@ -2074,7 +2871,7 @@ export default function AdsPage() {
 
                   <span className="text-sm font-black text-red-600">
                     {Math.round(
-                      currentLayout.scale *
+                      currentScale *
                         100
                     )}
                     %
@@ -2091,28 +2888,42 @@ export default function AdsPage() {
                   max="200"
                   step="5"
                   value={Math.round(
-                    currentLayout.scale *
+                    currentScale *
                       100
                   )}
-                  onChange={(e) =>
-                    updateLayout(
-                      previewDevice,
-                      "scale",
+                  onChange={(e) => {
+                    const value =
                       Number(
                         e.target
                           .value
-                      ) / 100
-                    )
-                  }
+                      ) / 100;
+
+                    if (
+                      isFloatingAd(
+                        form.type
+                      )
+                    ) {
+                      updateFloatingLayout(
+                        previewDevice,
+                        "scale",
+                        value
+                      );
+                    } else {
+                      updateNormalScale(
+                        previewDevice,
+                        value
+                      );
+                    }
+                  }}
                   className="mt-3 w-full accent-red-600"
                 />
 
                 <button
                   type="button"
                   onClick={
-                    resetDeviceLayout
+                    resetLayout
                   }
-                  className="mt-4 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-[10px] font-black text-zinc-600 transition hover:bg-zinc-100"
+                  className="mt-4 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-[10px] font-black text-zinc-600"
                 >
                   Reset{" "}
                   {previewDevice ===
@@ -2125,7 +2936,9 @@ export default function AdsPage() {
             </div>
           </Section>
 
+          {/* ================================================= */}
           {/* CREATE */}
+          {/* ================================================= */}
 
           <button
             type="button"
@@ -2135,15 +2948,13 @@ export default function AdsPage() {
             disabled={
               saving
             }
-            className="group relative w-full overflow-hidden rounded-2xl bg-red-600 px-6 py-4 text-sm font-black text-white shadow-xl shadow-red-600/20 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:shadow-none"
+            className="group relative w-full overflow-hidden rounded-2xl bg-red-600 px-6 py-4 text-sm font-black text-white shadow-xl shadow-red-600/20 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
           >
             <span className="relative z-10">
               {saving
                 ? "Deploying Campaign..."
                 : "Create & Deploy Campaign"}
             </span>
-
-            <span className="absolute inset-y-0 right-0 w-32 translate-x-20 bg-white/10 skew-x-[-20deg] transition-transform duration-500 group-hover:translate-x-0" />
           </button>
         </div>
 
@@ -2161,8 +2972,7 @@ export default function AdsPage() {
                   </div>
 
                   <div className="mt-0.5 text-[10px] text-zinc-500">
-                    Responsive production
-                    canvas
+                    Production coordinate canvas
                   </div>
                 </div>
 
@@ -2193,8 +3003,7 @@ export default function AdsPage() {
                     )
                   }
                   label="Desktop"
-                  dimensions="1366 × 768"
-                  compact
+                  dimensions="1920 × 1080"
                 />
 
                 <DeviceTab
@@ -2208,8 +3017,7 @@ export default function AdsPage() {
                     )
                   }
                   label="Mobile"
-                  dimensions="390 × 844"
-                  compact
+                  dimensions="1080 × 1920"
                 />
               </div>
             </div>
@@ -2269,59 +3077,95 @@ export default function AdsPage() {
                       <div className="pointer-events-none absolute left-1/2 top-2 z-[200] h-6 w-28 -translate-x-1/2 rounded-full bg-black" />
                     )}
 
-                    <div className="absolute inset-0 bg-gradient-to-br from-white via-zinc-50 to-zinc-100">
-                      <div className="absolute left-6 top-6 h-24 w-24 rounded-full bg-red-500/5 blur-2xl" />
+                    {/* =====================================================
+    REAL LIVE WEBSITE
+===================================================== */}
 
-                      <div className="absolute bottom-10 right-10 h-32 w-32 rounded-full bg-zinc-400/5 blur-3xl" />
-                    </div>
+<div className="absolute inset-0 overflow-hidden bg-white">
 
-                    <div className="pointer-events-none absolute inset-0">
-                      <div className="absolute left-8 right-8 top-8 h-14 rounded-xl bg-zinc-100" />
+  <iframe
+    src={LIVE_WEBSITE_URL}
+    title="Live Website Preview"
+    className="absolute left-0 top-0 block border-0"
+    style={{
+      width: baseWidth,
+      height: baseHeight,
+    }}
+    loading="eager"
+    allow="autoplay; fullscreen; picture-in-picture"
+  />
 
-                      <div className="absolute left-8 top-28 h-3 w-48 rounded-full bg-zinc-200" />
+  {/* =================================================
+      AD OVERLAY
+  ================================================= */}
 
-                      <div className="absolute left-8 top-36 h-3 w-72 rounded-full bg-zinc-100" />
+  <div
+    className="pointer-events-none absolute inset-0"
+    style={{
+      width: baseWidth,
+      height: baseHeight,
+    }}
+  >
 
-                      <div className="absolute bottom-8 left-8 right-8 h-20 rounded-xl bg-zinc-100" />
-                    </div>
+    <div
+      className="pointer-events-auto absolute left-1/2 top-1/2"
+      style={{
+      transform: isFloatingAd(form.type)
+        ? `translate(-50%, -50%) translate(${currentFloatingLayout.x}px, ${currentFloatingLayout.y}px) scale(${currentFloatingLayout.scale})`
+        : `translate(-50%, -50%) scale(${currentNormalLayout.scale})`,
 
-                    <div
-                      className="absolute left-1/2 top-1/2"
-                      style={{
-                        transform:
-                          `translate(-50%, -50%) translate(${currentLayout.x}px, ${currentLayout.y}px) scale(${currentLayout.scale})`,
-                        transformOrigin:
-                          "center center",
-                      }}
-                    >
-                      <PreviewCreative
-                        form={
-                          form
-                        }
-                        onClose={() =>
-                          setPreview(
-                            false
-                          )
-                        }
-                      />
-                    </div>
+      transformOrigin: "center center",
+
+      zIndex: 99999,
+    }}
+    >
+      <PreviewCreative
+        form={form}
+        onClose={() =>
+          setPreview(false)
+        }
+      />
+    </div>
+
+  </div>
+
+</div>
+
+                    {/* COORDINATE BADGE */}
 
                     <div className="pointer-events-none absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-black/80 px-4 py-2 text-[9px] font-black text-white">
-                      X{" "}
-                      {
-                        currentLayout.x
-                      }
-                      {" · "}
-                      Y{" "}
-                      {
-                        currentLayout.y
-                      }
-                      {" · "}
-                      {Math.round(
-                        currentLayout.scale *
-                          100
+                      {isFloatingAd(
+                        form.type
+                      ) ? (
+                        <>
+                          X{" "}
+                          {
+                            currentFloatingLayout.x
+                          }
+                          {" · "}
+                          Y{" "}
+                          {
+                            currentFloatingLayout.y
+                          }
+                          {" · "}
+                          {Math.round(
+                            currentFloatingLayout.scale *
+                              100
+                          )}
+                          %
+                        </>
+                      ) : (
+                        <>
+                          PLACEMENT{" "}
+                          {form.position}
+                          {" · "}
+                          {Math.round(
+                            currentNormalLayout.scale *
+                              100
+                          )}
+                          %
+                        </>
                       )}
-                      %
                     </div>
                   </div>
                 </div>
@@ -2384,9 +3228,8 @@ export default function AdsPage() {
             </div>
 
             <div className="mt-1 text-xs text-zinc-500">
-              Your deployed
-              campaigns will
-              appear here.
+              Your deployed campaigns
+              will appear here.
             </div>
           </div>
         ) : (
@@ -2395,7 +3238,7 @@ export default function AdsPage() {
               (ad) => (
                 <div
                   key={
-                    ad.id
+                    `${ad.type}-${ad.id}`
                   }
                   className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white transition hover:-translate-y-0.5 hover:shadow-lg"
                 >
@@ -2420,14 +3263,17 @@ export default function AdsPage() {
                                 ad.type
                               )
                             ? "VIDEO"
-                            : ad.type?.toUpperCase() ||
-                              "CAMPAIGN"}
+                            : (
+                                ad.type ||
+                                "CAMPAIGN"
+                              ).toUpperCase()}
                       </div>
                     )}
 
-                    <div className="absolute left-3 top-3 rounded-full bg-black/75 px-2.5 py-1 text-[8px] font-black uppercase tracking-wider text-white backdrop-blur">
-                      {ad.type ||
-                        "banner"}
+                    <div className="absolute left-3 top-3 rounded-full bg-black/75 px-2.5 py-1 text-[8px] font-black uppercase tracking-wider text-white">
+                      {
+                        ad.type
+                      }
                     </div>
 
                     <div
@@ -2451,8 +3297,9 @@ export default function AdsPage() {
 
                     <div className="mt-3 flex flex-wrap gap-1.5">
                       <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[8px] font-black text-zinc-600">
-                        {ad.position ||
-                          "Unassigned"}
+                        {
+                          ad.position
+                        }
                       </span>
 
                       <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[8px] font-black text-zinc-600">
@@ -2461,47 +3308,55 @@ export default function AdsPage() {
                           1}
                       </span>
 
-                      {ad.layout && (
-                        <>
+                      {ad.layout &&
+                        !isFloatingAd(
+                          ad.type
+                        ) && (
                           <span className="rounded-full bg-red-50 px-2.5 py-1 text-[8px] font-black text-red-600">
                             D{" "}
-                            {ad
-                              .layout
-                              .desktop
-                              ?.width ??
-                              1366}
-                            ×
-                            {ad
-                              .layout
-                              .desktop
-                              ?.height ??
-                              768}
+                            {Math.round(
+                              (ad
+                                .layout
+                                .desktop
+                                ?.scale ??
+                                1) *
+                                100
+                            )}
+                            %
                           </span>
+                        )}
 
-                          <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[8px] font-black text-blue-600">
-                            M{" "}
+                      {ad.layout &&
+                        isFloatingAd(
+                          ad.type
+                        ) && (
+                          <span className="rounded-full bg-purple-50 px-2.5 py-1 text-[8px] font-black text-purple-600">
+                            X{" "}
                             {ad
                               .layout
-                              .mobile
-                              ?.width ??
-                              390}
-                            ×
+                              .desktop
+                              ?.x ??
+                              0}
+                            {" "}
+                            Y{" "}
                             {ad
                               .layout
-                              .mobile
-                              ?.height ??
-                              844}
+                              .desktop
+                              ?.y ??
+                              0}
                           </span>
-                        </>
-                      )}
+                        )}
 
                       {ad.type ===
                         "shorts_video" && (
-                        <span className="rounded-full bg-purple-50 px-2.5 py-1 text-[8px] font-black text-purple-600">
+                        <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[8px] font-black text-blue-600">
                           {ad.videoOrientation ===
                           "vertical"
                             ? "9:16"
-                            : "16:9"}
+                            : ad.videoOrientation ===
+                                "horizontal"
+                              ? "16:9"
+                              : "AUTO"}
                         </span>
                       )}
                     </div>
@@ -2510,6 +3365,7 @@ export default function AdsPage() {
                       type="button"
                       onClick={() =>
                         remove(
+                          ad.type,
                           ad.id
                         )
                       }
@@ -2536,54 +3392,65 @@ function PreviewCreative({
   form,
   onClose,
 }: {
-  form: AdsForm;
+  form: FormState;
   onClose: () => void;
 }) {
   // ====================================================
-// BANNER
-// ====================================================
+  // BANNER
+  // ====================================================
 
-if (form.type === "banner") {
-  return (
-    <div
-      className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-xl"
-      style={{
-        width: "728px",
-        height: "90px",
-      }}
-    >
-      {form.image ? (
-        <img
-          src={form.image}
-          alt={form.title || "Banner Advertisement"}
-          className="h-full w-full object-cover"
-        />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center bg-zinc-100 text-xs font-black text-zinc-400">
-          Banner Advertisement — 728 × 90
-        </div>
-      )}
-    </div>
-  );
-}
+  if (
+    form.type ===
+    "banner"
+  ) {
+    return (
+      <div
+        className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-xl"
+        style={{
+          width: 728,
+          height: 90,
+        }}
+      >
+        {form.image ? (
+          <img
+            src={
+              form.image
+            }
+            alt={
+              form.title ||
+              "Banner Advertisement"
+            }
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-zinc-100 text-xs font-black text-zinc-400">
+            Banner Advertisement
+          </div>
+        )}
+      </div>
+    );
+  }
 
   // ====================================================
   // NATIVE
   // ====================================================
 
-  if (form.type === "native") {
+  if (
+    form.type ===
+    "native"
+  ) {
     return (
       <div className="w-[360px] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl">
         {form.image ? (
           <img
-            src={form.image}
+            src={
+              form.image
+            }
             alt=""
             className="h-40 w-full object-cover"
           />
         ) : (
-          <EmptyPreview
-            label="Creative image"
-          />
+          <EmptyPreview label="Creative image" />
         )}
 
         <div className="p-4">
@@ -2608,7 +3475,10 @@ if (form.type === "banner") {
   // POPUP
   // ====================================================
 
-  if (form.type === "popup") {
+  if (
+    form.type ===
+    "popup"
+  ) {
     return (
       <div className="relative w-[360px] overflow-hidden rounded-2xl bg-white shadow-2xl">
         {form.closeable && (
@@ -2617,20 +3487,23 @@ if (form.type === "banner") {
             onClick={onClose}
             className="absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-sm font-black text-white"
           >
-            ×
+            <X
+    size={28}
+    strokeWidth={3}
+  />
           </button>
         )}
 
         {form.image ? (
           <img
-            src={form.image}
+            src={
+              form.image
+            }
             alt=""
             className="h-[210px] w-full object-cover"
           />
         ) : (
-          <EmptyPreview
-            label="Popup creative"
-          />
+          <EmptyPreview label="Popup creative" />
         )}
 
         <div className="p-5">
@@ -2669,7 +3542,9 @@ if (form.type === "banner") {
 
         {form.image ? (
           <img
-            src={form.image}
+            src={
+              form.image
+            }
             alt=""
             className="h-[210px] w-full object-cover"
           />
@@ -2702,7 +3577,7 @@ if (form.type === "banner") {
   }
 
   // ====================================================
-  // STICKY BOTTOM
+  // STICKY
   // ====================================================
 
   if (
@@ -2713,7 +3588,9 @@ if (form.type === "banner") {
       <div className="flex w-[520px] max-w-[90vw] items-center gap-3 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-3 shadow-2xl">
         {form.image ? (
           <img
-            src={form.image}
+            src={
+              form.image
+            }
             alt=""
             className="h-16 w-24 shrink-0 rounded-xl object-cover"
           />
@@ -2744,7 +3621,10 @@ if (form.type === "banner") {
             onClick={onClose}
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-500"
           >
-            ×
+            <X
+    size={28}
+    strokeWidth={3}
+  />
           </button>
         )}
       </div>
@@ -2752,125 +3632,170 @@ if (form.type === "banner") {
   }
 
   // ====================================================
-// CUBE
-// ====================================================
+  // CUBE
+  // ====================================================
 
-if (form.type === "cube") {
-  return (
-    <>
-      <style>{`
-        @keyframes adsCubeSpin {
-          0% {
-            transform: rotateX(-8deg) rotateY(0deg);
-          }
+  if (
+    form.type ===
+    "cube"
+  ) {
+    const size =
+      form.width || 160;
 
-          25% {
-            transform: rotateX(-8deg) rotateY(90deg);
-          }
+    const depth =
+      size / 2 -0.1;
 
-          50% {
-            transform: rotateX(-8deg) rotateY(180deg);
-          }
+    const transforms = [
+      `rotateY(0deg) translateZ(${depth}px)`,
+      `rotateY(90deg) translateZ(${depth}px)`,
+      `rotateY(180deg) translateZ(${depth}px)`,
+      `rotateY(-90deg) translateZ(${depth}px)`,
+    ];
 
-          75% {
-            transform: rotateX(-8deg) rotateY(270deg);
-          }
+    return (
+      <>
+        <style>
+          {`
+            @keyframes adsCubeSpin {
+              from {
+                transform:
+                  rotateX(-8deg)
+                  rotateY(0deg);
+              }
 
-          100% {
-            transform: rotateX(-8deg) rotateY(360deg);
-          }
-        }
-      `}</style>
+              to {
+                transform:
+                  rotateX(-8deg)
+                  rotateY(360deg);
+              }
+            }
+          `}
+        </style>
 
-      <div className="relative flex h-[190px] w-[190px] items-center justify-center">
-        {form.closeable && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute -right-5 -top-5 z-50 flex h-8 w-8 items-center justify-center bg-black text-xs font-black text-white shadow-lg"
-          >
-            ×
-          </button>
-        )}
-
-        {/* Perspective */}
         <div
-          className="relative h-[160px] w-[160px]"
+          className="relative flex items-center justify-center"
           style={{
-            perspective: "800px",
+            width:
+              size + 30,
+
+            height:
+              size + 30,
           }}
         >
-          {/* Rotating cube */}
+          {form.closeable && (
+            <button
+              type="button"
+              onClick={
+                onClose
+              }
+              className="absolute -right-18 -top-5 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white text-xs font-black text-black shadow-3xl"
+            >
+              <X
+    size={28}
+    strokeWidth={3}
+  />
+            </button>
+          )}
+
           <div
-            className="absolute inset-0"
+            className="relative"
             style={{
-              transformStyle: "preserve-3d",
-              WebkitTransformStyle: "preserve-3d",
-              animation: `adsCubeSpin ${
-                form.rotationSpeed || 4
-              }s linear infinite`,
-              WebkitAnimation: `adsCubeSpin ${
-                form.rotationSpeed || 4
-              }s linear infinite`,
+              width: size,
+              height: size,
+              perspective:
+                "800px",
             }}
           >
-            {(
-              form.cubeFaces || []
-            ).map((face, index) => {
-              const transforms = [
-                "rotateY(0deg) translateZ(78px)",
-                "rotateY(90deg) translateZ(78px)",
-                "rotateY(180deg) translateZ(78px)",
-                "rotateY(-90deg) translateZ(78px)",
-              ];
+            <div
+              className="absolute inset-0"
+              style={{
+                transformStyle:
+                  "preserve-3d",
 
-              return (
-                <div
-                  key={index}
-                  className="absolute inset-0 overflow-hidden rounded-lg border border-white/10 bg-zinc-900 shadow-xl"
-                  style={{
-                    transform:
-                      transforms[index],
-                    WebkitTransform:
-                      transforms[index],
-                    backfaceVisibility:
-                      "hidden",
-                    WebkitBackfaceVisibility:
-                      "hidden",
-                  }}
-                >
-                  {face.image ? (
-                    <img
-                      src={face.image}
-                      alt={`Cube Face ${
-                        index + 1
-                      }`}
-                      className="h-full w-full object-cover"
-                      draggable={false}
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-xs font-black text-white">
-                      Face {index + 1}
+                WebkitTransformStyle:
+                  "preserve-3d",
+
+                animation:
+                  `adsCubeSpin ${
+                    form.rotationSpeed ||
+                    4
+                  }s linear infinite`,
+              }}
+            >
+              {form.cubeFaces
+                .slice(0, 4)
+                .map(
+                  (
+                    face,
+                    index
+                  ) => (
+                    <div
+                      key={
+                        index
+                      }
+                      className="absolute inset-0 overflow-hidden bg-zinc-900 shadow-2xl"
+                      style={{
+                        transform:
+                          transforms[
+                            index
+                          ],
+
+                        WebkitTransform:
+                          transforms[
+                            index
+                          ],
+
+                        backfaceVisibility:
+                          "hidden",
+
+                        WebkitBackfaceVisibility:
+                          "hidden",
+                      }}
+                    >
+                      {face.image ? (
+                        <img
+                          src={
+                            face.image
+                          }
+                          alt={`Cube Face ${
+                            index +
+                            1
+                          }`}
+                          className="h-full w-full object-cover"
+                          draggable={
+                            false
+                          }
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-xs font-black text-white">
+                          Face{" "}
+                          {index +
+                            1}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                  )
+                )}
+            </div>
           </div>
         </div>
-      </div>
-    </>
-  );
-}
+      </>
+    );
+  }
 
   // ====================================================
   // VIDEO
   // ====================================================
 
-  if (isVideoAd(form.type)) {
+  if (
+    form.type ===
+      "shorts_video" ||
+    form.type ===
+      "floating_tv"
+  ) {
     const youtube =
       getYouTubeEmbedUrl(
-        form.videoUrl || ""
+        form.videoUrl
       );
 
     const isVertical =
@@ -2879,10 +3804,17 @@ if (form.type === "cube") {
       form.videoOrientation ===
         "vertical";
 
+    const isAuto =
+      form.type ===
+        "shorts_video" &&
+      form.videoOrientation ===
+        "auto";
+
     const width =
       form.type ===
       "floating_tv"
-        ? form.width || 320
+        ? form.width ||
+          320
         : isVertical
           ? 240
           : 360;
@@ -2899,28 +3831,17 @@ if (form.type === "cube") {
           width,
         }}
       >
-        {/* IMAGE OVERLAY / POSTER */}
-
-        {form.image &&
-        !form.videoUrl ? (
-          <img
-            src={form.image}
-            alt=""
-            className={`w-full object-cover ${
-              isVertical
-                ? "aspect-[9/16]"
-                : "aspect-video"
-            }`}
-          />
-        ) : youtube ? (
+        {youtube ? (
           <div
             className={`relative ${aspectClass}`}
           >
             <iframe
-              src={youtube}
+              src={
+                youtube
+              }
               title={
                 form.title ||
-                "Video"
+                "Video Advertisement"
               }
               className="absolute inset-0 h-full w-full border-0"
               allow="autoplay; encrypted-media; picture-in-picture"
@@ -2936,17 +3857,15 @@ if (form.type === "cube") {
                 form.videoUrl
               }
               poster={
-                form.image ||
+                form.videoPoster ||
                 undefined
               }
               className="absolute inset-0 h-full w-full object-cover"
               autoPlay={
-                form.autoplay ??
-                true
+                form.autoplay
               }
               muted={
-                form.muted ??
-                true
+                form.muted
               }
               loop
               playsInline
@@ -2954,16 +3873,6 @@ if (form.type === "cube") {
               preload="metadata"
             />
           </div>
-        ) : form.image ? (
-          <img
-            src={form.image}
-            alt=""
-            className={`w-full object-cover ${
-              isVertical
-                ? "aspect-[9/16]"
-                : "aspect-video"
-            }`}
-          />
         ) : (
           <div
             className={`flex items-center justify-center text-xs font-bold text-zinc-500 ${
@@ -2976,7 +3885,7 @@ if (form.type === "cube") {
           </div>
         )}
 
-        <div className="pointer-events-none absolute left-3 top-3 rounded-md bg-red-600 px-2 py-1 text-[8px] font-black text-white">
+        <div className="pointer-events-none absolute left-3 top-3 z-20 rounded-md bg-red-600 px-2 py-1 text-[8px] font-black text-white">
           SPONSORED
         </div>
 
@@ -2987,6 +3896,7 @@ if (form.type === "cube") {
         )}
 
         {!isVertical &&
+          !isAuto &&
           form.type ===
             "shorts_video" && (
             <div className="pointer-events-none absolute bottom-3 left-3 rounded-md bg-black/70 px-2 py-1 text-[8px] font-black text-white">
@@ -2994,15 +3904,20 @@ if (form.type === "cube") {
             </div>
           )}
 
-        {form.closeable &&
-          form.type ===
-            "floating_tv" && (
+        {form.type ===
+          "floating_tv" &&
+          form.closeable && (
             <button
               type="button"
-              onClick={onClose}
+              onClick={
+                onClose
+              }
               className="absolute right-2 top-2 z-30 flex h-7 w-7 items-center justify-center rounded-full bg-black/75 text-xs font-black text-white"
             >
-              ×
+              <X
+    size={28}
+    strokeWidth={3}
+  />
             </button>
           )}
       </div>
@@ -3013,7 +3928,7 @@ if (form.type === "cube") {
 }
 
 // ======================================================
-// OTHER UI
+// EMPTY PREVIEW
 // ======================================================
 
 function EmptyPreview({
@@ -3028,6 +3943,10 @@ function EmptyPreview({
   );
 }
 
+// ======================================================
+// STAT
+// ======================================================
+
 function Stat({
   value,
   label,
@@ -3041,9 +3960,11 @@ function Stat({
     <div className="text-center">
       <div
         className={`text-xl font-black ${
-          accent === "green"
+          accent ===
+          "green"
             ? "text-green-400"
-            : accent === "gold"
+            : accent ===
+                "gold"
               ? "text-yellow-400"
               : "text-white"
         }`}
@@ -3058,129 +3979,3 @@ function Stat({
   );
 }
 
-function Toggle({
-  checked,
-  onChange,
-  label,
-}: {
-  checked: boolean;
-  onChange: (
-    value: boolean
-  ) => void;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() =>
-        onChange(!checked)
-      }
-      className="flex items-center gap-2"
-      aria-label={label}
-    >
-      <span
-        className={`relative h-6 w-11 shrink-0 rounded-full transition ${
-          checked
-            ? "bg-red-600"
-            : "bg-zinc-200"
-        }`}
-      >
-        <span
-          className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition ${
-            checked
-              ? "left-6"
-              : "left-1"
-          }`}
-        />
-      </span>
-
-      <span className="text-xs font-bold text-zinc-700">
-        {label}
-      </span>
-    </button>
-  );
-}
-
-function ToggleCard({
-  checked,
-  onChange,
-  title,
-  description,
-}: {
-  checked: boolean;
-  onChange: (
-    value: boolean
-  ) => void;
-  title: string;
-  description: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() =>
-        onChange(!checked)
-      }
-      className={`rounded-2xl border p-4 text-left transition ${
-        checked
-          ? "border-green-200 bg-green-50"
-          : "border-zinc-200 bg-white"
-      }`}
-    >
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-black text-zinc-900">
-          {title}
-        </span>
-
-        <span
-          className={`h-2.5 w-2.5 rounded-full ${
-            checked
-              ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"
-              : "bg-zinc-300"
-          }`}
-        />
-      </div>
-
-      <div className="mt-1 text-[10px] text-zinc-500">
-        {description}
-      </div>
-    </button>
-  );
-}
-
-function DeviceTab({
-  active,
-  onClick,
-  label,
-  dimensions,
-  compact,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  dimensions: string;
-  compact?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-lg ${
-        compact
-          ? "py-2"
-          : "px-4 py-3"
-      } transition ${
-        active
-          ? "bg-white text-zinc-950 shadow-sm"
-          : "text-zinc-500 hover:bg-white/60"
-      }`}
-    >
-      <div className="text-xs font-black">
-        {label}
-      </div>
-
-      <div className="mt-0.5 text-[8px] font-bold opacity-60">
-        {dimensions}
-      </div>
-    </button>
-  );
-}
