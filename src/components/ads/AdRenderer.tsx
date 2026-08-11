@@ -3,6 +3,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -40,8 +41,8 @@ type Device = "desktop" | "mobile";
 type RotationAdType =
   | "cube"
   | "floating_tv"
-  | "popup";
-
+  | "popup"
+  | "page_transition";
 
 type PopupTrigger =
   | "article_open"
@@ -107,6 +108,71 @@ function markFloatingAdClosed(
   );
 }
 
+// ======================================================
+// PAGE TRANSITION AD COOLDOWN
+// ======================================================
+
+const PAGE_TRANSITION_COOLDOWN_KEY =
+  "infinia-page-transition-ad-cooldown";
+
+const PAGE_TRANSITION_COOLDOWN_MS =
+  10 * 60 * 1000; // 10 minutes
+
+function isPageTransitionAdOnCooldown(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    const raw = localStorage.getItem(
+      PAGE_TRANSITION_COOLDOWN_KEY
+    );
+
+    if (!raw) {
+      return false;
+    }
+
+    const expiresAt = Number(raw);
+
+    if (!Number.isFinite(expiresAt)) {
+      localStorage.removeItem(
+        PAGE_TRANSITION_COOLDOWN_KEY
+      );
+
+      return false;
+    }
+
+    if (Date.now() >= expiresAt) {
+      localStorage.removeItem(
+        PAGE_TRANSITION_COOLDOWN_KEY
+      );
+
+      return false;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function startPageTransitionAdCooldown() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    localStorage.setItem(
+      PAGE_TRANSITION_COOLDOWN_KEY,
+      String(
+        Date.now() +
+          PAGE_TRANSITION_COOLDOWN_MS
+      )
+    );
+  } catch {
+    // Ignore localStorage errors
+  }
+}
 // ======================================================
 // FLOATING LAYOUT
 // ======================================================
@@ -480,6 +546,63 @@ function selectPopupAd(
 
   return candidates[nextIndex];
 }
+
+// ======================================================
+// SELECT PAGE TRANSITION AD
+// ======================================================
+const state =
+  readRotationState(
+    "page_transition"
+  );
+function selectPageTransitionAd(
+  ads: BusinessAd[],
+  currentUrl: string
+): BusinessAd | null {
+  const candidates = ads
+    .filter(
+      (ad) =>
+        ad.type === "page_transition"
+    )
+    .sort(
+      (a, b) =>
+        (a.priority ?? 999) -
+        (b.priority ?? 999)
+    );
+
+  if (!candidates.length) {
+    return null;
+  }
+
+  if (candidates.length === 1) {
+    return candidates[0];
+  }
+
+  const state =
+    readRotationState(
+      "popup"
+    );
+
+  // First ad
+  if (!state.lastAdId) {
+    return candidates[0];
+  }
+
+  const currentIndex =
+    candidates.findIndex(
+      (ad) =>
+        ad.id === state.lastAdId
+    );
+
+  if (currentIndex === -1) {
+    return candidates[0];
+  }
+
+  const nextIndex =
+    (currentIndex + 1) %
+    candidates.length;
+
+  return candidates[nextIndex];
+}
 // ======================================================
 // MAIN AD RENDERER
 // ======================================================
@@ -552,6 +675,28 @@ export default function AdRenderer({
 
 const [popupVisible, setPopupVisible] =
   useState(false);
+
+  // ====================================================
+// PAGE TRANSITION AD
+// ====================================================
+
+const [
+  pageTransitionAd,
+  setPageTransitionAd,
+] = useState<BusinessAd | null>(null);
+
+const [
+  pageTransitionVisible,
+  setPageTransitionVisible,
+] = useState(false);
+
+const [
+  pageTransitionCountdown,
+  setPageTransitionCountdown,
+] = useState(3);
+
+const pageTransitionFirstRender =
+  useRef(true);
 
   // ====================================================
   // VISIBLE ADS
@@ -972,6 +1117,132 @@ useEffect(() => {
   type,
 ]);
 
+// ====================================================
+// PAGE TRANSITION AD
+//
+// Shows on every SPA navigation.
+// Does NOT show on first page load.
+//
+// X button:
+// -> closes immediately
+// -> disables page transition ads for 10 minutes
+//
+// Skip:
+// -> available after 3 seconds
+// ====================================================
+
+useEffect(() => {
+  if (type && type !== "page_transition") {
+    return;
+  }
+
+  // --------------------------------------------------
+  // First render
+  //
+  // Don't show ad on initial page load.
+  // --------------------------------------------------
+
+  if (pageTransitionFirstRender.current) {
+    pageTransitionFirstRender.current =
+      false;
+
+    return;
+  }
+
+  // --------------------------------------------------
+  // 10 minute cooldown
+  // --------------------------------------------------
+
+  if (
+    isPageTransitionAdOnCooldown()
+  ) {
+    return;
+  }
+
+  const selected =
+    selectPageTransitionAd(
+      visibleAds,
+      currentUrl
+    );
+
+  if (!selected) {
+    return;
+  }
+
+  // --------------------------------------------------
+  // Show ad
+  // --------------------------------------------------
+
+  setPageTransitionAd(
+    selected
+  );
+
+  setPageTransitionCountdown(3);
+
+  setPageTransitionVisible(
+    true
+  );
+
+  // --------------------------------------------------
+  // Save rotation
+  // --------------------------------------------------
+
+  const state =
+    readRotationState(
+      "page_transition"
+    );
+
+  saveRotationState(
+    "page_transition",
+    {
+      lastAdId:
+        selected.id,
+
+      recentIds: [
+        ...state.recentIds,
+        selected.id,
+      ].slice(-5),
+
+      lastUrl:
+        currentUrl,
+    }
+  );
+
+  // --------------------------------------------------
+  // 3 second countdown
+  // --------------------------------------------------
+
+  let remaining = 3;
+
+  const interval =
+    window.setInterval(() => {
+      remaining -= 1;
+
+      setPageTransitionCountdown(
+        Math.max(
+          remaining,
+          0
+        )
+      );
+
+      if (remaining <= 0) {
+        window.clearInterval(
+          interval
+        );
+      }
+    }, 1000);
+
+  return () => {
+    window.clearInterval(
+      interval
+    );
+  };
+}, [
+  currentUrl,
+  visibleAds,
+  type,
+]);
+
   // ====================================================
   // NO ADS
   // ====================================================
@@ -1023,7 +1294,40 @@ useEffect(() => {
             setPopupAd(null);
           }}
         />
+
       )}
+
+      {pageTransitionAd &&
+  pageTransitionVisible && (
+    <PageTransitionAd
+      key={`page-transition-${pageTransitionAd.id}-${currentUrl}`}
+      ad={pageTransitionAd}
+      device={device}
+      countdown={
+        pageTransitionCountdown
+      }
+      onClose={() => {
+        startPageTransitionAdCooldown();
+
+        setPageTransitionVisible(
+          false
+        );
+
+        setPageTransitionAd(
+          null
+        );
+      }}
+      onSkip={() => {
+        setPageTransitionVisible(
+          false
+        );
+
+        setPageTransitionAd(
+          null
+        );
+      }}
+    />
+  )}
   </>
 );
 }
@@ -2160,6 +2464,778 @@ function PopupAd({
                 </a>
               )}
             </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ======================================================
+// PAGE TRANSITION AD
+// ======================================================
+
+function PageTransitionAd({
+  ad,
+  device,
+  countdown,
+  onClose,
+  onSkip,
+}: {
+  ad: BusinessAd;
+  device: Device;
+  countdown: number;
+  onClose: () => void;
+  onSkip: () => void;
+}) {
+  const image =
+    String(
+      getAdField<
+        {
+          image?: string;
+        },
+        "image"
+      >(
+        ad,
+        "image"
+      ) || ""
+    );
+
+  const link =
+    String(
+      getAdField<
+        {
+          link?: string;
+        },
+        "link"
+      >(
+        ad,
+        "link"
+      ) || ""
+    );
+
+  const description =
+    String(
+      getAdField<
+        {
+          description?: string;
+        },
+        "description"
+      >(
+        ad,
+        "description"
+      ) || ""
+    );
+
+  const buttonText =
+    String(
+      getAdField<
+        {
+          buttonText?: string;
+        },
+        "buttonText"
+      >(
+        ad,
+        "buttonText"
+      ) || "Visit Now"
+    );
+
+  const isMobile =
+    device === "mobile";
+
+  // ----------------------------------------------------
+  // BODY LOCK
+  // ----------------------------------------------------
+
+  useEffect(() => {
+    const previousOverflow =
+      document.body.style.overflow;
+
+    document.body.style.overflow =
+      "hidden";
+
+    return () => {
+      document.body.style.overflow =
+        previousOverflow;
+    };
+  }, []);
+
+  // ----------------------------------------------------
+  // ESC
+  // ----------------------------------------------------
+
+  useEffect(() => {
+    const handleKeyDown = (
+      event: KeyboardEvent
+    ) => {
+      if (
+        event.key === "Escape"
+      ) {
+        onClose();
+      }
+    };
+
+    document.addEventListener(
+      "keydown",
+      handleKeyDown
+    );
+
+    return () => {
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
+    };
+  }, [onClose]);
+
+  // ----------------------------------------------------
+  // BACKDROP CLICK
+  // ----------------------------------------------------
+
+  const handleBackdropClick = (
+    event: React.MouseEvent<HTMLDivElement>
+  ) => {
+    if (
+      event.target ===
+      event.currentTarget
+    ) {
+      onClose();
+    }
+  };
+
+  return (
+    <>
+      <style>
+        {`
+          @keyframes infiniaPageAdBackdrop {
+            from {
+              opacity: 0;
+            }
+
+            to {
+              opacity: 1;
+            }
+          }
+
+          @keyframes infiniaPageAdCard {
+            from {
+              opacity: 0;
+              transform:
+                translateY(28px)
+                scale(0.94);
+            }
+
+            to {
+              opacity: 1;
+              transform:
+                translateY(0)
+                scale(1);
+            }
+          }
+
+          @keyframes infiniaPageAdProgress {
+            from {
+              width: 0%;
+            }
+
+            to {
+              width: 100%;
+            }
+          }
+
+          .infinia-page-transition {
+            position: fixed;
+
+            inset: 0;
+
+            z-index: 9999999;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            padding: 14px;
+
+            background:
+              rgba(0, 0, 0, 0.82);
+
+            backdrop-filter:
+              blur(10px);
+
+            -webkit-backdrop-filter:
+              blur(10px);
+
+            animation:
+              infiniaPageAdBackdrop
+              0.22s ease-out;
+          }
+
+          .infinia-page-transition-card {
+            position: relative;
+
+            width:
+              ${
+                isMobile
+                  ? "min(420px, calc(100vw - 24px))"
+                  : "min(760px, calc(100vw - 50px))"
+              };
+
+            max-height:
+              calc(100vh - 28px);
+
+            overflow: hidden;
+
+            border-radius:
+              ${
+                isMobile
+                  ? "18px"
+                  : "24px"
+              };
+
+            background:
+              #ffffff;
+
+            box-shadow:
+              0 30px 100px
+              rgba(0,0,0,0.58);
+
+            animation:
+              infiniaPageAdCard
+              0.34s
+              cubic-bezier(
+                0.22,
+                1,
+                0.36,
+                1
+              );
+          }
+
+          .infinia-page-transition-top {
+            position: absolute;
+
+            top: 0;
+
+            left: 0;
+
+            right: 0;
+
+            z-index: 20;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding:
+              12px 14px;
+
+            pointer-events: none;
+          }
+
+          .infinia-page-transition-label {
+            display: inline-flex;
+
+            align-items: center;
+
+            gap: 7px;
+
+            padding:
+              6px 10px;
+
+            border-radius:
+              999px;
+
+            background:
+              rgba(0,0,0,0.68);
+
+            color: #ffffff;
+
+            font-size: 10px;
+
+            font-weight: 800;
+
+            letter-spacing:
+              0.1em;
+
+            text-transform:
+              uppercase;
+
+            backdrop-filter:
+              blur(8px);
+          }
+
+          .infinia-page-transition-dot {
+            width: 7px;
+
+            height: 7px;
+
+            border-radius: 50%;
+
+            background: #ef4444;
+
+            box-shadow:
+              0 0 0 4px
+              rgba(239,68,68,0.18);
+          }
+
+          .infinia-page-transition-close {
+            pointer-events: auto;
+
+            width: 40px;
+
+            height: 40px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            border:
+              1px solid
+              rgba(255,255,255,0.8);
+
+            border-radius: 50%;
+
+            background:
+              rgba(0,0,0,0.72);
+
+            color: #ffffff;
+
+            cursor: pointer;
+
+            box-shadow:
+              0 6px 20px
+              rgba(0,0,0,0.35);
+
+            backdrop-filter:
+              blur(8px);
+
+            -webkit-backdrop-filter:
+              blur(8px);
+
+            transition:
+              transform 0.2s ease,
+              background 0.2s ease;
+          }
+
+          .infinia-page-transition-close:hover {
+            transform:
+              rotate(90deg)
+              scale(1.06);
+
+            background:
+              rgba(0,0,0,0.92);
+          }
+
+          .infinia-page-transition-image {
+            display: block;
+
+            width: 100%;
+
+            height:
+              ${
+                isMobile
+                  ? "210px"
+                  : "360px"
+              };
+
+            object-fit: cover;
+
+            background:
+              #111827;
+          }
+
+          .infinia-page-transition-content {
+            padding:
+              ${
+                isMobile
+                  ? "18px"
+                  : "24px 28px 26px"
+              };
+          }
+
+          .infinia-page-transition-title {
+            margin: 0;
+
+            color: #111827;
+
+            font-size:
+              ${
+                isMobile
+                  ? "21px"
+                  : "29px"
+              };
+
+            line-height: 1.2;
+
+            font-weight: 800;
+
+            letter-spacing:
+              -0.025em;
+          }
+
+          .infinia-page-transition-description {
+            margin:
+              9px 0 0;
+
+            color: #64748b;
+
+            font-size:
+              ${
+                isMobile
+                  ? "14px"
+                  : "15px"
+              };
+
+            line-height: 1.55;
+          }
+
+          .infinia-page-transition-bottom {
+            display: flex;
+
+            align-items: center;
+
+            justify-content:
+              space-between;
+
+            gap: 12px;
+
+            margin-top: 20px;
+          }
+
+          .infinia-page-transition-sponsored {
+            color: #94a3b8;
+
+            font-size: 10px;
+
+            font-weight: 700;
+
+            letter-spacing:
+              0.08em;
+
+            text-transform:
+              uppercase;
+          }
+
+          .infinia-page-transition-actions {
+            display: flex;
+
+            align-items: center;
+
+            gap: 8px;
+          }
+
+          .infinia-page-transition-skip {
+            min-width: 105px;
+
+            height: 42px;
+
+            padding:
+              0 16px;
+
+            border:
+              1px solid #d1d5db;
+
+            border-radius: 9px;
+
+            background:
+              #ffffff;
+
+            color: #374151;
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+            transition:
+              all 0.2s ease;
+          }
+
+          .infinia-page-transition-skip:hover {
+            background:
+              #f3f4f6;
+
+            border-color:
+              #9ca3af;
+          }
+
+          .infinia-page-transition-skip:disabled {
+            opacity: 0.65;
+
+            cursor:
+              not-allowed;
+          }
+
+          .infinia-page-transition-cta {
+            display: inline-flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            min-width: 110px;
+
+            height: 42px;
+
+            padding:
+              0 18px;
+
+            border-radius: 9px;
+
+            background:
+              linear-gradient(
+                135deg,
+                #dc2626,
+                #b91c1c
+              );
+
+            color: #ffffff;
+
+            text-decoration: none;
+
+            font-size: 13px;
+
+            font-weight: 800;
+
+            box-shadow:
+              0 8px 20px
+              rgba(185,28,28,0.28);
+
+            transition:
+              transform 0.2s ease,
+              box-shadow 0.2s ease;
+          }
+
+          .infinia-page-transition-cta:hover {
+            transform:
+              translateY(-2px);
+
+            box-shadow:
+              0 12px 28px
+              rgba(185,28,28,0.36);
+          }
+
+          .infinia-page-transition-progress {
+            position: absolute;
+
+            left: 0;
+
+            bottom: 0;
+
+            height: 3px;
+
+            width: 100%;
+
+            background:
+              rgba(255,255,255,0.15);
+
+            overflow: hidden;
+          }
+
+          .infinia-page-transition-progress-bar {
+            height: 100%;
+
+            width: 100%;
+
+            background:
+              #dc2626;
+
+            transform-origin:
+              left center;
+
+            animation:
+              infiniaPageAdProgress
+              3s
+              linear
+              forwards;
+          }
+
+          @media (max-width: 480px) {
+            .infinia-page-transition {
+              padding: 10px;
+            }
+
+            .infinia-page-transition-card {
+              max-height:
+                calc(100vh - 20px);
+            }
+
+            .infinia-page-transition-image {
+              height: 185px;
+            }
+
+            .infinia-page-transition-bottom {
+              flex-direction: column;
+
+              align-items: stretch;
+            }
+
+            .infinia-page-transition-actions {
+              width: 100%;
+            }
+
+            .infinia-page-transition-skip,
+            .infinia-page-transition-cta {
+              flex: 1;
+            }
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            .infinia-page-transition,
+            .infinia-page-transition-card {
+              animation: none;
+            }
+
+            .infinia-page-transition-progress-bar {
+              animation: none;
+            }
+          }
+        `}
+      </style>
+
+      <div
+        className="infinia-page-transition"
+        role="dialog"
+        aria-modal="true"
+        aria-label={
+          ad.title ||
+          "Advertisement"
+        }
+        onMouseDown={
+          handleBackdropClick
+        }
+      >
+        <div
+          className="infinia-page-transition-card"
+          onMouseDown={(event) => {
+            event.stopPropagation();
+          }}
+        >
+          {/* TOP CONTROLS */}
+
+          <div className="infinia-page-transition-top">
+            <div className="infinia-page-transition-label">
+              <span className="infinia-page-transition-dot" />
+              Advertisement
+            </div>
+
+            <button
+              type="button"
+              className="infinia-page-transition-close"
+              onClick={onClose}
+              aria-label="Close advertisement"
+              title="Close advertisement"
+            >
+              <X
+                size={20}
+                strokeWidth={2.7}
+              />
+            </button>
+          </div>
+
+          {/* IMAGE */}
+
+          {image && (
+            link ? (
+              <a
+                href={link}
+                target={
+                  ad.openInNewTab !== false
+                    ? "_blank"
+                    : "_self"
+                }
+                rel={
+                  ad.openInNewTab !== false
+                    ? "noopener noreferrer"
+                    : undefined
+                }
+              >
+                <img
+                  src={image}
+                  alt={
+                    ad.title ||
+                    "Advertisement"
+                  }
+                  className="infinia-page-transition-image"
+                />
+              </a>
+            ) : (
+              <img
+                src={image}
+                alt={
+                  ad.title ||
+                  "Advertisement"
+                }
+                className="infinia-page-transition-image"
+              />
+            )
+          )}
+
+          {/* CONTENT */}
+
+          <div className="infinia-page-transition-content">
+            <h2 className="infinia-page-transition-title">
+              {ad.title ||
+                "Special Offer"}
+            </h2>
+
+            {description && (
+              <p className="infinia-page-transition-description">
+                {description}
+              </p>
+            )}
+
+            <div className="infinia-page-transition-bottom">
+              <span className="infinia-page-transition-sponsored">
+                Sponsored
+              </span>
+
+              <div className="infinia-page-transition-actions">
+                <button
+                  type="button"
+                  className="infinia-page-transition-skip"
+                  disabled={
+                    countdown > 0
+                  }
+                  onClick={onSkip}
+                >
+                  {countdown > 0
+                    ? `Skip in ${countdown}`
+                    : "Skip Ad"}
+                </button>
+
+                {link && (
+                  <a
+                    href={link}
+                    target={
+                      ad.openInNewTab !== false
+                        ? "_blank"
+                        : "_self"
+                    }
+                    rel={
+                      ad.openInNewTab !== false
+                        ? "noopener noreferrer"
+                        : undefined
+                    }
+                    className="infinia-page-transition-cta"
+                  >
+                    {buttonText}
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 3 SECOND PROGRESS */}
+
+          <div className="infinia-page-transition-progress">
+            <div className="infinia-page-transition-progress-bar" />
           </div>
         </div>
       </div>
