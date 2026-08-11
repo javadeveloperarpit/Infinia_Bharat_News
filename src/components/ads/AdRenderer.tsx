@@ -550,10 +550,6 @@ function selectPopupAd(
 // ======================================================
 // SELECT PAGE TRANSITION AD
 // ======================================================
-const state =
-  readRotationState(
-    "page_transition"
-  );
 function selectPageTransitionAd(
   ads: BusinessAd[],
   currentUrl: string
@@ -577,10 +573,7 @@ function selectPageTransitionAd(
     return candidates[0];
   }
 
-  const state =
-    readRotationState(
-      "popup"
-    );
+  const state = readRotationState("page_transition");
 
   // First ad
   if (!state.lastAdId) {
