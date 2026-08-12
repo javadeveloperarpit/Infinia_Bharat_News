@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 
 import {
   getArticleBySlug,
@@ -20,6 +21,148 @@ import {
 import type {
   NativeAd,
 } from "@/services/ads.service";
+
+
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{
+    slug: string;
+  }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+
+  const article = await getArticleBySlug(slug);
+
+  if (!article) {
+    return {
+      title: "News Not Found",
+      description: "यह खबर उपलब्ध नहीं है।",
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://infiniabharatnews.vercel.app";
+
+  const articleUrl =
+    `${siteUrl}/news/${article.slug}`;
+
+  const title =
+    article.seoTitle?.trim() ||
+    article.title;
+
+  const description =
+    article.seoDescription?.trim() ||
+    article.shortDescription ||
+    `${article.title} - INFINIA BHARAT NEWS`;
+
+  const image =
+    article.thumbnail ||
+    `${siteUrl}/logos/logo-light.png`;
+
+  return {
+    title,
+
+    description,
+
+    keywords: [
+      article.category || "",
+      article.categoryHi || "",
+      "भारत समाचार",
+      "हिंदी समाचार",
+      "ताजा खबर",
+      "ब्रेकिंग न्यूज़",
+      "INFINIA BHARAT NEWS",
+    ].filter(Boolean),
+
+    authors: [
+      {
+        name:
+          article.author?.name ||
+          "INFINIA BHARAT NEWS",
+      },
+    ],
+
+    creator:
+      article.author?.name ||
+      "INFINIA BHARAT NEWS",
+
+    publisher:
+      "INFINIA BHARAT NEWS",
+
+    alternates: {
+      canonical: articleUrl,
+    },
+
+    robots: {
+      index: article.status === "published",
+      follow: true,
+
+      googleBot: {
+        index: article.status === "published",
+        follow: true,
+        "max-image-preview": "large",
+        "max-video-preview": -1,
+        "max-snippet": -1,
+      },
+    },
+
+    openGraph: {
+      type: "article",
+
+      locale: "hi_IN",
+
+      url: articleUrl,
+
+      siteName: "INFINIA BHARAT NEWS",
+
+      title,
+
+      description,
+
+      publishedTime:
+        article.createdAt,
+
+      modifiedTime:
+        article.updatedAt,
+
+      authors: [
+        article.author?.name ||
+          "INFINIA BHARAT NEWS",
+      ],
+
+      section:
+        article.categoryHi ||
+        article.category ||
+        "समाचार",
+
+      images: [
+        {
+          url: image,
+          alt: article.title,
+          width: 1200,
+          height: 675,
+        },
+      ],
+    },
+
+    twitter: {
+      card: "summary_large_image",
+
+      title,
+
+      description,
+
+      images: [image],
+    },
+  };
+}
 
 
 export default async function NewsPage({
@@ -138,8 +281,85 @@ export default async function NewsPage({
   // PAGE
   // ======================================================
 
+
+  const articleImage =
+  article.thumbnail ||
+  `${siteUrl}/logos/logo-light.png`;
+
+const articleSchema = {
+  "@context": "https://schema.org",
+
+  "@type": "NewsArticle",
+
+  "@id": `${articleUrl}#newsarticle`,
+
+  mainEntityOfPage: {
+    "@type": "WebPage",
+    "@id": articleUrl,
+  },
+
+  headline: article.title,
+
+  description:
+    article.seoDescription ||
+    article.shortDescription ||
+    "",
+
+  image: [
+    articleImage,
+  ],
+
+  datePublished:
+    article.createdAt,
+
+  dateModified:
+    article.updatedAt ||
+    article.createdAt,
+
+  author: {
+    "@type": "Person",
+
+    name:
+      article.author?.name ||
+      "INFINIA BHARAT NEWS",
+
+    url: article.author?.slug
+      ? `${siteUrl}/author/${article.author.slug}`
+      : undefined,
+  },
+
+  publisher: {
+    "@type": "Organization",
+
+    name: "INFINIA BHARAT NEWS",
+
+    url: siteUrl,
+
+    logo: {
+      "@type": "ImageObject",
+
+      url:
+        `${siteUrl}/logos/logo-light.png`,
+    },
+  },
+
+  articleSection:
+    article.categoryHi ||
+    article.category ||
+    "समाचार",
+
+  inLanguage: "hi-IN",
+
+  isAccessibleForFree: true,
+};
   return (
     <main className="container-news py-8">
+      <script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify(articleSchema),
+  }}
+/>
 
       <div
         className="

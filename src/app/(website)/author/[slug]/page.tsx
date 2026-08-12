@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 
 import {
   getAuthorBySlug,
@@ -19,6 +20,82 @@ interface Props {
   params: Promise<{
     slug: string;
   }>;
+}
+
+export async function generateMetadata({
+  params,
+}: Props): Promise<Metadata> {
+  const { slug } = await params;
+
+  const author = await getAuthorBySlug(slug);
+
+  if (!author) {
+    return {
+      title: "Author Not Found",
+      description: "यह लेखक उपलब्ध नहीं है।",
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const title =
+    `${author.name} - पत्रकार एवं लेखक`;
+
+  const description =
+    author.bio ||
+    `${author.name} द्वारा INFINIA BHARAT NEWS पर प्रकाशित नवीनतम समाचार और लेख पढ़ें।`;
+
+  const url =
+    `/author/${author.slug}`;
+
+  return {
+    title,
+
+    description,
+
+    alternates: {
+      canonical: url,
+    },
+
+    robots: {
+      index: true,
+      follow: true,
+    },
+
+    openGraph: {
+      type: "profile",
+      title,
+      description,
+      url,
+      siteName: "INFINIA BHARAT NEWS",
+      locale: "hi_IN",
+
+      ...(author.photo
+        ? {
+            images: [
+              {
+                url: author.photo,
+                alt: author.name,
+              },
+            ],
+          }
+        : {}),
+    },
+
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+
+      ...(author.photo
+        ? {
+            images: [author.photo],
+          }
+        : {}),
+    },
+  };
 }
 
 // ==========================================

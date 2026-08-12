@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 
 import { getCategories } from "@/services/category.service";
 
@@ -19,6 +20,86 @@ interface Props {
   searchParams: Promise<{
     lang?: "hi" | "en";
   }>;
+}
+
+
+export async function generateMetadata({
+  params,
+}: Props): Promise<Metadata> {
+  const { slug } = await params;
+
+  const categories = await getCategories();
+
+  const category = categories.find(
+    (item: any) => item.slug === slug
+  );
+
+  if (!category) {
+    return {
+      title: "Category Not Found",
+      description: "यह कैटेगरी उपलब्ध नहीं है।",
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const name =
+    category.nameHi ||
+    category.name ||
+    "समाचार";
+
+  const description =
+    `${name} से जुड़ी ताज़ा खबरें, ब्रेकिंग न्यूज़ और लेटेस्ट अपडेट INFINIA BHARAT NEWS पर पढ़ें।`;
+
+  const url =
+    `/category/${category.slug}`;
+
+  return {
+    title: `${name} News`,
+    description,
+
+    keywords: [
+      name,
+      `${name} news`,
+      `${name} समाचार`,
+      "भारत समाचार",
+      "हिंदी समाचार",
+      "ब्रेकिंग न्यूज़",
+      "INFINIA BHARAT NEWS",
+    ],
+
+    alternates: {
+      canonical: url,
+    },
+
+    robots: {
+      index: true,
+      follow: true,
+
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+      },
+    },
+
+    openGraph: {
+      type: "website",
+      title: `${name} News | INFINIA BHARAT NEWS`,
+      description,
+      url,
+      siteName: "INFINIA BHARAT NEWS",
+      locale: "hi_IN",
+    },
+
+    twitter: {
+      card: "summary_large_image",
+      title: `${name} News | INFINIA BHARAT NEWS`,
+      description,
+    },
+  };
 }
 
 const labels = {

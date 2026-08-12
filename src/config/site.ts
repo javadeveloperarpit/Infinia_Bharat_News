@@ -1,7 +1,7 @@
 export const siteConfig = {
   name: "INFINIA BHARAT NEWS",
 
-  shortName: "IBN",
+  shortName: "Infinia Bharat",
 
   slogan: "सच सबसे पहले",
 
@@ -20,4 +20,22 @@ export const siteConfig = {
 
   locale: "hi_IN",
 
+  keywords: [
+    "भारत समाचार",
+    "हिंदी समाचार",
+    "आज की ताजा खबर",
+    "ताजा खबर",
+    "ब्रेकिंग न्यूज़",
+    "Breaking News",
+    "India News",
+    "Hindi News",
+    "Latest News",
+    "Politics",
+    "Sports",
+    "Business",
+    "Technology",
+    "Entertainment",
+    "World News",
+    "INFINIA BHARAT NEWS",
+  ],
 } as const;
