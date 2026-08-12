@@ -6,22 +6,26 @@ import {
   useRef,
   useState,
 } from "react";
-import { X } from "lucide-react";
+import {
+  X
+} from "lucide-react";
 
 import {
   createAd,
   getAds,
   deleteAd,
+  updateAd,
   type AdsData,
   type AdType,
-  type AdPosition,
   type AdFrequency,
   type AdCubeFace,
   type NormalAdLayout,
   type FloatingAdLayout,
+  type StickyBottomAdLayout,
 } from "@/services/ads.service";
 
-const LIVE_WEBSITE_URL = "/";
+const LIVE_WEBSITE_URL =
+  process.env.NEXT_PUBLIC_WEBSITE_URL || "/";
 
 // ======================================================
 // TYPES
@@ -37,8 +41,6 @@ type FormState = {
   image: string;
 
   link: string;
-
-  position: AdPosition;
 
   active: boolean;
 
@@ -84,6 +86,8 @@ type FormState = {
   normalLayout: NormalAdLayout;
 
   floatingLayout: FloatingAdLayout;
+
+  stickyBottomLayout: StickyBottomAdLayout;
 };
 
 // ======================================================
@@ -107,6 +111,18 @@ const DEFAULT_NORMAL_LAYOUT: NormalAdLayout = {
 
   mobile: {
     scale: 1,
+  },
+};
+
+const DEFAULT_STICKY_BOTTOM_LAYOUT: StickyBottomAdLayout = {
+  desktop: {
+    width: 1100,
+    height: 92,
+  },
+
+  mobile: {
+    width: 440,
+    height: 72,
   },
 };
 
@@ -152,8 +168,6 @@ function createDefaultForm(): FormState {
     image: "",
 
     link: "",
-
-    position: "homepage_top",
 
     active: true,
 
@@ -217,9 +231,196 @@ function createDefaultForm(): FormState {
         ...DEFAULT_FLOATING_LAYOUT.mobile,
       },
     },
+
+    stickyBottomLayout: {
+      desktop: {
+        ...DEFAULT_STICKY_BOTTOM_LAYOUT.desktop,
+      },
+
+      mobile: {
+        ...DEFAULT_STICKY_BOTTOM_LAYOUT.mobile,
+      },
+    },
   };
 }
 
+function adToForm(ad: any): FormState {
+  const defaultForm = createDefaultForm();
+
+  return {
+    ...defaultForm,
+
+    title: String(ad.title || ""),
+    type: ad.type as AdType,
+
+    image: String(ad.image || ""),
+    link: String(ad.link || ""),
+
+    active: ad.active ?? true,
+    priority: Number(ad.priority ?? 1),
+
+    mobileEnabled:
+      ad.mobileEnabled ?? true,
+
+    desktopEnabled:
+      ad.desktopEnabled ?? true,
+
+    openInNewTab:
+      ad.openInNewTab ?? true,
+
+    delay:
+      Number(ad.delay ?? 5),
+
+    frequency:
+      ad.frequency ?? "once_session",
+
+    closeable:
+      ad.closeable ?? true,
+
+    videoUrl:
+      String(ad.videoUrl || ""),
+
+    videoType:
+      ad.videoType ?? "youtube",
+
+    videoOrientation:
+      ad.videoOrientation ?? "auto",
+
+    videoPoster:
+      String(ad.videoPoster || ""),
+
+    duration:
+      Number(ad.duration ?? 10),
+
+    autoplay:
+      ad.autoplay ?? true,
+
+    muted:
+      ad.muted ?? true,
+
+    width:
+      Number(ad.width ?? 320),
+
+    cubeFaces:
+      Array.isArray(ad.cubeFaces)
+        ? ad.cubeFaces.map((face: any) => ({
+            image: String(face?.image || ""),
+            link: String(face?.link || ""),
+          }))
+        : defaultForm.cubeFaces,
+
+    rotationSpeed:
+      Number(ad.rotationSpeed ?? 4),
+
+    cubeSameImage:
+      ad.cubeSameImage ?? false,
+
+    normalLayout: {
+      desktop: {
+        scale:
+          Number(
+            ad.layout?.desktop?.scale ?? 1
+          ),
+      },
+      mobile: {
+        scale:
+          Number(
+            ad.layout?.mobile?.scale ?? 1
+          ),
+      },
+    },
+
+    floatingLayout: {
+      desktop: {
+        width:
+          Number(
+            ad.layout?.desktop?.width ??
+              DESKTOP_WIDTH
+          ),
+
+        height:
+          Number(
+            ad.layout?.desktop?.height ??
+              DESKTOP_HEIGHT
+          ),
+
+        x:
+          Number(
+            ad.layout?.desktop?.x ?? 0
+          ),
+
+        y:
+          Number(
+            ad.layout?.desktop?.y ?? 0
+          ),
+
+        scale:
+          Number(
+            ad.layout?.desktop?.scale ?? 1
+          ),
+      },
+
+      mobile: {
+        width:
+          Number(
+            ad.layout?.mobile?.width ??
+              MOBILE_WIDTH
+          ),
+
+        height:
+          Number(
+            ad.layout?.mobile?.height ??
+              MOBILE_HEIGHT
+          ),
+
+        x:
+          Number(
+            ad.layout?.mobile?.x ?? 0
+          ),
+
+        y:
+          Number(
+            ad.layout?.mobile?.y ?? 0
+          ),
+
+        scale:
+          Number(
+            ad.layout?.mobile?.scale ?? 1
+          ),
+      },
+    },
+
+    stickyBottomLayout: {
+      desktop: {
+        width:
+          Number(
+            ad.layout?.desktop?.width ??
+              1100
+          ),
+
+        height:
+          Number(
+            ad.layout?.desktop?.height ??
+              92
+          ),
+      },
+
+      mobile: {
+        width:
+          Number(
+            ad.layout?.mobile?.width ??
+              440
+          ),
+
+        height:
+          Number(
+            ad.layout?.mobile?.height ??
+              72
+          ),
+      },
+    },
+  };
+}
 // ======================================================
 // AD TYPES
 // ======================================================
@@ -287,94 +488,6 @@ const AD_TYPES: {
   },
 ];
 
-// ======================================================
-// POSITIONS
-// ======================================================
-
-const POSITIONS: {
-  value: AdPosition;
-  label: string;
-}[] = [
-  {
-    value: "homepage_top",
-    label: "Homepage — Top",
-  },
-
-  {
-    value: "homepage_middle",
-    label: "Homepage — Middle",
-  },
-
-  {
-    value: "homepage_bottom",
-    label: "Homepage — Bottom",
-  },
-
-  {
-    value: "article_top",
-    label: "Article — Top",
-  },
-
-  {
-    value: "article_after_intro",
-    label: "Article — After Intro",
-  },
-
-  {
-    value: "article_middle",
-    label: "Article — Middle",
-  },
-
-  {
-    value: "article_before_related",
-    label: "Article — Before Related",
-  },
-
-  {
-    value: "sidebar_top",
-    label: "Sidebar — Top",
-  },
-
-  {
-    value: "sidebar_middle",
-    label: "Sidebar — Middle",
-  },
-
-  {
-    value: "sidebar_bottom",
-    label: "Sidebar — Bottom",
-  },
-
-  {
-    value: "shorts_between",
-    label: "Shorts — Between Videos",
-  },
-
-  {
-    value: "shorts_after_3",
-    label: "Shorts — After 3 Videos",
-  },
-
-  {
-    value: "global_popup",
-    label: "Global Popup",
-  },
-
-  {
-    value: "page_transition",
-    label: "Page Transition",
-  },
-
-  {
-    value: "floating_tv",
-    label: "Floating TV",
-  },
-
-  {
-    value: "sticky_bottom",
-    label: "Sticky Bottom",
-  },
-];
 
 // ======================================================
 // FREQUENCIES
@@ -428,6 +541,19 @@ function isPopupAd(type: AdType) {
     type === "popup" ||
     type === "page_transition"
   );
+}
+
+function supportsScaleControl(type: AdType) {
+  return (
+    type === "popup" ||
+    type === "page_transition" ||
+    type === "cube" ||
+    type === "floating_tv"
+  );
+}
+
+function isStickyBottomAd(type: AdType) {
+  return type === "sticky_bottom";
 }
 
 function needsImage(type: AdType) {
@@ -553,8 +679,6 @@ function buildAdPayload(
   const common = {
     title: form.title.trim(),
 
-    position: form.position,
-
     active: form.active,
 
     priority: form.priority,
@@ -582,18 +706,6 @@ function buildAdPayload(
       image: form.image.trim(),
 
       link: form.link.trim(),
-
-      layout: {
-        desktop: {
-          scale:
-            form.normalLayout.desktop.scale,
-        },
-
-        mobile: {
-          scale:
-            form.normalLayout.mobile.scale,
-        },
-      },
     };
   }
 
@@ -610,18 +722,6 @@ function buildAdPayload(
       image: form.image.trim(),
 
       link: form.link.trim(),
-
-      layout: {
-        desktop: {
-          scale:
-            form.normalLayout.desktop.scale,
-        },
-
-        mobile: {
-          scale:
-            form.normalLayout.mobile.scale,
-        },
-      },
     };
   }
 
@@ -717,13 +817,17 @@ function buildAdPayload(
 
       layout: {
         desktop: {
-          scale:
-            form.normalLayout.desktop.scale,
+          width:
+            form.stickyBottomLayout.desktop.width,
+          height:
+            form.stickyBottomLayout.desktop.height,
         },
 
         mobile: {
-          scale:
-            form.normalLayout.mobile.scale,
+          width:
+            form.stickyBottomLayout.mobile.width,
+          height:
+            form.stickyBottomLayout.mobile.height,
         },
       },
     };
@@ -766,18 +870,6 @@ function buildAdPayload(
 
       muted:
         form.muted,
-
-      layout: {
-        desktop: {
-          scale:
-            form.normalLayout.desktop.scale,
-        },
-
-        mobile: {
-          scale:
-            form.normalLayout.mobile.scale,
-        },
-      },
     };
   }
 
@@ -1282,6 +1374,9 @@ export default function AdsPage() {
     setPreviewWidth,
   ] = useState(500);
 
+  const [editingAdId, setEditingAdId] =
+  useState<string | null>(null);
+
   // ====================================================
   // PREVIEW WIDTH
   // ====================================================
@@ -1411,6 +1506,30 @@ export default function AdsPage() {
   }
 
   // ====================================================
+  // STICKY BOTTOM LAYOUT
+  // WIDTH + HEIGHT ONLY
+  // ====================================================
+
+  function updateStickyBottomLayout(
+    device: PreviewDevice,
+    key: "width" | "height",
+    value: number
+  ) {
+    setForm((prev) => ({
+      ...prev,
+
+      stickyBottomLayout: {
+        ...prev.stickyBottomLayout,
+
+        [device]: {
+          ...prev.stickyBottomLayout[device],
+          [key]: value,
+        },
+      },
+    }));
+  }
+
+  // ====================================================
   // MOVE FLOATING CREATIVE
   // ====================================================
 
@@ -1494,6 +1613,27 @@ export default function AdsPage() {
       return;
     }
 
+    if (isStickyBottomAd(form.type)) {
+      const defaults =
+        DEFAULT_STICKY_BOTTOM_LAYOUT[
+          previewDevice
+        ];
+
+      setForm((prev) => ({
+        ...prev,
+
+        stickyBottomLayout: {
+          ...prev.stickyBottomLayout,
+
+          [previewDevice]: {
+            ...defaults,
+          },
+        },
+      }));
+
+      return;
+    }
+
     setForm((prev) => ({
       ...prev,
 
@@ -1509,86 +1649,22 @@ export default function AdsPage() {
     }));
   }
 
+  
   // ====================================================
   // CHANGE TYPE
-  // ====================================================
-
-  function changeType(
-    type: AdType
-  ) {
-    let position =
-      form.position;
-
-    if (
-      type === "popup"
-    ) {
-      position =
-        "global_popup";
-    }
-
-    if (
-      type ===
-      "page_transition"
-    ) {
-      position =
-        "page_transition";
-    }
-
-    if (
-      type ===
-      "floating_tv"
-    ) {
-      position =
-        "floating_tv";
-    }
-
-    if (
-      type ===
-      "sticky_bottom"
-    ) {
-      position =
-        "sticky_bottom";
-    }
-
-    if (
-      type ===
-      "shorts_video"
-    ) {
-      position =
-        "shorts_between";
-    }
-
+  // Position is no longer part of the ad model.
+  function changeType(type: AdType) {
     setForm((prev) => ({
       ...prev,
-
       type,
-
-      position,
-
-      image:
-        needsImage(type)
-          ? prev.image
-          : "",
-
-      link:
-        supportsLink(type)
-          ? prev.link
-          : "",
-
-      videoUrl:
-        isVideoAd(type)
-          ? prev.videoUrl
-          : "",
-
+      image: needsImage(type) ? prev.image : "",
+      link: supportsLink(type) ? prev.link : "",
+      videoUrl: isVideoAd(type) ? prev.videoUrl : "",
       videoOrientation:
-        type ===
-        "shorts_video"
-          ? "vertical"
-          : "horizontal",
+        type === "shorts_video" ? "vertical" : "horizontal",
     }));
   }
 
-  // ====================================================
   // CUBE FACE UPDATE
   // ====================================================
 
@@ -1743,7 +1819,31 @@ export default function AdsPage() {
       const payload =
         buildAdPayload(form);
 
-      await createAd(payload);
+      if (editingAdId) {
+  await updateAd(
+    form.type,
+    editingAdId,
+    payload
+  );
+
+  alert(
+    "Campaign updated successfully."
+  );
+} else {
+  await createAd(payload);
+
+  alert(
+    "Campaign created successfully."
+  );
+}
+
+setEditingAdId(null);
+
+setForm(
+  createDefaultForm()
+);
+
+await loadAds();
 
       alert(
         "Campaign created successfully."
@@ -1767,6 +1867,27 @@ export default function AdsPage() {
       setSaving(false);
     }
   }
+
+  function editAd(ad: any) {
+  setEditingAdId(ad.id);
+
+  setForm(
+    adToForm(ad)
+  );
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+}
+
+function cancelEdit() {
+  setEditingAdId(null);
+
+  setForm(
+    createDefaultForm()
+  );
+}
 
   // ====================================================
   // DELETE
@@ -1854,40 +1975,60 @@ export default function AdsPage() {
       previewDevice
     ];
 
+  const currentStickyBottomLayout =
+    form.stickyBottomLayout[
+      previewDevice
+    ];
+
   const currentScale =
     isFloatingAd(form.type)
       ? currentFloatingLayout.scale
       : currentNormalLayout.scale;
+
+  const currentRenderLayout = {
+    x: isFloatingAd(form.type)
+      ? currentFloatingLayout.x
+      : 0,
+    y: isFloatingAd(form.type)
+      ? currentFloatingLayout.y
+      : 0,
+    scale: supportsScaleControl(form.type)
+      ? currentScale
+      : 1,
+  };
 
   // ====================================================
   // PREVIEW CANVAS
   // ====================================================
 
   const baseWidth =
-  previewDevice === "desktop"
-    ? DESKTOP_WIDTH
-    : MOBILE_WIDTH;
+    previewDevice ===
+    "desktop"
+      ? DESKTOP_WIDTH
+      : MOBILE_WIDTH;
 
-const baseHeight =
-  previewDevice === "desktop"
-    ? DESKTOP_HEIGHT
-    : MOBILE_HEIGHT;
+  const baseHeight =
+    previewDevice ===
+    "desktop"
+      ? DESKTOP_HEIGHT
+      : MOBILE_HEIGHT;
 
-const availableWidth = Math.max(
-  260,
-  previewWidth - 32
-);
+  const availableWidth =
+    Math.max(
+      260,
+      previewWidth - 32
+    );
 
-const canvasScale = Math.min(
-  availableWidth / baseWidth,
-  1
-);
+  const canvasScale =
+    Math.min(
+      availableWidth /
+        baseWidth,
+      0.95
+    );
 
-const displayedWidth =
-  baseWidth * canvasScale;
-
-const displayedHeight =
-  baseHeight * canvasScale;
+  const displayedHeight =
+    baseHeight *
+    canvasScale;
 
   // ====================================================
   // RENDER
@@ -2113,49 +2254,6 @@ const displayedHeight =
                 </div>
               )}
 
-              {/* POSITION */}
-
-              <div>
-                <FieldLabel>
-                  Placement
-                </FieldLabel>
-
-                <Select
-                  value={
-                    form.position
-                  }
-                  onChange={(e) =>
-                    updateField(
-                      "position",
-                      e.target
-                        .value as AdPosition
-                    )
-                  }
-                >
-                  {POSITIONS.map(
-                    (item) => (
-                      <option
-                        key={
-                          item.value
-                        }
-                        value={
-                          item.value
-                        }
-                      >
-                        {
-                          item.label
-                        }
-                      </option>
-                    )
-                  )}
-                </Select>
-
-                <p className="mt-1.5 text-[9px] text-zinc-400">
-                  Placement decides
-                  where the ad is
-                  rendered.
-                </p>
-              </div>
 
               {/* PRIORITY */}
 
@@ -2771,151 +2869,140 @@ const displayedHeight =
           <Section
             title="Responsive Layout"
             description={
-              isFloatingAd(
-                form.type
-              )
-                ? "X/Y position is available only for floating creatives. Scale is available for every creative."
-                : "This creative uses its placement automatically. Only scale can be adjusted."
+              isFloatingAd(form.type)
+                ? "X/Y position and scale are available only for floating creatives."
+                : isStickyBottomAd(form.type)
+                  ? "Sticky Bottom supports responsive width and height only."
+                  : supportsScaleControl(form.type)
+                    ? "This creative uses automatic placement. Only scale can be adjusted."
+                    : "This creative uses automatic placement with no layout controls."
             }
           >
             <div className="grid grid-cols-2 gap-2 rounded-xl bg-zinc-100 p-1">
               <DeviceTab
-  active={previewDevice === "desktop"}
-  onClick={() => setPreviewDevice("desktop")}
-  label="Desktop"
-  dimensions="1366 × 768"
-/>
+                active={previewDevice === "desktop"}
+                onClick={() => setPreviewDevice("desktop")}
+                label="Desktop"
+                dimensions="1366 × 768"
+              />
 
-<DeviceTab
-  active={previewDevice === "mobile"}
-  onClick={() => setPreviewDevice("mobile")}
-  label="Mobile"
-  dimensions="440 × 956"
-/>
+              <DeviceTab
+                active={previewDevice === "mobile"}
+                onClick={() => setPreviewDevice("mobile")}
+                label="Mobile"
+                dimensions="440 × 956"
+              />
             </div>
 
             <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
-              {/* POSITION ONLY FLOATING */}
-
-              {isFloatingAd(
-                form.type
-              ) ? (
+              {isFloatingAd(form.type) ? (
                 <PositionControl
-                  x={
-                    currentFloatingLayout.x
-                  }
-                  y={
-                    currentFloatingLayout.y
-                  }
-                  onMove={
-                    moveCreative
-                  }
-                  onCenter={
-                    centerCreative
-                  }
+                  x={currentFloatingLayout.x}
+                  y={currentFloatingLayout.y}
+                  onMove={moveCreative}
+                  onCenter={centerCreative}
                 />
               ) : (
                 <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
                   <div className="text-xs font-black text-zinc-900">
                     Automatic Placement
                   </div>
-
                   <div className="mt-2 text-[10px] leading-5 text-zinc-500">
-                    This ad does not
-                    use free X/Y
-                    positioning.
-                    Its location is
-                    determined by:
+                    This ad does not use free X/Y positioning. Its location is determined by:
                   </div>
-
-                  <div className="mt-3 rounded-xl bg-white p-3 text-xs font-black text-red-600">
-                    {
-                      POSITIONS.find(
-                        (item) =>
-                          item.value ===
-                          form.position
-                      )?.label
-                    }
-                  </div>
+                  
                 </div>
               )}
 
-              {/* SCALE */}
-
-              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-                <div className="text-xs font-black text-zinc-900">
-                  Creative Scale
+              {supportsScaleControl(form.type) && (
+                <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                  <div className="text-xs font-black text-zinc-900">Creative Scale</div>
+                  <div className="mt-4 flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-zinc-500">25%</span>
+                    <span className="text-sm font-black text-red-600">{Math.round(currentScale * 100)}%</span>
+                    <span className="text-[10px] font-bold text-zinc-500">200%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="25"
+                    max="200"
+                    step="5"
+                    value={Math.round(currentScale * 100)}
+                    onChange={(e) => {
+                      const value = Number(e.target.value) / 100;
+                      if (isFloatingAd(form.type)) {
+                        updateFloatingLayout(previewDevice, "scale", value);
+                      } else {
+                        updateNormalScale(previewDevice, value);
+                      }
+                    }}
+                    className="mt-3 w-full accent-red-600"
+                  />
+                  <button
+                    type="button"
+                    onClick={resetLayout}
+                    className="mt-4 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-[10px] font-black text-zinc-600"
+                  >
+                    Reset {previewDevice === "desktop" ? "Desktop" : "Mobile"} Layout
+                  </button>
                 </div>
+              )}
 
-                <div className="mt-4 flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-zinc-500">
-                    25%
-                  </span>
-
-                  <span className="text-sm font-black text-red-600">
-                    {Math.round(
-                      currentScale *
-                        100
-                    )}
-                    %
-                  </span>
-
-                  <span className="text-[10px] font-bold text-zinc-500">
-                    200%
-                  </span>
+              {isStickyBottomAd(form.type) && (
+                <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                  <div className="text-xs font-black text-zinc-900">Sticky Bottom Size</div>
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <div>
+                      <FieldLabel>Width</FieldLabel>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={currentStickyBottomLayout.width}
+                        onChange={(e) =>
+                          updateStickyBottomLayout(
+                            previewDevice,
+                            "width",
+                            Number(e.target.value) || 1
+                          )
+                        }
+                      />
+                    </div>
+                    <div>
+                      <FieldLabel>Height</FieldLabel>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={currentStickyBottomLayout.height}
+                        onChange={(e) =>
+                          updateStickyBottomLayout(
+                            previewDevice,
+                            "height",
+                            Number(e.target.value) || 1
+                          )
+                        }
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={resetLayout}
+                    className="mt-4 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-[10px] font-black text-zinc-600"
+                  >
+                    Reset {previewDevice === "desktop" ? "Desktop" : "Mobile"} Size
+                  </button>
                 </div>
+              )}
 
-                <input
-                  type="range"
-                  min="25"
-                  max="200"
-                  step="5"
-                  value={Math.round(
-                    currentScale *
-                      100
-                  )}
-                  onChange={(e) => {
-                    const value =
-                      Number(
-                        e.target
-                          .value
-                      ) / 100;
-
-                    if (
-                      isFloatingAd(
-                        form.type
-                      )
-                    ) {
-                      updateFloatingLayout(
-                        previewDevice,
-                        "scale",
-                        value
-                      );
-                    } else {
-                      updateNormalScale(
-                        previewDevice,
-                        value
-                      );
-                    }
-                  }}
-                  className="mt-3 w-full accent-red-600"
-                />
-
-                <button
-                  type="button"
-                  onClick={
-                    resetLayout
-                  }
-                  className="mt-4 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-[10px] font-black text-zinc-600"
-                >
-                  Reset{" "}
-                  {previewDevice ===
-                  "desktop"
-                    ? "Desktop"
-                    : "Mobile"}{" "}
-                  Layout
-                </button>
-              </div>
+              {!supportsScaleControl(form.type) &&
+                !isStickyBottomAd(form.type) &&
+                !isFloatingAd(form.type) && (
+                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                    <div className="text-xs font-black text-zinc-900">Fixed Creative</div>
+                    <div className="mt-2 text-[10px] leading-5 text-zinc-500">
+                      This ad type does not store scale, X/Y, width, or height layout values.
+                    </div>
+                  </div>
+                )}
             </div>
           </Section>
 
@@ -2924,21 +3011,30 @@ const displayedHeight =
           {/* ================================================= */}
 
           <button
-            type="button"
-            onClick={
-              saveAd
-            }
-            disabled={
-              saving
-            }
-            className="group relative w-full overflow-hidden rounded-2xl bg-red-600 px-6 py-4 text-sm font-black text-white shadow-xl shadow-red-600/20 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
-          >
-            <span className="relative z-10">
-              {saving
-                ? "Deploying Campaign..."
-                : "Create & Deploy Campaign"}
-            </span>
-          </button>
+  type="button"
+  onClick={saveAd}
+  disabled={saving}
+  className="group relative w-full overflow-hidden rounded-2xl bg-red-600 px-6 py-4 text-sm font-black text-white shadow-xl shadow-red-600/20 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
+>
+  <span className="relative z-10">
+    {saving
+      ? editingAdId
+        ? "Updating Campaign..."
+        : "Deploying Campaign..."
+      : editingAdId
+        ? "Update Campaign"
+        : "Create & Deploy Campaign"}
+  </span>
+</button>
+{editingAdId && (
+  <button
+    type="button"
+    onClick={cancelEdit}
+    className="rounded-xl border border-zinc-300 px-5 py-3 text-xs font-black text-zinc-700 hover:bg-zinc-100"
+  >
+    Cancel Edit
+  </button>
+)}
         </div>
 
         {/* ================================================= */}
@@ -2976,18 +3072,32 @@ const displayedHeight =
 
               <div className="mt-4 grid grid-cols-2 gap-1 rounded-xl bg-zinc-100 p-1">
                 <DeviceTab
-  active={previewDevice === "desktop"}
-  onClick={() => setPreviewDevice("desktop")}
-  label="Desktop"
-  dimensions="1366 × 768"
-/>
+                  active={
+                    previewDevice ===
+                    "desktop"
+                  }
+                  onClick={() =>
+                    setPreviewDevice(
+                      "desktop"
+                    )
+                  }
+                  label="Desktop"
+                  dimensions="1366 × 768"
+                />
 
-<DeviceTab
-  active={previewDevice === "mobile"}
-  onClick={() => setPreviewDevice("mobile")}
-  label="Mobile"
-  dimensions="440 × 956"
-/>
+                <DeviceTab
+                  active={
+                    previewDevice ===
+                    "mobile"
+                  }
+                  onClick={() =>
+                    setPreviewDevice(
+                      "mobile"
+                    )
+                  }
+                  label="Mobile"
+                  dimensions="440 × 956"
+                />
               </div>
             </div>
 
@@ -3013,16 +3123,21 @@ const displayedHeight =
                 </div>
 
                 <div
-  className={`relative mx-auto overflow-hidden bg-white shadow-2xl ${
-    previewDevice === "mobile"
-      ? "rounded-[28px] border-[5px] border-zinc-900"
-      : "rounded-xl border border-zinc-300"
-  }`}
-  style={{
-    width: displayedWidth,
-    height: displayedHeight,
-  }}
->
+                  className={`relative mx-auto overflow-hidden bg-white shadow-2xl ${
+                    previewDevice ===
+                    "mobile"
+                      ? "rounded-[28px] border-[5px] border-zinc-900"
+                      : "rounded-xl border border-zinc-300"
+                  }`}
+                  style={{
+                    width:
+                      baseWidth *
+                      canvasScale,
+
+                    height:
+                      displayedHeight,
+                  }}
+                >
                   <div
                     className="absolute left-0 top-0 origin-top-left"
                     style={{
@@ -3074,17 +3189,19 @@ const displayedHeight =
     <div
       className="pointer-events-auto absolute left-1/2 top-1/2"
       style={{
-      transform: isFloatingAd(form.type)
-        ? `translate(-50%, -50%) translate(${currentFloatingLayout.x}px, ${currentFloatingLayout.y}px) scale(${currentFloatingLayout.scale})`
-        : `translate(-50%, -50%) scale(${currentNormalLayout.scale})`,
+        transform:
+          `translate(-50%, -50%) ` +
+          `translate(${currentRenderLayout.x}px, ${currentRenderLayout.y}px) ` +
+          `scale(${currentRenderLayout.scale})`,
 
-      transformOrigin: "center center",
+        transformOrigin: "center center",
 
-      zIndex: 99999,
-    }}
+        zIndex: 99999,
+      }}
     >
       <PreviewCreative
         form={form}
+        device={previewDevice}
         onClose={() =>
           setPreview(false)
         }
@@ -3098,37 +3215,28 @@ const displayedHeight =
                     {/* COORDINATE BADGE */}
 
                     <div className="pointer-events-none absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-black/80 px-4 py-2 text-[9px] font-black text-white">
-                      {isFloatingAd(
-                        form.type
-                      ) ? (
+                      {isFloatingAd(form.type) ? (
                         <>
-                          X{" "}
-                          {
-                            currentFloatingLayout.x
-                          }
+                          X {currentFloatingLayout.x}
                           {" · "}
-                          Y{" "}
-                          {
-                            currentFloatingLayout.y
-                          }
+                          Y {currentFloatingLayout.y}
                           {" · "}
-                          {Math.round(
-                            currentFloatingLayout.scale *
-                              100
-                          )}
-                          %
+                          {Math.round(currentFloatingLayout.scale * 100)}%
+                        </>
+                      ) : supportsScaleControl(form.type) ? (
+                        <>
+                          
+                          {" · "}
+                          {Math.round(currentScale * 100)}%
+                        </>
+                      ) : isStickyBottomAd(form.type) ? (
+                        <>
+                          {currentStickyBottomLayout.width}
+                          {" × "}
+                          {currentStickyBottomLayout.height}
                         </>
                       ) : (
-                        <>
-                          PLACEMENT{" "}
-                          {form.position}
-                          {" · "}
-                          {Math.round(
-                            currentNormalLayout.scale *
-                              100
-                          )}
-                          %
-                        </>
+                        <>AUTOMATIC PLACEMENT</>
                       )}
                     </div>
                   </div>
@@ -3261,9 +3369,7 @@ const displayedHeight =
 
                     <div className="mt-3 flex flex-wrap gap-1.5">
                       <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[8px] font-black text-zinc-600">
-                        {
-                          ad.position
-                        }
+                        AUTOMATIC
                       </span>
 
                       <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[8px] font-black text-zinc-600">
@@ -3273,22 +3379,18 @@ const displayedHeight =
                       </span>
 
                       {ad.layout &&
-                        !isFloatingAd(
-                          ad.type
-                        ) && (
+                        supportsScaleControl(ad.type) &&
+                        !isFloatingAd(ad.type) && (
                           <span className="rounded-full bg-red-50 px-2.5 py-1 text-[8px] font-black text-red-600">
-                            D{" "}
-                            {Math.round(
-                              (ad
-                                .layout
-                                .desktop
-                                ?.scale ??
-                                1) *
-                                100
-                            )}
-                            %
+                            D {Math.round((ad.layout.desktop?.scale ?? 1) * 100)}%
                           </span>
                         )}
+
+                      {ad.type === "sticky_bottom" && ad.layout && (
+                        <span className="rounded-full bg-orange-50 px-2.5 py-1 text-[8px] font-black text-orange-600">
+                          D {ad.layout.desktop?.width ?? 1100} × {ad.layout.desktop?.height ?? 92}
+                        </span>
+                      )}
 
                       {ad.layout &&
                         isFloatingAd(
@@ -3325,18 +3427,32 @@ const displayedHeight =
                       )}
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        remove(
-                          ad.type,
-                          ad.id
-                        )
-                      }
-                      className="mt-4 w-full rounded-xl border border-red-200 px-4 py-2.5 text-[10px] font-black text-red-600 transition hover:bg-red-50"
-                    >
-                      Delete Campaign
-                    </button>
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+
+  <button
+    type="button"
+    onClick={() =>
+      editAd(ad)
+    }
+    className="rounded-xl border border-blue-200 px-4 py-2.5 text-[10px] font-black text-blue-600 transition hover:bg-blue-50"
+  >
+    Edit Campaign
+  </button>
+
+  <button
+    type="button"
+    onClick={() =>
+      remove(
+        ad.type,
+        ad.id
+      )
+    }
+    className="rounded-xl border border-red-200 px-4 py-2.5 text-[10px] font-black text-red-600 transition hover:bg-red-50"
+  >
+    Delete Campaign
+  </button>
+
+</div>
                   </div>
                 </div>
               )
@@ -3354,9 +3470,11 @@ const displayedHeight =
 
 function PreviewCreative({
   form,
+  device,
   onClose,
 }: {
   form: FormState;
+  device: PreviewDevice;
   onClose: () => void;
 }) {
   // ====================================================
@@ -3451,10 +3569,7 @@ function PreviewCreative({
             onClick={onClose}
             className="absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-sm font-black text-white"
           >
-            <X
-    size={28}
-    strokeWidth={3}
-  />
+            ×
           </button>
         )}
 
@@ -3544,56 +3659,97 @@ function PreviewCreative({
   // STICKY
   // ====================================================
 
-  if (
-    form.type ===
-    "sticky_bottom"
-  ) {
-    return (
-      <div className="flex w-[520px] max-w-[90vw] items-center gap-3 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-3 shadow-2xl">
-        {form.image ? (
-          <img
-            src={
-              form.image
-            }
-            alt=""
-            className="h-16 w-24 shrink-0 rounded-xl object-cover"
+ if (
+  form.type ===
+  "sticky_bottom"
+) {
+  return (
+    <div
+      className="relative overflow-visible"
+      style={{
+        width:
+          form.stickyBottomLayout[
+            device
+          ].width,
+        height:
+          form.stickyBottomLayout[
+            device
+          ].height,
+        maxWidth: "100%",
+      }}
+    >
+      {/* CLOSE BUTTON */}
+
+      {form.closeable && (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close advertisement"
+          title="Close advertisement"
+          className="absolute -top-[34px] right-0 z-20 flex h-[34px] w-[34px] items-center justify-center rounded-tl-md border border-b-0 border-white/85 bg-black text-white shadow-[0_-4px_15px_rgba(0,0,0,0.3)]"
+        >
+          <X
+            size={19}
+            strokeWidth={2.8}
           />
-        ) : (
-          <div className="flex h-16 w-24 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-[8px] font-black text-zinc-400">
-            IMAGE
-          </div>
-        )}
+        </button>
+      )}
 
-        <div className="min-w-0 flex-1">
-          <div className="text-[8px] font-black uppercase tracking-widest text-red-600">
-            Featured
-          </div>
+      {/* ADVERTISEMENT LABEL */}
 
-          <div className="mt-1 truncate text-sm font-black text-zinc-950">
-            {form.title ||
-              "Featured promotion"}
-          </div>
-
-          <div className="mt-1 text-[9px] text-zinc-500">
-            Sponsored content
-          </div>
-        </div>
-
-        {form.closeable && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-500"
-          >
-            <X
-    size={28}
-    strokeWidth={3}
-  />
-          </button>
-        )}
+      <div className="absolute left-[7px] top-[6px] z-10 rounded-[2px] bg-black/70 px-[6px] py-[3px] text-[8px] font-bold uppercase tracking-[0.08em] text-white">
+        Advertisement
       </div>
-    );
-  }
+
+      {/* ADVERTISEMENT */}
+
+      {form.image ? (
+        form.link ? (
+          <a
+            href={form.link}
+            target={
+              form.openInNewTab !== false
+                ? "_blank"
+                : "_self"
+            }
+            rel={
+              form.openInNewTab !== false
+                ? "noopener noreferrer"
+                : undefined
+            }
+            className="block h-full w-full overflow-hidden rounded-t-lg border border-white/20 border-b-0 bg-black shadow-[0_-8px_35px_rgba(0,0,0,0.4)]"
+          >
+            <img
+              src={form.image}
+              alt={
+                form.title ||
+                "Advertisement"
+              }
+              className="block h-full w-full select-none object-cover object-center"
+              draggable={false}
+            />
+          </a>
+        ) : (
+          <div className="block h-full w-full overflow-hidden rounded-t-lg border border-white/20 border-b-0 bg-black shadow-[0_-8px_35px_rgba(0,0,0,0.4)]">
+            <img
+              src={form.image}
+              alt={
+                form.title ||
+                "Advertisement"
+              }
+              className="block h-full w-full select-none object-cover object-center"
+              draggable={false}
+            />
+          </div>
+        )
+      ) : (
+        <div className="flex h-full w-full items-center justify-center rounded-t-lg border border-white/20 border-b-0 bg-black text-xs font-bold uppercase tracking-widest text-white/50">
+          Advertisement
+        </div>
+      )}
+    </div>
+  );
+}
 
   // ====================================================
   // CUBE
@@ -3607,7 +3763,7 @@ function PreviewCreative({
       form.width || 160;
 
     const depth =
-      size / 2 -0.1;
+      size / 2-0.4;
 
     const transforms = [
       `rotateY(0deg) translateZ(${depth}px)`,
@@ -3652,12 +3808,9 @@ function PreviewCreative({
               onClick={
                 onClose
               }
-              className="absolute -right-18 -top-5 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white text-xs font-black text-black shadow-3xl"
+              className="absolute -right-2 -top-2 z-50 flex h-7 w-7 items-center justify-center rounded-full bg-black text-xs font-black text-white shadow-lg"
             >
-              <X
-    size={28}
-    strokeWidth={3}
-  />
+              ×
             </button>
           )}
 
@@ -3697,7 +3850,7 @@ function PreviewCreative({
                       key={
                         index
                       }
-                      className="absolute inset-0 overflow-hidden bg-zinc-900 shadow-2xl"
+                      className="absolute inset-0 overflow-hidden rounded-lg border border-white/10 bg-zinc-900 shadow-2xl"
                       style={{
                         transform:
                           transforms[
@@ -3878,10 +4031,7 @@ function PreviewCreative({
               }
               className="absolute right-2 top-2 z-30 flex h-7 w-7 items-center justify-center rounded-full bg-black/75 text-xs font-black text-white"
             >
-              <X
-    size={28}
-    strokeWidth={3}
-  />
+              ×
             </button>
           )}
       </div>

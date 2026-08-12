@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import {
   getArticleBySlug,
-  getRelatedArticles
+  getRelatedArticles,
 } from "@/services/public/article.public.service";
 
 import ArticleHeader from "@/components/article/article-header";
@@ -13,111 +13,271 @@ import RelatedNews from "@/components/article/related-news";
 import ArticleSidebar from "@/components/article/article-sidebar";
 import CommentsList from "@/components/comments/comments-list";
 
+import {
+  getAdsByType,
+} from "@/services/ads.service";
+
+import type {
+  NativeAd,
+} from "@/services/ads.service";
+
 
 export default async function NewsPage({
-  params
+  params,
 }: {
   params: Promise<{
-    slug:string
-  }>
+    slug: string;
+  }>;
 }) {
 
+  // ======================================================
+  // PARAMS
+  // ======================================================
 
-const {
-  slug
-}=await params;
-
-
-
-const article =
-await getArticleBySlug(slug);
+  const {
+    slug,
+  } = await params;
 
 
+  // ======================================================
+  // ARTICLE
+  // ======================================================
 
-if(!article){
-
-notFound();
-
-}
-
-
-
-const related =
-await getRelatedArticles(
-  article.categoryId,
-  article.slug
-);
+  const article =
+    await getArticleBySlug(slug);
 
 
-
-const siteUrl =
-process.env.NEXT_PUBLIC_SITE_URL || "https://infiniabharatnews.vercel.app";
-
-
-
-const articleUrl =
-`${siteUrl}/news/${article.slug}`;
+  if (!article) {
+    notFound();
+  }
 
 
+  // ======================================================
+  // RELATED ARTICLES + NATIVE ADS
+  // ======================================================
 
-return (
-  <main className="container-news py-8 ">
-    
-    <div className="grid min-w-0 grid-cols-12 gap-4 lg:gap-8">
+  const [
+    related,
+    nativeAds,
+  ] = await Promise.all([
+    getRelatedArticles(
+      article.categoryId,
+      article.slug
+    ),
 
-      {/* Share */}
-      <aside className="hidden lg:block lg:col-span-1">
-        <ShareButtons
-          title={article.title}
-          url={articleUrl}
-        />
-        
-      </aside>
+    getAdsByType("native"),
+  ]);
 
-      {/* Article */}
-      <article className="col-span-12 min-w-0 lg:col-span-8">
 
-        <ArticleHeader article={article} />
+  // ======================================================
+  // PLAIN NATIVE ADS
+  // ======================================================
 
-        {/* Mobile Share */}
-        <div className="lg:hidden sticky top-20 z-40 bg-white py-3 border-y mb-6">
+  const nativeAdsPlain =
+    nativeAds
+      .filter(
+        (
+          ad
+        ): ad is NativeAd & { id: string } =>
+          ad.type === "native" &&
+          ad.active
+      )
+      .map((ad) => ({
+        ...ad,
+
+        createdAt:
+          ad.createdAt &&
+          typeof ad.createdAt === "object" &&
+          "toDate" in ad.createdAt
+            ? (
+                ad.createdAt as {
+                  toDate: () => Date;
+                }
+              )
+                .toDate()
+                .toISOString()
+            : typeof ad.createdAt === "string"
+              ? ad.createdAt
+              : null,
+
+        updatedAt:
+          ad.updatedAt &&
+          typeof ad.updatedAt === "object" &&
+          "toDate" in ad.updatedAt
+            ? (
+                ad.updatedAt as {
+                  toDate: () => Date;
+                }
+              )
+                .toDate()
+                .toISOString()
+            : typeof ad.updatedAt === "string"
+              ? ad.updatedAt
+              : null,
+      }))
+      .sort(
+        (a, b) =>
+          (b.priority ?? 1) -
+          (a.priority ?? 1)
+      );
+
+
+  // ======================================================
+  // ARTICLE URL
+  // ======================================================
+
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://infiniabharatnews.vercel.app";
+
+  const articleUrl =
+    `${siteUrl}/news/${article.slug}`;
+
+
+  // ======================================================
+  // PAGE
+  // ======================================================
+
+  return (
+    <main className="container-news py-8">
+
+      <div
+        className="
+          grid
+          min-w-0
+          grid-cols-12
+          gap-4
+          lg:gap-8
+        "
+      >
+
+        {/* ==================================================
+            SHARE SIDEBAR
+        ================================================== */}
+
+        <aside
+          className="
+            hidden
+            lg:block
+            lg:col-span-1
+          "
+        >
           <ShareButtons
             title={article.title}
             url={articleUrl}
           />
-        </div>
-        <AuthorBox article={article} />
+        </aside>
 
-        {/* =========================================
-            COMMENTS
-        ========================================= */}
 
-        <section
-          id="comments"
-          className="mt-10 border-t border-zinc-200 pt-8"
+        {/* ==================================================
+            ARTICLE
+        ================================================== */}
+
+        <article
+          className="
+            col-span-12
+            min-w-0
+            lg:col-span-8
+          "
         >
-          <CommentsList
-            articleId={article.id}
-            articleSlug={article.slug}
+
+          <ArticleHeader
+            article={article}
           />
-        </section>
 
 
-        <ArticleContent article={article} />
+          {/* ==================================================
+              MOBILE SHARE
+          ================================================== */}
 
-        
-        <RelatedNews articles={related} />
+          <div
+            className="
+              lg:hidden
+              sticky
+              top-20
+              z-40
+              bg-white
+              py-3
+              border-y
+              mb-6
+            "
+          >
+            <ShareButtons
+              title={article.title}
+              url={articleUrl}
+            />
+          </div>
 
-      </article>
 
-      {/* Sidebar */}
-      <aside className="hidden min-w-0 lg:block lg:col-span-3">
-        <ArticleSidebar related={related} />
-      </aside>
+          {/* ==================================================
+              AUTHOR
+          ================================================== */}
 
-    </div>
-  </main>
-);
+          <AuthorBox
+            article={article}
+          />
 
 
+          {/* ==================================================
+              COMMENTS
+          ================================================== */}
+
+          <section
+            id="comments"
+            className="
+              mt-10
+              border-t
+              border-zinc-200
+              pt-8
+            "
+          >
+            <CommentsList
+              articleId={article.id}
+              articleSlug={article.slug}
+            />
+          </section>
+
+
+          {/* ==================================================
+              ARTICLE CONTENT
+          ================================================== */}
+
+          <ArticleContent
+            article={article}
+          />
+
+
+          {/* ==================================================
+              RELATED NEWS + NATIVE ADS
+          ================================================== */}
+
+          <RelatedNews
+            articles={related}
+            nativeAds={nativeAdsPlain}
+          />
+
+        </article>
+
+
+        {/* ==================================================
+            RIGHT SIDEBAR
+        ================================================== */}
+
+        <aside
+          className="
+            hidden
+            min-w-0
+            lg:block
+            lg:col-span-3
+          "
+        >
+          <ArticleSidebar
+            related={related}
+          />
+        </aside>
+
+      </div>
+
+    </main>
+  );
 }

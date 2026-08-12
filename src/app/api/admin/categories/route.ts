@@ -18,23 +18,17 @@ import {
 } from "@/lib/auth/verify-role";
 
 import {
-  createSlug,
-} from "@/lib/utils/create-slug";
-
-import {
-  syncVideosFromFirebase,
-} from "@/lib/github/video-github-sync";
+  syncCategoriesFromFirebase,
+} from "@/lib/github/category-github-sync";
 
 // ======================================================
-// CREATE VIDEO
+// CREATE CATEGORY
 // ======================================================
 
 export async function POST(
   request: NextRequest
 ) {
-
   try {
-
     const token =
       request.headers
         .get("authorization")
@@ -44,7 +38,6 @@ export async function POST(
         );
 
     if (!token) {
-
       return NextResponse.json(
         {
           success: false,
@@ -54,225 +47,177 @@ export async function POST(
           status: 401,
         }
       );
-
     }
 
-    const user: any =
-      await verifyRole(
-        token,
-        [
-          "admin",
-          "editor",
-          "superAdmin",
-        ]
-      );
+    await verifyRole(
+      token,
+      [
+        "admin",
+        "editor",
+        "superAdmin",
+      ]
+    );
 
     const body =
       await request.json();
 
-    if (!body.title?.trim()) {
-
+    if (!body.name?.trim()) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Video title is required",
+            "Category name is required",
         },
         {
           status: 400,
         }
       );
-
     }
 
-    const slug =
-      createSlug(
-        body.title
+    if (!body.nameHi?.trim()) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Hindi category name is required",
+        },
+        {
+          status: 400,
+        }
       );
+    }
 
-    const videoData = {
+    const categoryData = {
+      name:
+        body.name.trim(),
 
-      ...body,
+      nameHi:
+        body.nameHi.trim(),
 
-      slug,
+      slug:
+        body.slug ||
+        body.name
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, "-"),
 
-      author: {
-
-        uid:
-          user?.uid || "",
-
-        name:
-          user?.name || "",
-
-        email:
-          user?.email || "",
-
-        role:
-          user?.role || "",
-
-      },
+      status:
+        body.status || "active",
 
       createdAt:
         FieldValue.serverTimestamp(),
 
       updatedAt:
         FieldValue.serverTimestamp(),
-
     };
-
-    // ==============================================
-    // FIREBASE CREATE
-    // ==============================================
 
     const ref =
       await adminDb
-        .collection("videos")
-        .add(
-          videoData
-        );
+        .collection("categories")
+        .add(categoryData);
 
     console.log(
-      "VIDEO CREATED:",
+      "CATEGORY CREATED:",
       ref.id
     );
 
-    // ==============================================
+    // ==================================================
     // GITHUB SYNC
-    // ==============================================
+    // ==================================================
 
-    let githubSynced =
-      false;
-
-    let githubCount =
-      0;
-
-    let githubError =
-      "";
+    let githubSynced = false;
+    let githubCount = 0;
+    let githubError = "";
 
     try {
-
       const result =
-        await syncVideosFromFirebase();
+        await syncCategoriesFromFirebase();
 
       githubSynced =
         result.success;
 
       githubCount =
         result.count;
-
-    } catch (
-      error: any
-    ) {
-
+    } catch (error: any) {
       githubError =
         error?.message ||
         "GitHub sync failed";
 
       console.error(
-        "VIDEO CREATE GITHUB ERROR:",
+        "CATEGORY CREATE GITHUB ERROR:",
         error
       );
-
     }
 
-    // ==============================================
-    // RESPONSE
-    // ==============================================
-
     return NextResponse.json({
-
       success: true,
 
-      id:
-        ref.id,
-
-      slug,
+      id: ref.id,
 
       githubSynced,
 
       githubCount,
 
       githubError,
-
     });
-
-  } catch (
-    error: any
-  ) {
-
+  } catch (error: any) {
     console.error(
-      "CREATE VIDEO ERROR:",
+      "CREATE CATEGORY ERROR:",
       error
     );
 
     return NextResponse.json(
       {
         success: false,
-
         message:
           error?.message ||
-          "Failed to create video",
+          "Failed to create category",
       },
       {
         status: 500,
       }
     );
-
   }
-
 }
 
 // ======================================================
-// GET ALL VIDEOS
+// GET ALL CATEGORIES
 // ======================================================
 
 export async function GET() {
-
   try {
-
     const snapshot =
       await adminDb
-        .collection("videos")
+        .collection("categories")
         .get();
 
-    const videos =
+    const categories =
       snapshot.docs.map(
         (doc) => ({
-
-          id:
-            doc.id,
-
+          id: doc.id,
           ...doc.data(),
-
         })
       );
 
     return NextResponse.json(
-      videos
+      categories
     );
-
-  } catch (
-    error: any
-  ) {
-
+  } catch (error: any) {
     console.error(
-      "GET VIDEOS ERROR:",
+      "GET CATEGORIES ERROR:",
       error
     );
 
     return NextResponse.json(
       {
         success: false,
-
         message:
           error?.message ||
-          "Failed to fetch videos",
+          "Failed to fetch categories",
       },
       {
         status: 500,
       }
     );
-
   }
-
 }

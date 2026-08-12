@@ -50,37 +50,57 @@ views?:number;
 
 
 
+interface NativeAd {
+  id: string;
+  type: "native";
+  title: string;
+  image: string;
+  link: string;
+  position: string;
+  active: boolean;
+  priority?: number;
+  mobileEnabled?: boolean;
+  desktopEnabled?: boolean;
+  openInNewTab?: boolean;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
 interface Props {
-
-name:string;
-
-nameHi:string;
-
-slug:string;
-
-articles:Article[];
-
-videos:Video[];
-
+  name: string;
+  nameHi: string;
+  slug: string;
+  articles: Article[];
+  videos: Video[];
+  nativeAds?: NativeAdItem[];
 }
 
 
+type NativeAdItem = {
+  id: string;
+  type: "native";
+  title: string;
+  image: string;
+  link: string;
+  active: boolean;
+  priority: number;
+  mobileEnabled: boolean;
+  desktopEnabled: boolean;
+  openInNewTab: boolean;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
 
 
 
 export default function CategorySection({
-
-name,
-
-nameHi,
-
-slug,
-
-articles,
-
-videos
-
-}:Props){
+  name,
+  nameHi,
+  slug,
+  articles,
+  videos,
+  nativeAds = [],
+}: Props) {
 
 
 
@@ -191,13 +211,84 @@ type:"fallback"
 
 
 
+let nativeIndex = 0;
+
+const cardsWithAds: any[] = [];
+
+let realContentCount = 0;
+
+cards.forEach((item) => {
+
+  cardsWithAds.push(item);
+
+  if (
+    item.type === "article" ||
+    item.type === "video"
+  ) {
+
+    realContentCount++;
+
+    if (
+      realContentCount % 3 === 0 &&
+      nativeAds.length > 0
+    ) {
+
+      cardsWithAds.push({
+        type: "native",
+        data:
+          nativeAds[
+            nativeIndex %
+              nativeAds.length
+          ],
+      });
+
+      nativeIndex++;
+    }
+  }
+});
 
 
+// ======================================
+// FEWER THAN 3 REAL CONTENT ITEMS
+// Show ad immediately after real content
+// ======================================
+
+if (
+  realContentCount > 0 &&
+  realContentCount < 3 &&
+  nativeAds.length > 0
+) {
+
+  const lastRealIndex =
+    cardsWithAds.reduce(
+      (last, item, index) =>
+        item.type === "article" ||
+        item.type === "video"
+          ? index
+          : last,
+      -1
+    );
+
+  if (lastRealIndex !== -1) {
+
+    cardsWithAds.splice(
+      lastRealIndex + 1,
+      0,
+      {
+        type: "native",
+        data:
+          nativeAds[
+            nativeIndex %
+              nativeAds.length
+          ],
+      }
+    );
+  }
+}
 
 
 const mobileCards =
-cards.slice(0,6);
-
+  cardsWithAds.slice(0, 6);
 
 
 
@@ -208,7 +299,25 @@ item:any,
 index:number
 ){
 
+if (item.type === "native") {
+  return (
+    <NewsCard
+    key={`native-${item.data.id}-${index}`}
+      article={{
+        id: item.data.id,
+        title: item.data.title,
+        thumbnail: item.data.image,
 
+        isNativeAd: true,
+
+        adLink: item.data.link,
+
+        openInNewTab:
+          item.data.openInNewTab,
+      }}
+    />
+  );
+}
 
 if(item.type==="article"){
 
@@ -462,60 +571,87 @@ renderCard
 
 {/* DESKTOP */}
 
+
 <div
 
+
 className="
+
 
 hidden
 
+
 xl:grid
+
 
 grid-cols-3
 
+
 gap-5
 
+
 "
+
 
 >
 
 
+
 {
 
-cards.map(
+
+cardsWithAds.map(
 (item,index)=>
+
 
 
 <div
 
-key={index}
+
+key={
+  item.type === "native"
+    ? `native-desktop-${item.data.id}-${index}`
+    : item.data?.id || `fallback-desktop-${index}`
+}
+
 
 className="
 
+
 col-span-1
 
+
 "
+
 
 >
 
 
+
 {
+
 
 renderCard(
 item,
 index
 )
 
+
 }
+
 
 
 
 </div>
 
 
+
 )
 
 
+
 }
+
 
 
 

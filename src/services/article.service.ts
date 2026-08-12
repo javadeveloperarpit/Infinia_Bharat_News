@@ -2,25 +2,28 @@ import {
   collection,
   getDocs,
   getDoc,
-  deleteDoc,
   doc,
-  updateDoc,
-  serverTimestamp,
 } from "firebase/firestore";
-import {
-  createSlug
-} from "@/lib/utils/create-slug";
-
 
 import { auth, db } from "@/lib/firebase/firebase";
 
+// ======================================================
+// ARTICLE DATA
+// ======================================================
+
 export interface ArticleData {
   title: string;
+
   categoryId: string;
+
   thumbnail: string;
+
   shortDescription: string;
+
   content: string;
+
   seoTitle: string;
+
   seoDescription: string;
 
   slug?: string;
@@ -33,114 +36,183 @@ export interface ArticleData {
   };
 
   featured?: boolean;
+
   breaking?: boolean;
+
   priority?: number;
 
   status: "draft" | "published";
 }
 
-// =========================
-// GET ARTICLES
-// =========================
+// ======================================================
+// GET ALL ARTICLES
+// ======================================================
 
 export async function getArticles() {
-  const snapshot = await getDocs(collection(db, "articles"));
+  const snapshot = await getDocs(
+    collection(db, "articles")
+  );
 
   return snapshot.docs.map((item) => ({
     id: item.id,
     ...item.data(),
-  })) as (ArticleData & { id: string })[];
+  })) as (ArticleData & {
+    id: string;
+  })[];
 }
 
-// =========================
+// ======================================================
 // GET SINGLE ARTICLE
-// =========================
+// ======================================================
 
 export async function getArticleById(
-  id:string
-):Promise<(ArticleData & {id:string}) | null> {
+  id: string
+): Promise<
+  (ArticleData & { id: string }) | null
+> {
+  const ref = doc(
+    db,
+    "articles",
+    id
+  );
 
-const ref =
-doc(db,"articles",id);
+  const snap = await getDoc(ref);
 
+  if (!snap.exists()) {
+    return null;
+  }
 
-const snap =
-await getDoc(ref);
-
-
-if(!snap.exists()){
- return null;
+  return {
+    id: snap.id,
+    ...snap.data(),
+  } as ArticleData & {
+    id: string;
+  };
 }
 
+// ======================================================
+// GET AUTH TOKEN
+// ======================================================
 
-return {
- id:snap.id,
- ...snap.data()
-} as ArticleData & {id:string};
+async function getAuthToken() {
+  const user = auth.currentUser;
 
+  if (!user) {
+    throw new Error("Not logged in");
+  }
+
+  return user.getIdToken();
 }
 
-// =========================
+// ======================================================
 // UPDATE ARTICLE
-// =========================
+//
+// Firebase update is handled by SERVER API.
+// Server API:
+// Firebase -> GitHub sync
+// ======================================================
 
 export async function updateArticle(
-id:string,
-data:any
-){
+  id: string,
+  data: Partial<ArticleData>
+) {
+  if (!id) {
+    throw new Error("Article ID missing");
+  }
 
-const user = auth.currentUser;
+  const token =
+    await getAuthToken();
 
+  const response =
+    await fetch(
+      `/api/admin/articles/${id}`,
+      {
+        method: "PUT",
 
-if(!user){
-throw new Error("Not logged in");
+        headers: {
+          "Content-Type":
+            "application/json",
+
+          Authorization:
+            `Bearer ${token}`,
+        },
+
+        body:
+          JSON.stringify(data),
+      }
+    );
+
+  const result =
+    await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result?.message ||
+      "Article update failed"
+    );
+  }
+
+  return result;
 }
 
-
-const token =
-await user.getIdToken();
-
-
-
-const res =
-await fetch(
-`/api/admin/articles/${id}`,
-{
-method:"PUT",
-
-headers:{
-"Content-Type":"application/json",
-Authorization:`Bearer ${token}`
-},
-
-body:JSON.stringify(data)
-
-}
-);
-
-
-
-const result =
-await res.json();
-
-
-
-if(!res.ok){
-
-throw new Error(
-result.message || "Update failed"
-);
-
-}
-
-
-return result;
-
-}
-// =========================
+// ======================================================
 // DELETE ARTICLE
-// =========================
+//
+// IMPORTANT:
+//
+// DO NOT USE deleteDoc() HERE.
+//
+// Delete must go through the server API:
+//
+// Client
+//   ↓
+// DELETE /api/admin/articles/:id
+//   ↓
+// Firebase delete
+//   ↓
+// syncArticlesFromFirebase()
+//   ↓
+// GitHub articles.json
+//
+// ======================================================
 
-export async function deleteArticle(id: string) {
-  await deleteDoc(doc(db, "articles", id));
+export async function deleteArticle(
+  id: string
+) {
+  if (!id) {
+    throw new Error(
+      "Article ID missing"
+    );
+  }
+
+  const token =
+    await getAuthToken();
+
+  const response =
+    await fetch(
+      `/api/admin/articles/${id}`,
+      {
+        method: "DELETE",
+
+        headers: {
+          Authorization:
+            `Bearer ${token}`,
+
+          "Content-Type":
+            "application/json",
+        },
+      }
+    );
+
+  const result =
+    await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result?.message ||
+      "Article delete failed"
+    );
+  }
+
+  return result;
 }

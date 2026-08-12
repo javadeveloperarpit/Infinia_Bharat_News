@@ -411,7 +411,7 @@ function handleScreenClick() {
     );
   }, 150);
 
-  // tumhara existing pending command code...
+  
 }}
   className="
     pointer-events-none
@@ -468,7 +468,7 @@ function handleScreenClick() {
     alt=""
     fill
     priority
-    sizes="100vw"
+    sizes="(max-width: 768px) 100vw, 50vw"
     draggable={false}
     onContextMenu={(e) => e.preventDefault()}
     className="

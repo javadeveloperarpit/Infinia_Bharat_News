@@ -15,7 +15,8 @@ import {
 import { X } from "lucide-react";
 
 import type { BusinessAd } from "@/services/ads.service";
-
+import StickyBottomAd from "./StickyBottomAd";
+import BannerAd from "./BannerAd";
 // ======================================================
 // TYPES
 // ======================================================
@@ -33,7 +34,6 @@ interface AdRendererProps {
     | "native"
     | "shorts_video";
 
-  position?: string;
 }
 
 type Device = "desktop" | "mobile";
@@ -279,6 +279,24 @@ function getAdField<
   key: K
 ): T[K] | undefined {
   return (ad as BusinessAd & T)[key];
+}
+function getAdLayout(
+  ad: BusinessAd,
+  device: Device
+): FloatingLayout | undefined {
+  const layout = getAdField<
+    {
+      layout?: {
+        desktop?: FloatingLayout;
+        mobile?: FloatingLayout;
+      };
+    },
+    "layout"
+  >(ad, "layout");
+
+  return device === "desktop"
+    ? layout?.desktop
+    : layout?.mobile;
 }
 
 // ======================================================
@@ -603,8 +621,10 @@ function selectPageTransitionAd(
 export default function AdRenderer({
   ads,
   type,
-  position,
 }: AdRendererProps) {
+
+  const [stickyBottomAd, setStickyBottomAd] =
+    useState<BusinessAd | null>(null);
   const pathname =
     usePathname();
 
@@ -727,26 +747,18 @@ const pageTransitionFirstRender =
             return false;
           }
 
-          if (
-            position &&
-            ad.position !== position
-          ) {
-            return false;
-          }
+
 
           // Default renderer:
           // only floating ads
 
-          if (
-            !type &&
-            !position
-          ) {
-            return (
-              ad.type === "cube" ||
-              ad.type ===
-                "floating_tv"
-            );
-          }
+          if (!type) {
+  return (
+    ad.type === "cube" ||
+    ad.type === "floating_tv" ||
+    ad.type === "sticky_bottom"
+  );
+}
 
           return true;
         })
@@ -759,8 +771,6 @@ const pageTransitionFirstRender =
     }, [
       ads,
       device,
-      type,
-      position,
     ]);
 
   // ====================================================
@@ -832,6 +842,35 @@ const pageTransitionFirstRender =
       currentUrl,
     ]);
 
+    useEffect(() => {
+  if (type && type !== "sticky_bottom") {
+    return;
+  }
+
+  const selected = visibleAds
+    .filter(
+      (ad) =>
+        ad.type === "sticky_bottom" 
+    )
+    .sort(
+      (a, b) =>
+        (a.priority ?? 999) -
+        (b.priority ?? 999)
+    )
+    .find((ad) => {
+      try {
+        return (
+          sessionStorage.getItem(
+            `infinia-sticky-bottom-${ad.id}`
+          ) !== "true"
+        );
+      } catch {
+        return true;
+      }
+    });
+
+  setStickyBottomAd(selected ?? null);
+}, [visibleAds, type]);
   // ====================================================
   // SAVE ROTATION STATE
   // ====================================================
@@ -1321,6 +1360,14 @@ useEffect(() => {
       }}
     />
   )}
+
+  {stickyBottomAd && (
+  <StickyBottomAd
+    ad={stickyBottomAd}
+    device={device}
+
+  />
+)}
   </>
 );
 }
@@ -1330,9 +1377,7 @@ useEffect(() => {
 // ======================================================
 
 function getFloatingCoordinates(
-  layout:
-    | FloatingLayout
-    | undefined,
+  layout: FloatingLayout | undefined,
   device: Device
 ) {
   const referenceWidth =
@@ -1346,49 +1391,89 @@ function getFloatingCoordinates(
       : MOBILE_REFERENCE_HEIGHT;
 
   const viewportWidth =
-    typeof window !==
-    "undefined"
+    typeof window !== "undefined"
       ? window.innerWidth
       : referenceWidth;
 
   const viewportHeight =
-    typeof window !==
-    "undefined"
+    typeof window !== "undefined"
       ? window.innerHeight
       : referenceHeight;
 
-  const x = Number(
-    layout?.x ?? 0
-  );
+  const x = Number(layout?.x ?? 0);
+  const y = Number(layout?.y ?? 0);
 
-  const y = Number(
-    layout?.y ?? 0
-  );
-
-  const scale =
-    typeof layout?.scale ===
-    "number"
+  const configuredScale =
+    typeof layout?.scale === "number"
       ? layout.scale
       : 1;
 
+  // ----------------------------------------------------
+  // RESPONSIVE REFERENCE SCALE
+  //
+  // Desktop:
+  // 1366 x 768 => 1
+  //
+  // Mobile:
+  // 440 x 956 => 1
+  //
+  // Smaller/larger screens scale proportionally.
+  // ----------------------------------------------------
+
+  const viewportScale =
+    Math.min(
+      viewportWidth / referenceWidth,
+      viewportHeight / referenceHeight
+    );
+
+  // Don't allow extreme scaling.
+  const safeViewportScale = clamp(
+    viewportScale,
+    0.72,
+    1.15
+  );
+
+  // Manual scale configured from admin panel.
+  const safeConfiguredScale = clamp(
+    configuredScale,
+    0.25,
+    2
+  );
+
   const xRatio =
-    viewportWidth /
-    referenceWidth;
+    viewportWidth / referenceWidth;
 
   const yRatio =
-    viewportHeight /
-    referenceHeight;
+    viewportHeight / referenceHeight;
 
-  const actualX =
-    x * xRatio;
+  const rawX =
+  x * xRatio;
 
-  const actualY =
-    y * yRatio;
+const rawY =
+  y * yRatio;
+
+const actualX =
+  clamp(
+    rawX,
+    -viewportWidth * 0.42,
+    viewportWidth * 0.42
+  );
+
+const actualY =
+  clamp(
+    rawY,
+    -viewportHeight * 0.42,
+    viewportHeight * 0.42
+  );
 
   return {
     actualX,
     actualY,
-    scale,
+
+    // This scale applies to the complete floating ad.
+    responsiveScale:
+      safeViewportScale *
+      safeConfiguredScale,
   };
 }
 
@@ -1482,10 +1567,7 @@ function CubeAd({
     )
   );
 
-  const layout =
-    device === "desktop"
-      ? ad.layout?.desktop
-      : ad.layout?.mobile;
+  const layout = getAdLayout(ad, device);
 
   if (closed) {
     return null;
@@ -1520,29 +1602,27 @@ function CubeAd({
       )
     ) || 160;
 
-  const safeWidth =
-    clamp(
-      configuredWidth,
-      80,
-      400
-    );
+  const maxCubeWidth =
+  device === "mobile"
+    ? 220
+    : 360;
+
+const safeWidth =
+  clamp(
+    configuredWidth,
+    device === "mobile" ? 80 : 100,
+    maxCubeWidth
+  );
 
   const {
-    actualX,
-    actualY,
-    scale,
-  } =
-    getFloatingCoordinates(
-      layout,
-      device
-    );
-
-  const safeScale =
-    clamp(
-      scale,
-      0.25,
-      2
-    );
+  actualX,
+  actualY,
+  responsiveScale,
+} =
+  getFloatingCoordinates(
+    layout,
+    device
+  );
 
   const handleClose = () => {
     markFloatingAdClosed(
@@ -1563,13 +1643,12 @@ function CubeAd({
         top: "50%",
 
         width: safeWidth + 30,
-        height: safeWidth + 30,
+height: safeWidth + 30,
 
-        transform:
-          `translate(-50%, -50%) ` +
-          `translate(${actualX}px, ${actualY}px) ` +
-          `scale(${safeScale})`,
-
+transform:
+  `translate(-50%, -50%) ` +
+  `translate(${actualX}px, ${actualY}px) ` +
+  `scale(${responsiveScale})`,
         transformOrigin:
           "center center",
 
@@ -3260,20 +3339,17 @@ function FloatingTVAd({
     return null;
   }
 
-  const layout =
-    device === "desktop"
-      ? ad.layout?.desktop
-      : ad.layout?.mobile;
+  const layout = getAdLayout(ad, device);
 
   const {
-    actualX,
-    actualY,
-    scale,
-  } =
-    getFloatingCoordinates(
-      layout,
-      device
-    );
+  actualX,
+  actualY,
+  responsiveScale,
+} =
+  getFloatingCoordinates(
+    layout,
+    device
+  );
 
   // ====================================================
   // WIDTH
@@ -3290,12 +3366,20 @@ function FloatingTVAd({
       )
     ) || 320;
 
-  const width =
-    clamp(
-      configuredWidth,
-      180,
-      800
-    );
+  const maxTVWidth =
+  device === "mobile"
+    ? Math.min(
+        260,
+        window.innerWidth - 32
+      )
+    : 520;
+
+const width =
+  clamp(
+    configuredWidth,
+    device === "mobile" ? 160 : 220,
+    maxTVWidth
+  );
 
   // ====================================================
   // HEIGHT
@@ -3306,16 +3390,6 @@ function FloatingTVAd({
       width * 0.5625
     );
 
-  // ====================================================
-  // SCALE
-  // ====================================================
-
-  const safeScale =
-    clamp(
-      scale,
-      0.25,
-      2
-    );
 
   // ====================================================
   // VIDEO DATA
@@ -3397,8 +3471,8 @@ function FloatingTVAd({
         height,
 
         transform:
-          `translate(-50%, -50%) ` +
-          `scale(${safeScale})`,
+  `translate(-50%, -50%) ` +
+  `scale(${responsiveScale})`,
 
         transformOrigin:
           "center center",

@@ -18,87 +18,12 @@ import {
 } from "@/lib/auth/verify-role";
 
 import {
-  createSlug,
-} from "@/lib/utils/create-slug";
+  syncBreakingNewsFromFirebase,
+} from "@/lib/github/breaking-news-github-sync";
 
-import {
-  syncVideosFromFirebase,
-} from "@/lib/github/video-github-sync";
 
 // ======================================================
-// GET SINGLE VIDEO
-// ======================================================
-
-export async function GET(
-  request: NextRequest,
-  {
-    params,
-  }: {
-    params: Promise<{
-      id: string;
-    }>;
-  }
-) {
-
-  try {
-
-    const {
-      id,
-    } = await params;
-
-    const doc =
-      await adminDb
-        .collection("videos")
-        .doc(id)
-        .get();
-
-    if (!doc.exists) {
-
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Video not found",
-        },
-        {
-          status: 404,
-        }
-      );
-
-    }
-
-    return NextResponse.json({
-
-      id:
-        doc.id,
-
-      ...doc.data(),
-
-    });
-
-  } catch (
-    error: any
-  ) {
-
-    return NextResponse.json(
-      {
-        success: false,
-
-        message:
-          error?.message ||
-          "Failed to fetch video",
-      },
-      {
-        status: 500,
-      }
-    );
-
-  }
-
-}
-
-// ======================================================
-// UPDATE VIDEO
+// UPDATE BREAKING NEWS
 // ======================================================
 
 export async function PUT(
@@ -114,9 +39,9 @@ export async function PUT(
 
   try {
 
-    // ==============================================
+    // ==================================================
     // AUTH
-    // ==============================================
+    // ==================================================
 
     const token =
       request.headers
@@ -131,8 +56,7 @@ export async function PUT(
       return NextResponse.json(
         {
           success: false,
-          message:
-            "Unauthorized",
+          message: "Unauthorized",
         },
         {
           status: 401,
@@ -150,13 +74,15 @@ export async function PUT(
       ]
     );
 
-    // ==============================================
+
+    // ==================================================
     // ID
-    // ==============================================
+    // ==================================================
 
     const {
       id,
     } = await params;
+
 
     if (!id) {
 
@@ -164,7 +90,7 @@ export async function PUT(
         {
           success: false,
           message:
-            "Video ID missing",
+            "Breaking News ID missing",
         },
         {
           status: 400,
@@ -173,24 +99,30 @@ export async function PUT(
 
     }
 
-    // ==============================================
+
+    // ==================================================
     // BODY
-    // ==============================================
+    // ==================================================
 
     const body =
       await request.json();
 
-    // ==============================================
+
+    // ==================================================
     // FIREBASE REF
-    // ==============================================
+    // ==================================================
 
     const ref =
       adminDb
-        .collection("videos")
+        .collection(
+          "breakingNews"
+        )
         .doc(id);
+
 
     const old =
       await ref.get();
+
 
     if (!old.exists) {
 
@@ -198,7 +130,7 @@ export async function PUT(
         {
           success: false,
           message:
-            "Video not found",
+            "Breaking news not found",
         },
         {
           status: 404,
@@ -207,34 +139,70 @@ export async function PUT(
 
     }
 
-    // ==============================================
-    // UPDATE FIREBASE
-    // ==============================================
 
-    await ref.update({
+    // ==================================================
+    // UPDATE
+    // ==================================================
 
-      ...body,
-
-      slug:
-        body.title
-          ? createSlug(
-              body.title
-            )
-          : old.data()?.slug || "",
+    const updateData: Record<
+      string,
+      any
+    > = {
 
       updatedAt:
         FieldValue.serverTimestamp(),
 
-    });
+    };
+
+
+    if (
+      body?.text !== undefined
+    ) {
+
+      updateData.text =
+        String(
+          body.text
+        ).trim();
+
+    }
+
+
+    if (
+      body?.active !== undefined
+    ) {
+
+      updateData.active =
+        Boolean(
+          body.active
+        );
+
+    }
+
+
+    if (
+      body?.expiry !== undefined
+    ) {
+
+      updateData.expiry =
+        body.expiry;
+
+    }
+
+
+    await ref.update(
+      updateData
+    );
+
 
     console.log(
-      "VIDEO UPDATED:",
+      "BREAKING NEWS UPDATED:",
       id
     );
 
-    // ==============================================
+
+    // ==================================================
     // GITHUB SYNC
-    // ==============================================
+    // ==================================================
 
     let githubSynced =
       false;
@@ -245,25 +213,17 @@ export async function PUT(
     let githubError =
       "";
 
+
     try {
 
       const result =
-        await syncVideosFromFirebase();
+        await syncBreakingNewsFromFirebase();
 
       githubSynced =
         result.success;
 
       githubCount =
         result.count;
-
-      console.log(
-        "VIDEO UPDATE GITHUB SYNC SUCCESS:",
-        {
-          id,
-          count:
-            githubCount,
-        }
-      );
 
     } catch (
       error: any
@@ -274,33 +234,38 @@ export async function PUT(
         "GitHub sync failed";
 
       console.error(
-        "VIDEO UPDATE GITHUB SYNC FAILED:",
+        "BREAKING NEWS UPDATE GITHUB ERROR:",
         error
       );
 
     }
 
-    return NextResponse.json({
 
-      success: true,
+    // ==================================================
+    // RESPONSE
+    // ==================================================
 
-      message:
-        "Video updated successfully",
+    return NextResponse.json(
+      {
+        success: true,
 
-      githubSynced,
+        message:
+          "Breaking news updated successfully",
 
-      githubCount,
+        githubSynced,
 
-      githubError,
+        githubCount,
 
-    });
+        githubError,
+      }
+    );
 
   } catch (
     error: any
   ) {
 
     console.error(
-      "UPDATE VIDEO ERROR:",
+      "UPDATE BREAKING NEWS ERROR:",
       error
     );
 
@@ -310,19 +275,18 @@ export async function PUT(
 
         message:
           error?.message ||
-          "Failed to update video",
+          "Failed to update breaking news",
       },
       {
         status: 500,
       }
     );
-
   }
-
 }
 
+
 // ======================================================
-// DELETE VIDEO
+// DELETE BREAKING NEWS
 // ======================================================
 
 export async function DELETE(
@@ -338,9 +302,9 @@ export async function DELETE(
 
   try {
 
-    // ==============================================
+    // ==================================================
     // AUTH
-    // ==============================================
+    // ==================================================
 
     const token =
       request.headers
@@ -350,13 +314,13 @@ export async function DELETE(
           ""
         );
 
+
     if (!token) {
 
       return NextResponse.json(
         {
           success: false,
-          message:
-            "Unauthorized",
+          message: "Unauthorized",
         },
         {
           status: 401,
@@ -364,6 +328,7 @@ export async function DELETE(
       );
 
     }
+
 
     await verifyRole(
       token,
@@ -373,13 +338,15 @@ export async function DELETE(
       ]
     );
 
-    // ==============================================
+
+    // ==================================================
     // ID
-    // ==============================================
+    // ==================================================
 
     const {
       id,
     } = await params;
+
 
     if (!id) {
 
@@ -387,7 +354,7 @@ export async function DELETE(
         {
           success: false,
           message:
-            "Video ID missing",
+            "Breaking News ID missing",
         },
         {
           status: 400,
@@ -396,17 +363,22 @@ export async function DELETE(
 
     }
 
-    // ==============================================
+
+    // ==================================================
     // FIREBASE REF
-    // ==============================================
+    // ==================================================
 
     const ref =
       adminDb
-        .collection("videos")
+        .collection(
+          "breakingNews"
+        )
         .doc(id);
+
 
     const old =
       await ref.get();
+
 
     if (!old.exists) {
 
@@ -414,7 +386,7 @@ export async function DELETE(
         {
           success: false,
           message:
-            "Video not found",
+            "Breaking news not found",
         },
         {
           status: 404,
@@ -423,20 +395,23 @@ export async function DELETE(
 
     }
 
-    // ==============================================
+
+    // ==================================================
     // DELETE FIREBASE
-    // ==============================================
+    // ==================================================
 
     await ref.delete();
 
+
     console.log(
-      "VIDEO DELETED:",
+      "BREAKING NEWS DELETED:",
       id
     );
 
-    // ==============================================
+
+    // ==================================================
     // GITHUB SYNC
-    // ==============================================
+    // ==================================================
 
     let githubSynced =
       false;
@@ -447,25 +422,17 @@ export async function DELETE(
     let githubError =
       "";
 
+
     try {
 
       const result =
-        await syncVideosFromFirebase();
+        await syncBreakingNewsFromFirebase();
 
       githubSynced =
         result.success;
 
       githubCount =
         result.count;
-
-      console.log(
-        "VIDEO DELETE GITHUB SYNC SUCCESS:",
-        {
-          id,
-          count:
-            githubCount,
-        }
-      );
 
     } catch (
       error: any
@@ -476,33 +443,38 @@ export async function DELETE(
         "GitHub sync failed";
 
       console.error(
-        "VIDEO DELETE GITHUB SYNC FAILED:",
+        "BREAKING NEWS DELETE GITHUB ERROR:",
         error
       );
 
     }
 
-    return NextResponse.json({
 
-      success: true,
+    // ==================================================
+    // RESPONSE
+    // ==================================================
 
-      message:
-        "Video deleted successfully",
+    return NextResponse.json(
+      {
+        success: true,
 
-      githubSynced,
+        message:
+          "Breaking news deleted successfully",
 
-      githubCount,
+        githubSynced,
 
-      githubError,
+        githubCount,
 
-    });
+        githubError,
+      }
+    );
 
   } catch (
     error: any
   ) {
 
     console.error(
-      "DELETE VIDEO ERROR:",
+      "DELETE BREAKING NEWS ERROR:",
       error
     );
 
@@ -512,13 +484,11 @@ export async function DELETE(
 
         message:
           error?.message ||
-          "Failed to delete video",
+          "Failed to delete breaking news",
       },
       {
         status: 500,
       }
     );
-
   }
-
 }

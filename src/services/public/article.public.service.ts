@@ -1,15 +1,33 @@
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  limit,
-} from "firebase/firestore";
+import fs from "fs/promises";
+import path from "path";
 
-import { db } from "@/lib/firebase/firebase";
+
+// ============================================================
+// PUBLIC ARTICLE SERVICE
+// ============================================================
+//
+// IMPORTANT:
+//
+// Public website Firebase se articles READ nahi karti.
+//
+// Source:
+//     GitHub -> public/data/articles.json
+//
+// Firebase:
+//     ONLY admin/master database
+//
+// Flow:
+//
+// Firebase
+//    ↓
+// GitHub Sync
+//    ↓
+// articles.json
+//    ↓
+// Public Website
+//
+// ============================================================
+
 
 // ============================================================
 // TYPES
@@ -17,19 +35,33 @@ import { db } from "@/lib/firebase/firebase";
 
 export interface PublicArticle {
   id: string;
+
   title: string;
+
   slug: string;
+
   thumbnail: string;
+
   shortDescription: string;
+
   content: string;
+
   seoTitle: string;
+
   seoDescription: string;
+
   categoryId: string;
+
   category?: string;
+
   categoryHi?: string;
+
   featured: boolean;
+
   breaking: boolean;
+
   priority: number;
+
   status: "draft" | "published";
 
   author?: {
@@ -43,14 +75,41 @@ export interface PublicArticle {
   };
 
   createdAt?: string;
+
   updatedAt?: string;
 }
+
+
+// ============================================================
+// CATEGORY TYPE
+// ============================================================
+
+interface ArticleCategory {
+  id?: string;
+
+  name?: string;
+
+  nameHi?: string;
+
+  slug?: string;
+}
+
+
+// ============================================================
+// ARPIT MISHRA PHOTO FALLBACK
+// ============================================================
+
+const ARPIT_MISHRA_PHOTO =
+  "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhleYE3u57u2LIBNwS0wcdK8_2DdClNs9NHzArdEt5_4F-FDCAQD0KYKW2rRzIQustLfKOdwKkCwI4an3JpMepTyCS71v11b0ab12389xMefgfY9B7sniXiZOSe3rf4d4hzQH6h31lNUmehFqJOHq35VqRCaEaWNyZ0mIoc0CBmhumWmEP_3Vy9835f1s9k/s1600/ArpitMishra.jpeg";
+
 
 // ============================================================
 // CREATE AUTHOR SLUG
 // ============================================================
 
-function createAuthorSlug(name: string) {
+function createAuthorSlug(
+  name: string
+) {
   return name
     .toLowerCase()
     .trim()
@@ -60,512 +119,426 @@ function createAuthorSlug(name: string) {
     .replace(/^-|-$/g, "");
 }
 
+
 // ============================================================
 // FORMAT TIMESTAMP
 // ============================================================
 
-function formatTimestamp(value: any) {
+function formatTimestamp(
+  value: any
+) {
+
   if (!value) {
     return undefined;
   }
 
-  if (typeof value?.toDate === "function") {
-    return value.toDate().toISOString();
+
+  if (
+    typeof value?.toDate ===
+    "function"
+  ) {
+
+    return value
+      .toDate()
+      .toISOString();
+
   }
 
-  if (value?.seconds) {
+
+  if (
+    value?.seconds
+  ) {
+
     return new Date(
       value.seconds * 1000
     ).toISOString();
+
   }
 
-  const date = new Date(value);
 
-  if (isNaN(date.getTime())) {
+  const date =
+    new Date(value);
+
+
+  if (
+    isNaN(
+      date.getTime()
+    )
+  ) {
+
     return undefined;
+
   }
+
 
   return date.toISOString();
+
 }
 
-// ============================================================
-// VERIFIED AUTHOR PHOTO FALLBACK
-// ============================================================
-//
-// Confirmed working Arpit Mishra profile image.
-// This is used only when Firestore does not contain
-// an author photo.
-//
-// ============================================================
-
-const ARPIT_MISHRA_PHOTO =
-  "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhleYE3u57u2LIBNwS0wcdK8_2DdClNs9NHzArdEt5_4F-FDCAQD0KYKW2rRzIQustLfKOdwKkCwI4an3JpMepTyCS71v11b0ab12389xMefgfY9B7sniXiZOSe3rf4d4hzQH6h31lNUmehFqJOHq35VqRCaEaWNyZ0mIoc0CBmhumWmEP_3Vy9835f1s9k/s1600/ArpitMishra.jpeg";
 
 // ============================================================
 // GET AUTHOR PHOTO
 // ============================================================
 
 function getAuthorPhoto(
-  user: any,
   articleAuthor: any,
   authorName: string
 ) {
-  // ----------------------------------------------------------
-  // Check all common profile-image fields
-  // ----------------------------------------------------------
 
-  const firestorePhoto =
-    user?.photo ||
-    user?.profilePhoto ||
-    user?.photoURL ||
-    user?.profileImage ||
-    user?.image ||
-    user?.imageUrl ||
-    user?.avatar ||
+  const photo =
     articleAuthor?.photo ||
     articleAuthor?.profilePhoto ||
     articleAuthor?.photoURL ||
     articleAuthor?.profileImage ||
     articleAuthor?.image ||
     articleAuthor?.imageUrl ||
+    articleAuthor?.avatar ||
     "";
 
-  if (firestorePhoto) {
-    return String(firestorePhoto);
+
+  if (photo) {
+    return String(photo);
   }
 
-  // ----------------------------------------------------------
-  // Confirmed Arpit Mishra fallback
-  // ----------------------------------------------------------
 
   if (
     authorName
       .trim()
-      .toLowerCase() === "arpit mishra"
+      .toLowerCase() ===
+    "arpit mishra"
   ) {
+
     return ARPIT_MISHRA_PHOTO;
+
   }
+
 
   return "";
 }
 
+
 // ============================================================
-// GET LATEST AUTHOR PROFILE
+// FORMAT AUTHOR
 // ============================================================
 //
-// Article me author.uid saved hai.
+// NO FIREBASE REQUEST.
 //
-// users/{uid} se latest profile fetch hota hai.
-//
-// Agar users document me photo/slug available nahi hai,
-// article author data fallback hota hai.
+// Author information comes directly from
+// articles.json.
 //
 // ============================================================
 
-async function getLatestAuthorProfile(
+function formatAuthor(
   articleAuthor: any
 ) {
-  // ==========================================================
-  // NO AUTHOR UID
-  // ==========================================================
 
-  if (!articleAuthor?.uid) {
-    const name =
-      articleAuthor?.name ||
-      "INFINIA BHARAT NEWS";
+  const name =
+    articleAuthor?.name ||
+    "INFINIA BHARAT NEWS";
 
-    return {
-      uid: "",
-      name,
-      email:
-        articleAuthor?.email ||
-        "news@infiniabharatnews.com",
-      role:
-        articleAuthor?.role ||
-        "admin",
-      photo:
-        getAuthorPhoto(
-          {},
-          articleAuthor,
-          name
-        ),
-      slug:
-        articleAuthor?.slug ||
-        createAuthorSlug(name),
-      bio:
-        articleAuthor?.bio ||
-        "",
-    };
-  }
-
-  try {
-    // ========================================================
-    // GET USER DOCUMENT
-    // ========================================================
-
-    const userRef = doc(
-      db,
-      "users",
-      articleAuthor.uid
-    );
-
-    const userSnap =
-      await getDoc(userRef);
-
-    // ========================================================
-    // USER PROFILE EXISTS
-    // ========================================================
-
-    if (userSnap.exists()) {
-      const user =
-        userSnap.data();
-
-      const name =
-        user.name ||
-        articleAuthor.name ||
-        "INFINIA BHARAT NEWS";
-
-      const photo =
-        getAuthorPhoto(
-          user,
-          articleAuthor,
-          name
-        );
-
-      const slug =
-        user.slug ||
-        articleAuthor.slug ||
-        createAuthorSlug(name);
-
-      console.log(
-        "FORMATTED AUTHOR:",
-        {
-          uid:
-            user.uid ||
-            articleAuthor.uid,
-
-          name,
-
-          photo,
-
-          slug,
-        }
-      );
-
-      return {
-        uid:
-          user.uid ||
-          articleAuthor.uid,
-
-        name,
-
-        email:
-          user.email ||
-          articleAuthor.email ||
-          "",
-
-        role:
-          user.role ||
-          articleAuthor.role ||
-          "editor",
-
-        photo,
-
-        slug,
-
-        bio:
-          user.bio ||
-          articleAuthor.bio ||
-          "",
-      };
-    }
-
-    // ========================================================
-    // USER DOCUMENT DOES NOT EXIST
-    // ========================================================
-
-    const name =
-      articleAuthor.name ||
-      "INFINIA BHARAT NEWS";
-
-    const photo =
-      getAuthorPhoto(
-        {},
-        articleAuthor,
-        name
-      );
-
-    const slug =
-      articleAuthor.slug ||
-      createAuthorSlug(name);
-
-    return {
-      uid:
-        articleAuthor.uid ||
-        "",
-
-      name,
-
-      email:
-        articleAuthor.email ||
-        "",
-
-      role:
-        articleAuthor.role ||
-        "editor",
-
-      photo,
-
-      slug,
-
-      bio:
-        articleAuthor.bio ||
-        "",
-    };
-  } catch (error) {
-    console.error(
-      "GET AUTHOR PROFILE ERROR:",
-      error
-    );
-
-    // ========================================================
-    // NEVER BREAK ARTICLE PAGE
-    // ========================================================
-
-    const name =
-      articleAuthor.name ||
-      "INFINIA BHARAT NEWS";
-
-    const photo =
-      getAuthorPhoto(
-        {},
-        articleAuthor,
-        name
-      );
-
-    const slug =
-      articleAuthor.slug ||
-      createAuthorSlug(name);
-
-    return {
-      uid:
-        articleAuthor.uid ||
-        "",
-
-      name,
-
-      email:
-        articleAuthor.email ||
-        "",
-
-      role:
-        articleAuthor.role ||
-        "editor",
-
-      photo,
-
-      slug,
-
-      bio:
-        articleAuthor.bio ||
-        "",
-    };
-  }
-}
-
-// ============================================================
-// FORMAT ARTICLE
-// ============================================================
-
-async function formatArticle(
-  docSnapshot: any,
-  category?: any
-): Promise<PublicArticle> {
-  const data =
-    docSnapshot.data();
-
-  const author =
-    await getLatestAuthorProfile(
-      data.author
-    );
 
   return {
-    id: docSnapshot.id,
 
-    title:
-      data.title || "",
+    uid:
+      articleAuthor?.uid ||
+      "",
+
+    name,
+
+    email:
+      articleAuthor?.email ||
+      "news@infiniabharatnews.com",
+
+    role:
+      articleAuthor?.role ||
+      "editor",
+
+    photo:
+      getAuthorPhoto(
+        articleAuthor,
+        name
+      ),
 
     slug:
-      data.slug || "",
+      articleAuthor?.slug ||
+      createAuthorSlug(name),
+
+    bio:
+      articleAuthor?.bio ||
+      "",
+
+  };
+
+}
+
+
+// ============================================================
+// FORMAT RAW ARTICLE
+// ============================================================
+
+function formatArticle(
+  data: any,
+  category?: ArticleCategory
+): PublicArticle {
+
+  const articleAuthor =
+    formatAuthor(
+      data?.author
+    );
+
+
+  return {
+
+    id:
+      String(
+        data?.id ||
+        ""
+      ),
+
+    title:
+      data?.title ||
+      "",
+
+    slug:
+      data?.slug ||
+      "",
 
     thumbnail:
-      data.thumbnail || "",
+      data?.thumbnail ||
+      "",
 
     shortDescription:
-      data.shortDescription || "",
+      data?.shortDescription ||
+      "",
 
     content:
-      data.content || "",
+      data?.content ||
+      "",
 
     seoTitle:
-      data.seoTitle || "",
+      data?.seoTitle ||
+      "",
 
     seoDescription:
-      data.seoDescription || "",
+      data?.seoDescription ||
+      "",
 
     categoryId:
-      data.categoryId || "",
+      data?.categoryId ||
+      "",
 
     category:
       category?.name ||
-      data.category ||
+      data?.category ||
       "",
 
     categoryHi:
       category?.nameHi ||
-      data.categoryHi ||
+      data?.categoryHi ||
       "",
 
     featured:
-      data.featured || false,
+      Boolean(
+        data?.featured
+      ),
 
     breaking:
-      data.breaking || false,
+      Boolean(
+        data?.breaking
+      ),
 
     priority:
-      data.priority || 0,
+      Number(
+        data?.priority || 0
+      ),
 
     status:
-      data.status || "published",
+      data?.status ===
+      "published"
+        ? "published"
+        : "draft",
 
-    author,
+    author:
+      articleAuthor,
 
     createdAt:
       formatTimestamp(
-        data.createdAt
+        data?.createdAt
       ),
 
     updatedAt:
       formatTimestamp(
-        data.updatedAt
+        data?.updatedAt
       ),
+
   };
+
 }
 
+
 // ============================================================
-// CATEGORY ARTICLES
+// LOAD ARTICLES JSON
+// ============================================================
+//
+// SERVER SOURCE:
+// public/data/articles.json
+//
+// Browser source is also:
+// /data/articles.json
+//
+// Server Components ke andar relative fetch()
+// use nahi karna hai.
 // ============================================================
 
-export async function getPublishedArticlesByCategory(
-  categoryId: string
-): Promise<PublicArticle[]> {
-  const q = query(
-    collection(db, "articles"),
+async function loadArticles(): Promise<any[]> {
 
-    where(
-      "status",
-      "==",
-      "published"
-    ),
+  try {
 
-    where(
-      "categoryId",
-      "==",
-      categoryId
-    ),
+    const filePath =
+      path.join(
+        process.cwd(),
+        "public",
+        "data",
+        "articles.json"
+      );
 
-    orderBy(
-      "createdAt",
-      "desc"
-    ),
+    const file =
+      await fs.readFile(
+        filePath,
+        "utf-8"
+      );
 
-    limit(18)
-  );
+    const data =
+      JSON.parse(file);
 
-  const snap =
-    await getDocs(q);
+    if (!Array.isArray(data)) {
 
-  // ==========================================================
-  // CATEGORY DOCUMENT
-  // ==========================================================
+      console.error(
+        "articles.json is not an array"
+      );
 
-  const categorySnap =
-    await getDocs(
-      query(
-        collection(
-          db,
-          "categories"
-        ),
+      return [];
+    }
 
-        where(
-          "name",
-          "==",
-          categoryId
-        )
-      )
+    return data;
+
+  } catch (error) {
+
+    console.error(
+      "LOAD ARTICLES JSON ERROR:",
+      error
     );
 
-  const category =
-    categorySnap.empty
-      ? null
-      : categorySnap.docs[0].data();
-
-  // ==========================================================
-  // FORMAT ARTICLES
-  // ==========================================================
-
-  return Promise.all(
-    snap.docs.map(
-      (articleDoc) =>
-        formatArticle(
-          articleDoc,
-          category
-        )
-    )
-  );
+    return [];
+  }
 }
 
+
 // ============================================================
-// LATEST ARTICLES
+// SORT ARTICLES
+// ============================================================
+
+function sortArticles(
+  articles: PublicArticle[]
+) {
+
+  return [
+    ...articles,
+  ].sort(
+    (
+      a,
+      b
+    ) => {
+
+      const priorityA =
+        Number(
+          a.priority || 0
+        );
+
+      const priorityB =
+        Number(
+          b.priority || 0
+        );
+
+
+      if (
+        priorityA !==
+        priorityB
+      ) {
+
+        return (
+          priorityB -
+          priorityA
+        );
+
+      }
+
+
+      const dateA =
+        new Date(
+          a.createdAt ||
+          0
+        ).getTime();
+
+
+      const dateB =
+        new Date(
+          b.createdAt ||
+          0
+        ).getTime();
+
+
+      return (
+        dateB -
+        dateA
+      );
+
+    }
+  );
+
+}
+
+
+// ============================================================
+// PUBLISHED ARTICLES
 // ============================================================
 
 export async function getPublishedArticles(): Promise<
   PublicArticle[]
 > {
-  const q = query(
-    collection(db, "articles"),
 
-    where(
-      "status",
-      "==",
-      "published"
-    ),
+  const rawArticles =
+    await loadArticles();
 
-    orderBy(
-      "priority",
-      "desc"
-    ),
 
-    orderBy(
-      "createdAt",
-      "desc"
-    ),
+  const articles =
+    rawArticles
+      .filter(
+        (
+          article
+        ) =>
+          article?.status ===
+          "published"
+      )
+      .map(
+        (
+          article
+        ) =>
+          formatArticle(
+            article
+          )
+      );
 
-    limit(20)
+
+  return sortArticles(
+    articles
+  ).slice(
+    0,
+    20
   );
 
-  const snap =
-    await getDocs(q);
-
-  return Promise.all(
-    snap.docs.map(
-      (docSnapshot) =>
-        formatArticle(
-          docSnapshot
-        )
-    )
-  );
 }
+
 
 // ============================================================
 // FEATURED ARTICLES
@@ -574,46 +547,89 @@ export async function getPublishedArticles(): Promise<
 export async function getFeaturedArticles(): Promise<
   PublicArticle[]
 > {
-  const q = query(
-    collection(db, "articles"),
 
-    where(
-      "featured",
-      "==",
-      true
-    ),
+  const rawArticles =
+    await loadArticles();
 
-    where(
-      "status",
-      "==",
-      "published"
-    ),
 
-    orderBy(
-      "priority",
-      "desc"
-    ),
+  const articles =
+    rawArticles
+      .filter(
+        (
+          article
+        ) =>
+          article?.status ===
+            "published" &&
+          article?.featured ===
+            true
+      )
+      .map(
+        (
+          article
+        ) =>
+          formatArticle(
+            article
+          )
+      );
 
-    orderBy(
-      "createdAt",
-      "desc"
-    ),
 
-    limit(5)
+  return sortArticles(
+    articles
+  ).slice(
+    0,
+    5
   );
 
-  const snap =
-    await getDocs(q);
-
-  return Promise.all(
-    snap.docs.map(
-      (docSnapshot) =>
-        formatArticle(
-          docSnapshot
-        )
-    )
-  );
 }
+
+
+// ============================================================
+// CATEGORY ARTICLES
+// ============================================================
+
+export async function getPublishedArticlesByCategory(
+  categoryId: string
+): Promise<PublicArticle[]> {
+
+  if (!categoryId) {
+    return [];
+  }
+
+
+  const rawArticles =
+    await loadArticles();
+
+
+  const articles =
+    rawArticles
+      .filter(
+        (
+          article
+        ) =>
+          article?.status ===
+            "published" &&
+          article?.categoryId ===
+            categoryId
+      )
+      .map(
+        (
+          article
+        ) =>
+          formatArticle(
+            article
+          )
+      );
+
+
+  return sortArticles(
+    articles
+  ).slice(
+    0,
+    18
+  );
+
+}
+
 
 // ============================================================
 // SINGLE ARTICLE
@@ -622,31 +638,37 @@ export async function getFeaturedArticles(): Promise<
 export async function getArticleBySlug(
   slug: string
 ): Promise<PublicArticle | null> {
+
   if (!slug) {
     return null;
   }
 
-  const q = query(
-    collection(db, "articles"),
 
-    where(
-      "slug",
-      "==",
-      slug
-    )
-  );
+  const rawArticles =
+    await loadArticles();
 
-  const snapshot =
-    await getDocs(q);
 
-  if (snapshot.empty) {
+  const article =
+    rawArticles.find(
+      (
+        item
+      ) =>
+        item?.slug ===
+        slug
+    );
+
+
+  if (!article) {
     return null;
   }
 
+
   return formatArticle(
-    snapshot.docs[0]
+    article
   );
+
 }
+
 
 // ============================================================
 // RELATED ARTICLES
@@ -656,52 +678,44 @@ export async function getRelatedArticles(
   categoryId: string,
   currentSlug: string
 ): Promise<PublicArticle[]> {
-  const q = query(
-    collection(db, "articles"),
 
-    where(
-      "status",
-      "==",
-      "published"
-    ),
+  if (!categoryId) {
+    return [];
+  }
 
-    where(
-      "categoryId",
-      "==",
-      categoryId
-    ),
 
-    orderBy(
-      "priority",
-      "desc"
-    ),
+  const rawArticles =
+    await loadArticles();
 
-    orderBy(
-      "createdAt",
-      "desc"
-    ),
-
-    limit(6)
-  );
-
-  const snap =
-    await getDocs(q);
 
   const articles =
-    await Promise.all(
-      snap.docs.map(
-        (docSnapshot) =>
-          formatArticle(
-            docSnapshot
-          )
+    rawArticles
+      .filter(
+        (
+          article
+        ) =>
+          article?.status ===
+            "published" &&
+          article?.categoryId ===
+            categoryId &&
+          article?.slug !==
+            currentSlug
       )
-    );
+      .map(
+        (
+          article
+        ) =>
+          formatArticle(
+            article
+          )
+      );
 
-  return articles
-    .filter(
-      (item) =>
-        item.slug !== currentSlug
-    )
-    .slice(0, 5);
+
+  return sortArticles(
+    articles
+  ).slice(
+    0,
+    5
+  );
+
 }
-

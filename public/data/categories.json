@@ -1,0 +1,155 @@
+[
+  {
+    "id": "1dZZyWByie1QMFY32WD5",
+    "name": "Business",
+    "nameHi": "बिजनेस",
+    "slug": "business",
+    "status": "active",
+    "createdAt": "2026-08-08T04:28:08.113Z",
+    "updatedAt": "2026-08-08T04:28:08.113Z"
+  },
+  {
+    "id": "2jQz4ltgoNG13TiIcth4",
+    "status": "active",
+    "slug": "world",
+    "name": "World",
+    "createdAt": "2026-07-26T03:53:30.316Z",
+    "nameHi": "दुनिया",
+    "updatedAt": "2026-08-01T05:29:09.851Z"
+  },
+  {
+    "id": "B0eNnfzv5admHbGplpNU",
+    "slug": "health",
+    "name": "Health",
+    "status": "active",
+    "createdAt": "2026-07-26T03:55:02.825Z",
+    "nameHi": "स्वास्थ्य",
+    "updatedAt": "2026-08-01T05:29:10.378Z"
+  },
+  {
+    "id": "IQOIWV7PBidKLgPt5vg1",
+    "name": "demo",
+    "nameHi": "demo",
+    "slug": "demo",
+    "status": "inactive",
+    "createdAt": "2026-08-12T13:16:59.991Z",
+    "updatedAt": "2026-08-12T13:16:59.991Z"
+  },
+  {
+    "id": "ITMUnYIjFc0XTBBPswfe",
+    "status": "active",
+    "slug": "viral",
+    "name": "Viral",
+    "createdAt": "2026-07-26T03:55:59.686Z",
+    "nameHi": "वायरल",
+    "updatedAt": "2026-08-01T05:29:10.478Z"
+  },
+  {
+    "id": "IbdJvujldjSlzKxPNsXZ",
+    "slug": "technology",
+    "name": "Technology",
+    "status": "active",
+    "createdAt": "2026-07-26T03:54:17.491Z",
+    "nameHi": "टेक्नोलॉजी",
+    "updatedAt": "2026-08-01T05:29:10.578Z"
+  },
+  {
+    "id": "UszvBhERq8TUS9JV924Y",
+    "slug": "religion",
+    "name": "Religion",
+    "status": "active",
+    "createdAt": "2026-07-26T03:55:25.301Z",
+    "nameHi": "धर्म",
+    "updatedAt": "2026-08-01T05:29:10.675Z"
+  },
+  {
+    "id": "bHfyfVzGaOiwKTf27GpR",
+    "status": "active",
+    "slug": "state-news",
+    "name": "State News",
+    "createdAt": "2026-07-26T03:53:41.468Z",
+    "nameHi": "राज्य समाचार",
+    "updatedAt": "2026-08-01T05:29:10.771Z"
+  },
+  {
+    "id": "f09EymYPHETWv0orYdCa",
+    "status": "active",
+    "slug": "lifestyle",
+    "name": "Lifestyle",
+    "createdAt": "2026-07-26T03:54:52.382Z",
+    "nameHi": "लाइफस्टाइल",
+    "updatedAt": "2026-08-01T05:29:10.863Z"
+  },
+  {
+    "id": "gyQbObVvOcAZJIThoQ8p",
+    "slug": "education",
+    "name": "Education",
+    "status": "active",
+    "createdAt": "2026-07-26T03:55:13.897Z",
+    "nameHi": "शिक्षा",
+    "updatedAt": "2026-08-01T05:29:10.992Z"
+  },
+  {
+    "id": "hXSu9IXUa5uDNkjttIVL",
+    "slug": "politics",
+    "name": "Politics",
+    "status": "active",
+    "createdAt": "2026-07-26T03:53:14.531Z",
+    "nameHi": "राजनीति",
+    "updatedAt": "2026-08-01T05:29:11.075Z"
+  },
+  {
+    "id": "hrpdEjMAicTy9vCvjUJY",
+    "slug": "sports",
+    "name": "Sports",
+    "status": "active",
+    "createdAt": "2026-07-26T03:54:30.339Z",
+    "nameHi": "खेल",
+    "updatedAt": "2026-08-01T05:29:11.178Z"
+  },
+  {
+    "id": "jBIVOFjEcJEUg8APXyoT",
+    "status": "active",
+    "slug": "india",
+    "name": "India",
+    "createdAt": "2026-07-26T03:53:02.417Z",
+    "nameHi": "भारत",
+    "updatedAt": "2026-08-01T05:29:11.269Z"
+  },
+  {
+    "id": "lDvdU8x0txhhpx0fduAV",
+    "status": "active",
+    "slug": "crime",
+    "name": "Crime",
+    "createdAt": "2026-07-26T03:53:52.788Z",
+    "nameHi": "अपराध",
+    "updatedAt": "2026-08-01T05:29:11.362Z"
+  },
+  {
+    "id": "nPL5CSazQ6Sz0xLajxOb",
+    "status": "active",
+    "slug": "entertainment",
+    "name": "Entertainment",
+    "createdAt": "2026-07-26T03:54:40.506Z",
+    "nameHi": "मनोरंजन",
+    "updatedAt": "2026-08-01T05:29:11.603Z"
+  },
+  {
+    "id": "qY289pjGMqELPXwCnns4",
+    "slug": "auto",
+    "name": "Auto",
+    "status": "active",
+    "createdAt": "2026-07-26T03:55:47.158Z",
+    "nameHi": "ऑटो",
+    "updatedAt": "2026-08-01T05:29:11.707Z"
+  },
+  {
+    "id": "xSzWw4tKT8O4OuoAcGtu",
+    "slug": "science",
+    "name": "Science",
+    "status": "active",
+    "createdAt": "2026-07-26T03:55:36.124Z",
+    "nameHi": "विज्ञान",
+    "updatedAt": "2026-08-01T05:29:11.810Z"
+  }
+]

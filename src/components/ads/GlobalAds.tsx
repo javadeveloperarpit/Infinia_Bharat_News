@@ -7,9 +7,8 @@ import {
 
 import AdRenderer from "@/components/ads/AdRenderer";
 
-import {
-  getAds,
-  type BusinessAd,
+import type {
+  BusinessAd,
 } from "@/services/ads.service";
 
 export default function GlobalAds() {
@@ -21,10 +20,27 @@ export default function GlobalAds() {
 
     async function loadAds() {
       try {
-        const data = await getAds();
+        const response = await fetch(
+          "/data/ads.json",
+          {
+            cache: "no-store",
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `Ads JSON returned ${response.status}`
+          );
+        }
+
+        const data = await response.json();
 
         if (mounted) {
-          setAds(data);
+          setAds(
+            Array.isArray(data?.ads)
+              ? data.ads
+              : []
+          );
         }
       } catch (error) {
         console.error(
@@ -47,80 +63,60 @@ export default function GlobalAds() {
 
   return (
     <>
-      {/* ================================================= */}
       {/* GLOBAL POPUP */}
-      {/* ================================================= */}
 
       <AdRenderer
         ads={ads}
         type="popup"
-        position="global_popup"
       />
 
-      {/* ================================================= */}
       {/* PAGE TRANSITION */}
-      {/* ================================================= */}
 
       <AdRenderer
         ads={ads}
         type="page_transition"
-        position="page_transition"
       />
 
-      {/* ================================================= */}
       {/* FLOATING TV */}
-      {/* ================================================= */}
 
       <AdRenderer
         ads={ads}
         type="floating_tv"
-        position="floating_tv"
       />
 
-      {/* ================================================= */}
       {/* 3D CUBE */}
-      {/* ================================================= */}
 
       <AdRenderer
         ads={ads}
         type="cube"
       />
 
-      {/* ================================================= */}
       {/* STICKY BOTTOM */}
-      {/* ================================================= */}
 
       <AdRenderer
         ads={ads}
         type="sticky_bottom"
-        position="sticky_bottom"
       />
 
-      {/* ================================================= */}
       {/* BANNER */}
-      {/* ================================================= */}
 
       <AdRenderer
         ads={ads}
         type="banner"
       />
 
-      {/* ================================================= */}
-      {/* NATIVE */}
-      {/* ================================================= */}
-
-      <AdRenderer
-        ads={ads}
-        type="native"
-      />
-
-      {/* ================================================= */}
       {/* SHORTS VIDEO */}
-      {/* ================================================= */}
 
       <AdRenderer
         ads={ads}
         type="shorts_video"
+      />
+
+      {/* NATIVE */}
+
+      <AdRenderer
+        ads={ads}
+        type="native"
       />
     </>
   );

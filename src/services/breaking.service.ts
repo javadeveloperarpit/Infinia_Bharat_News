@@ -1,18 +1,12 @@
 import {
   collection,
-  addDoc,
   getDocs,
-  deleteDoc,
-  doc,
-  updateDoc,
-  serverTimestamp,
 } from "firebase/firestore";
 
-import { db } from "@/lib/firebase/firebase";
-
-// ======================================================
-// TYPES
-// ======================================================
+import {
+  auth,
+  db,
+} from "@/lib/firebase/firebase";
 
 export interface BreakingNewsData {
   id: string;
@@ -23,27 +17,56 @@ export interface BreakingNewsData {
   updatedAt?: any;
 }
 
-// ======================================================
-// CREATE BREAKING NEWS
-// ======================================================
+async function getAuthToken() {
+  const user = auth.currentUser;
 
-export async function createBreakingNews(
-  data: Omit<BreakingNewsData, "id" | "createdAt" | "updatedAt">
-) {
-  const ref = await addDoc(
-    collection(db, "breakingNews"),
-    {
-      ...data,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    }
-  );
+  if (!user) {
+    throw new Error("Not logged in");
+  }
 
-  return ref.id;
+  return user.getIdToken();
 }
 
 // ======================================================
-// GET BREAKING NEWS
+// CREATE
+// ======================================================
+
+export async function createBreakingNews(
+  data: Omit<
+    BreakingNewsData,
+    "id" | "createdAt" | "updatedAt"
+  >
+) {
+  const token = await getAuthToken();
+
+  const response = await fetch(
+    "/api/admin/breaking-news",
+    {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+
+      body: JSON.stringify(data),
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result?.message ||
+      "Failed to create breaking news"
+    );
+  }
+
+  return result;
+}
+
+// ======================================================
+// GET
 // ======================================================
 
 export async function getBreakingNews(): Promise<
@@ -58,60 +81,88 @@ export async function getBreakingNews(): Promise<
 
     return {
       ...data,
-
-      // IMPORTANT:
-      // Firestore document ID must ALWAYS win.
       id: item.id,
     } as BreakingNewsData;
   });
 }
 
 // ======================================================
-// DELETE BREAKING NEWS
-// ======================================================
-
-export async function deleteBreakingNews(
-  id: string
-) {
-  if (!id || !id.trim()) {
-    throw new Error(
-      "Invalid Breaking News document ID."
-    );
-  }
-
-  await deleteDoc(
-    doc(
-      db,
-      "breakingNews",
-      id
-    )
-  );
-}
-
-// ======================================================
-// UPDATE BREAKING NEWS
+// UPDATE
 // ======================================================
 
 export async function updateBreakingNews(
   id: string,
   data: Partial<BreakingNewsData>
 ) {
-  if (!id || !id.trim()) {
+  if (!id) {
     throw new Error(
-      "Invalid Breaking News document ID."
+      "Breaking News ID missing"
     );
   }
 
-  await updateDoc(
-    doc(
-      db,
-      "breakingNews",
-      id
-    ),
+  const token = await getAuthToken();
+
+  const response = await fetch(
+    `/api/admin/breaking-news/${id}`,
     {
-      ...data,
-      updatedAt: serverTimestamp(),
+      method: "PUT",
+
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+
+      body: JSON.stringify(data),
     }
   );
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result?.message ||
+      "Failed to update breaking news"
+    );
+  }
+
+  return result;
 }
 
+// ======================================================
+// DELETE
+// ======================================================
+
+export async function deleteBreakingNews(
+  id: string
+) {
+  if (!id) {
+    throw new Error(
+      "Breaking News ID missing"
+    );
+  }
+
+  const token = await getAuthToken();
+
+  const response = await fetch(
+    `/api/admin/breaking-news/${id}`,
+    {
+      method: "DELETE",
+
+      headers: {
+        Authorization:
+          `Bearer ${token}`,
+      },
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result?.message ||
+      "Failed to delete breaking news"
+    );
+  }
+
+  return result;
+}

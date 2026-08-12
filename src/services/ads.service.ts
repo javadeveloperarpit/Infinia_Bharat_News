@@ -40,28 +40,6 @@ export type AdType =
   | "native";
 
 // ======================================================
-// AD POSITIONS
-// ======================================================
-
-export type AdPosition =
-  | "homepage_top"
-  | "homepage_middle"
-  | "homepage_bottom"
-  | "article_top"
-  | "article_after_intro"
-  | "article_middle"
-  | "article_before_related"
-  | "sidebar_top"
-  | "sidebar_middle"
-  | "sidebar_bottom"
-  | "shorts_between"
-  | "shorts_after_3"
-  | "global_popup"
-  | "page_transition"
-  | "floating_tv"
-  | "sticky_bottom";
-
-// ======================================================
 // FREQUENCY
 // ======================================================
 
@@ -100,15 +78,11 @@ export interface AdCubeFace {
 // ======================================================
 // NORMAL AD LAYOUT
 //
-// ONLY SCALE
+// SCALE ONLY
 //
 // Used by:
-// banner
-// native
 // popup
 // page_transition
-// shorts_video
-// sticky_bottom
 // ======================================================
 
 export interface NormalDeviceLayout {
@@ -121,9 +95,28 @@ export interface NormalAdLayout {
 }
 
 // ======================================================
+// STICKY BOTTOM LAYOUT
+//
+// WIDTH + HEIGHT ONLY
+//
+// NO X/Y
+// NO SCALE
+// ======================================================
+
+export interface StickyBottomDeviceLayout {
+  width: number;
+  height: number;
+}
+
+export interface StickyBottomAdLayout {
+  desktop: StickyBottomDeviceLayout;
+  mobile: StickyBottomDeviceLayout;
+}
+
+// ======================================================
 // FLOATING DEVICE LAYOUT
 //
-// X/Y POSITIONING IS ONLY AVAILABLE FOR:
+// X/Y + SCALE ONLY FOR:
 // cube
 // floating_tv
 // ======================================================
@@ -143,14 +136,14 @@ export interface FloatingAdLayout {
 
 // ======================================================
 // COMMON AD DATA
+//
+// NO POSITION FIELD
 // ======================================================
 
 interface CommonAdData {
   title: string;
 
   type: AdType;
-
-  position: AdPosition;
 
   active: boolean;
 
@@ -162,10 +155,6 @@ interface CommonAdData {
 
   openInNewTab?: boolean;
 
-  layout?:
-    | NormalAdLayout
-    | FloatingAdLayout;
-
   createdAt?: unknown;
 
   updatedAt?: unknown;
@@ -173,6 +162,10 @@ interface CommonAdData {
 
 // ======================================================
 // BANNER
+//
+// NO LAYOUT
+// NO SCALE
+// NO POSITION
 // ======================================================
 
 export interface BannerAd
@@ -186,6 +179,10 @@ export interface BannerAd
 
 // ======================================================
 // NATIVE
+//
+// NO LAYOUT
+// NO SCALE
+// NO POSITION
 // ======================================================
 
 export interface NativeAd
@@ -199,6 +196,8 @@ export interface NativeAd
 
 // ======================================================
 // POPUP
+//
+// SCALE AVAILABLE
 // ======================================================
 
 export interface PopupAd
@@ -214,10 +213,14 @@ export interface PopupAd
   frequency?: AdFrequency;
 
   closeable?: boolean;
+
+  layout?: NormalAdLayout;
 }
 
 // ======================================================
 // PAGE TRANSITION
+//
+// SCALE AVAILABLE
 // ======================================================
 
 export interface PageTransitionAd
@@ -233,10 +236,17 @@ export interface PageTransitionAd
   frequency?: AdFrequency;
 
   closeable?: boolean;
+
+  layout?: NormalAdLayout;
 }
 
 // ======================================================
 // STICKY BOTTOM
+//
+// WIDTH + HEIGHT ONLY
+//
+// NO X/Y
+// NO SCALE
 // ======================================================
 
 export interface StickyBottomAd
@@ -248,10 +258,16 @@ export interface StickyBottomAd
   link: string;
 
   closeable?: boolean;
+
+  layout?: StickyBottomAdLayout;
 }
 
 // ======================================================
 // SHORTS VIDEO
+//
+// NO LAYOUT
+// NO SCALE
+// NO POSITION
 // ======================================================
 
 export interface ShortsVideoAd
@@ -278,7 +294,7 @@ export interface ShortsVideoAd
 // ======================================================
 // FLOATING TV
 //
-// X/Y POSITIONING ENABLED
+// X/Y + SCALE ENABLED
 // ======================================================
 
 export interface FloatingTvAd
@@ -300,12 +316,14 @@ export interface FloatingTvAd
   muted?: boolean;
 
   width?: number;
+
+  layout?: FloatingAdLayout;
 }
 
 // ======================================================
 // 3D CUBE
 //
-// X/Y POSITIONING ENABLED
+// X/Y + SCALE ENABLED
 // ======================================================
 
 export interface CubeAd
@@ -319,6 +337,8 @@ export interface CubeAd
   cubeSameImage?: boolean;
 
   width?: number;
+
+  layout?: FloatingAdLayout;
 }
 
 // ======================================================
@@ -375,7 +395,7 @@ function getTypeCollection(
 // ======================================================
 // NORMAL LAYOUT SANITIZER
 //
-// ONLY SCALE
+// ONLY POPUP + PAGE TRANSITION
 // ======================================================
 
 function sanitizeNormalLayout(
@@ -388,16 +408,14 @@ function sanitizeNormalLayout(
   return {
     desktop: {
       scale:
-        typeof layout.desktop?.scale ===
-        "number"
+        typeof layout.desktop?.scale === "number"
           ? layout.desktop.scale
           : 1,
     },
 
     mobile: {
       scale:
-        typeof layout.mobile?.scale ===
-        "number"
+        typeof layout.mobile?.scale === "number"
           ? layout.mobile.scale
           : 1,
     },
@@ -405,9 +423,45 @@ function sanitizeNormalLayout(
 }
 
 // ======================================================
+// STICKY BOTTOM LAYOUT SANITIZER
+//
+// WIDTH + HEIGHT ONLY
+// ======================================================
+
+function sanitizeStickyBottomLayout(
+  layout?: StickyBottomAdLayout
+): StickyBottomAdLayout {
+  return {
+    desktop: {
+      width:
+        typeof layout?.desktop?.width === "number"
+          ? layout.desktop.width
+          : 1100,
+
+      height:
+        typeof layout?.desktop?.height === "number"
+          ? layout.desktop.height
+          : 92,
+    },
+
+    mobile: {
+      width:
+        typeof layout?.mobile?.width === "number"
+          ? layout.mobile.width
+          : 440,
+
+      height:
+        typeof layout?.mobile?.height === "number"
+          ? layout.mobile.height
+          : 72,
+    },
+  };
+}
+
+// ======================================================
 // FLOATING LAYOUT SANITIZER
 //
-// X/Y ONLY FOR CUBE + FLOATING TV
+// X/Y + SCALE ONLY FOR CUBE + FLOATING TV
 // ======================================================
 
 function sanitizeFloatingLayout(
@@ -420,64 +474,54 @@ function sanitizeFloatingLayout(
   return {
     desktop: {
       width:
-        typeof layout.desktop?.width ===
-        "number"
+        typeof layout.desktop?.width === "number"
           ? layout.desktop.width
           : 160,
 
       height:
-        typeof layout.desktop?.height ===
-        "number"
+        typeof layout.desktop?.height === "number"
           ? layout.desktop.height
           : 160,
 
       x:
-        typeof layout.desktop?.x ===
-        "number"
+        typeof layout.desktop?.x === "number"
           ? layout.desktop.x
           : 0,
 
       y:
-        typeof layout.desktop?.y ===
-        "number"
+        typeof layout.desktop?.y === "number"
           ? layout.desktop.y
           : 0,
 
       scale:
-        typeof layout.desktop?.scale ===
-        "number"
+        typeof layout.desktop?.scale === "number"
           ? layout.desktop.scale
           : 1,
     },
 
     mobile: {
       width:
-        typeof layout.mobile?.width ===
-        "number"
+        typeof layout.mobile?.width === "number"
           ? layout.mobile.width
           : 140,
 
       height:
-        typeof layout.mobile?.height ===
-        "number"
+        typeof layout.mobile?.height === "number"
           ? layout.mobile.height
           : 140,
 
       x:
-        typeof layout.mobile?.x ===
-        "number"
+        typeof layout.mobile?.x === "number"
           ? layout.mobile.x
           : 0,
 
       y:
-        typeof layout.mobile?.y ===
-        "number"
+        typeof layout.mobile?.y === "number"
           ? layout.mobile.y
           : 0,
 
       scale:
-        typeof layout.mobile?.scale ===
-        "number"
+        typeof layout.mobile?.scale === "number"
           ? layout.mobile.scale
           : 1,
     },
@@ -487,9 +531,7 @@ function sanitizeFloatingLayout(
 // ======================================================
 // SANITIZE AD DATA
 //
-// This is the most important part.
-//
-// Irrelevant attributes are NOT written.
+// POSITION IS NOT STORED.
 // ======================================================
 
 function sanitizeAd(
@@ -497,9 +539,11 @@ function sanitizeAd(
 ): AdsData {
   const common = {
     title: data.title || "",
+
     type: data.type,
-    position: data.position,
-    active: data.active ?? true,
+
+    active:
+      data.active ?? true,
 
     priority:
       data.priority ?? 1,
@@ -527,13 +571,6 @@ function sanitizeAd(
       image: data.image || "",
 
       link: data.link || "",
-
-      layout:
-        sanitizeNormalLayout(
-          data.layout as
-            | NormalAdLayout
-            | undefined
-        ),
     };
   }
 
@@ -550,13 +587,6 @@ function sanitizeAd(
       image: data.image || "",
 
       link: data.link || "",
-
-      layout:
-        sanitizeNormalLayout(
-          data.layout as
-            | NormalAdLayout
-            | undefined
-        ),
     };
   }
 
@@ -586,9 +616,7 @@ function sanitizeAd(
 
       layout:
         sanitizeNormalLayout(
-          data.layout as
-            | NormalAdLayout
-            | undefined
+          data.layout
         ),
     };
   }
@@ -622,9 +650,7 @@ function sanitizeAd(
 
       layout:
         sanitizeNormalLayout(
-          data.layout as
-            | NormalAdLayout
-            | undefined
+          data.layout
         ),
     };
   }
@@ -650,10 +676,8 @@ function sanitizeAd(
         data.closeable ?? true,
 
       layout:
-        sanitizeNormalLayout(
-          data.layout as
-            | NormalAdLayout
-            | undefined
+        sanitizeStickyBottomLayout(
+          data.layout
         ),
     };
   }
@@ -703,20 +727,13 @@ function sanitizeAd(
 
       muted:
         data.muted ?? true,
-
-      layout:
-        sanitizeNormalLayout(
-          data.layout as
-            | NormalAdLayout
-            | undefined
-        ),
     };
   }
 
   // ====================================================
   // FLOATING TV
   //
-  // X/Y ALLOWED
+  // X/Y + SCALE
   // ====================================================
 
   if (
@@ -764,9 +781,7 @@ function sanitizeAd(
 
       layout:
         sanitizeFloatingLayout(
-          data.layout as
-            | FloatingAdLayout
-            | undefined
+          data.layout
         ),
     };
   }
@@ -774,7 +789,7 @@ function sanitizeAd(
   // ====================================================
   // 3D CUBE
   //
-  // X/Y ALLOWED
+  // X/Y + SCALE
   // ====================================================
 
   if (data.type === "cube") {
@@ -798,16 +813,10 @@ function sanitizeAd(
 
       layout:
         sanitizeFloatingLayout(
-          data.layout as
-            | FloatingAdLayout
-            | undefined
+          data.layout
         ),
     };
   }
-
-  // ====================================================
-  // FALLBACK
-  // ====================================================
 
   return data;
 }
@@ -838,55 +847,48 @@ export async function createAd(
       }
     );
 
+  // Sync after Firestore succeeds
+  await syncAdsToGitHub();
+
   return docRef.id;
 }
 
 // ======================================================
 // GET ALL ADS
-//
-// Reads every type collection.
 // ======================================================
 
-export async function getAds(): Promise<
-  BusinessAd[]
-> {
-  const snapshots =
-    await Promise.all(
-      (
-        [
-          "banner",
-          "cube",
-          "popup",
-          "page_transition",
-          "shorts_video",
-          "floating_tv",
-          "sticky_bottom",
-          "native",
-        ] as AdType[]
-      ).map(
-        (type) =>
-          getDocs(
-            getTypeCollection(type)
-          )
-      )
-    );
+const GITHUB_ADS_URL =
+  "https://raw.githubusercontent.com/javadeveloperarpit/Infinia_Bharat_News/main/public/data/ads.json";
 
-  const ads: BusinessAd[] = [];
+export async function getAds(): Promise<BusinessAd[]> {
+  try {
+    const response = await fetch(GITHUB_ADS_URL, {
+      cache: "no-store",
+    });
 
-  snapshots.forEach(
-    (snapshot) => {
-      snapshot.docs.forEach(
-        (item) => {
-          ads.push({
-            id: item.id,
-            ...(item.data() as AdsData),
-          });
-        }
+    if (!response.ok) {
+      throw new Error(
+        `GitHub ads fetch failed: ${response.status}`
       );
     }
-  );
 
-  return ads;
+    const data = await response.json();
+
+    if (!data || !Array.isArray(data.ads)) {
+      return [];
+    }
+
+    return data.ads.filter(
+      (ad: BusinessAd) => ad && ad.active === true
+    );
+  } catch (error) {
+    console.error(
+      "Failed to load ads from GitHub:",
+      error
+    );
+
+    return [];
+  }
 }
 
 // ======================================================
@@ -911,9 +913,6 @@ export async function getAdsByType(
 
 // ======================================================
 // GET SINGLE AD
-//
-// Since type is part of the path,
-// type is required.
 // ======================================================
 
 export async function getAd(
@@ -943,9 +942,6 @@ export async function getAd(
 
 // ======================================================
 // UPDATE AD
-//
-// Type is required because it determines
-// which subcollection the document belongs to.
 // ======================================================
 
 export async function updateAd(
@@ -984,7 +980,9 @@ export async function updateAd(
         serverTimestamp(),
     }
   );
+  await syncAdsToGitHub();
 }
+
 
 // ======================================================
 // DELETE AD
@@ -1003,13 +1001,14 @@ export async function deleteAd(
       id
     )
   );
+
+  await syncAdsToGitHub();
 }
 
 // ======================================================
 // OPTIONAL HELPER
-// ======================================================
 //
-// Useful when checking whether an ad supports
+// Only checks whether the ad supports
 // free X/Y positioning.
 // ======================================================
 
@@ -1018,4 +1017,43 @@ export function supportsFreePosition(
 ): boolean {
   return isFloatingAdType(type);
 }
+// ======================================================
+// GITHUB SYNC
+// ======================================================
 
+async function syncAdsToGitHub(): Promise<void> {
+  try {
+    const response = await fetch(
+      "/api/admin/github/sync-ads",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result?.message ||
+          "GitHub ads sync failed"
+      );
+    }
+
+    console.log(
+      "Ads synced to GitHub:",
+      result
+    );
+  } catch (error) {
+    console.error(
+      "GitHub ads sync failed:",
+      error
+    );
+
+    // IMPORTANT:
+    // Firestore operation should NOT fail
+    // just because GitHub sync failed.
+  }
+}

@@ -22,6 +22,7 @@ export default function WebsiteLayout({
 
       {children}
       <GlobalAds />
+      
       <Footer />
     </>
   );

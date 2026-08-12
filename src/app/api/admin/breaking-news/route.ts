@@ -18,22 +18,22 @@ import {
 } from "@/lib/auth/verify-role";
 
 import {
-  createSlug,
-} from "@/lib/utils/create-slug";
+  syncBreakingNewsFromFirebase,
+} from "@/lib/github/breaking-news-github-sync";
 
-import {
-  syncVideosFromFirebase,
-} from "@/lib/github/video-github-sync";
 
 // ======================================================
-// CREATE VIDEO
+// CREATE BREAKING NEWS
 // ======================================================
 
 export async function POST(
   request: NextRequest
 ) {
-
   try {
+
+    // ==================================================
+    // AUTH
+    // ==================================================
 
     const token =
       request.headers
@@ -44,7 +44,6 @@ export async function POST(
         );
 
     if (!token) {
-
       return NextResponse.json(
         {
           success: false,
@@ -54,63 +53,58 @@ export async function POST(
           status: 401,
         }
       );
-
     }
 
-    const user: any =
-      await verifyRole(
-        token,
-        [
-          "admin",
-          "editor",
-          "superAdmin",
-        ]
-      );
+    await verifyRole(
+      token,
+      [
+        "admin",
+        "editor",
+        "superAdmin",
+      ]
+    );
+
+
+    // ==================================================
+    // BODY
+    // ==================================================
 
     const body =
       await request.json();
 
-    if (!body.title?.trim()) {
+    const text =
+      String(
+        body?.text || ""
+      ).trim();
 
+    if (!text) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Video title is required",
+            "Breaking news text is required",
         },
         {
           status: 400,
         }
       );
-
     }
 
-    const slug =
-      createSlug(
-        body.title
-      );
 
-    const videoData = {
+    // ==================================================
+    // FIREBASE CREATE
+    // ==================================================
 
-      ...body,
+    const newsData = {
 
-      slug,
+      text,
 
-      author: {
+      active:
+        body?.active !== false,
 
-        uid:
-          user?.uid || "",
-
-        name:
-          user?.name || "",
-
-        email:
-          user?.email || "",
-
-        role:
-          user?.role || "",
-
-      },
+      expiry:
+        body?.expiry ||
+        "24h",
 
       createdAt:
         FieldValue.serverTimestamp(),
@@ -120,25 +114,26 @@ export async function POST(
 
     };
 
-    // ==============================================
-    // FIREBASE CREATE
-    // ==============================================
 
     const ref =
       await adminDb
-        .collection("videos")
+        .collection(
+          "breakingNews"
+        )
         .add(
-          videoData
+          newsData
         );
 
+
     console.log(
-      "VIDEO CREATED:",
+      "BREAKING NEWS CREATED:",
       ref.id
     );
 
-    // ==============================================
+
+    // ==================================================
     // GITHUB SYNC
-    // ==============================================
+    // ==================================================
 
     let githubSynced =
       false;
@@ -149,10 +144,11 @@ export async function POST(
     let githubError =
       "";
 
+
     try {
 
       const result =
-        await syncVideosFromFirebase();
+        await syncBreakingNewsFromFirebase();
 
       githubSynced =
         result.success;
@@ -169,39 +165,41 @@ export async function POST(
         "GitHub sync failed";
 
       console.error(
-        "VIDEO CREATE GITHUB ERROR:",
+        "BREAKING NEWS CREATE GITHUB ERROR:",
         error
       );
 
     }
 
-    // ==============================================
+
+    // ==================================================
     // RESPONSE
-    // ==============================================
+    // ==================================================
 
-    return NextResponse.json({
+    return NextResponse.json(
+      {
+        success: true,
 
-      success: true,
+        id:
+          ref.id,
 
-      id:
-        ref.id,
+        githubSynced,
 
-      slug,
+        githubCount,
 
-      githubSynced,
-
-      githubCount,
-
-      githubError,
-
-    });
+        githubError,
+      },
+      {
+        status: 200,
+      }
+    );
 
   } catch (
     error: any
   ) {
 
     console.error(
-      "CREATE VIDEO ERROR:",
+      "CREATE BREAKING NEWS ERROR:",
       error
     );
 
@@ -211,19 +209,24 @@ export async function POST(
 
         message:
           error?.message ||
-          "Failed to create video",
+          "Failed to create breaking news",
       },
       {
         status: 500,
       }
     );
-
   }
-
 }
 
+
 // ======================================================
-// GET ALL VIDEOS
+// GET BREAKING NEWS
+// ======================================================
+//
+// Admin listing
+//
+// Firebase direct read is okay.
+// Public website GitHub JSON read karegi.
 // ======================================================
 
 export async function GET() {
@@ -232,23 +235,25 @@ export async function GET() {
 
     const snapshot =
       await adminDb
-        .collection("videos")
+        .collection(
+          "breakingNews"
+        )
         .get();
 
-    const videos =
+
+    const news =
       snapshot.docs.map(
         (doc) => ({
-
           id:
             doc.id,
 
           ...doc.data(),
-
         })
       );
 
+
     return NextResponse.json(
-      videos
+      news
     );
 
   } catch (
@@ -256,7 +261,7 @@ export async function GET() {
   ) {
 
     console.error(
-      "GET VIDEOS ERROR:",
+      "GET BREAKING NEWS ERROR:",
       error
     );
 
@@ -266,13 +271,11 @@ export async function GET() {
 
         message:
           error?.message ||
-          "Failed to fetch videos",
+          "Failed to fetch breaking news",
       },
       {
         status: 500,
       }
     );
-
   }
-
 }

@@ -338,19 +338,15 @@ rounded-lg
 
 
 <Image
-
-src={story.thumbnail}
-
-alt={story.title}
-
-fill
-
-className="
-object-cover
-group-hover:scale-110
-transition
-"
-
+  src={story.thumbnail}
+  alt={story.title}
+  fill
+  sizes="128px"
+  className="
+    object-cover
+    group-hover:scale-110
+    transition
+  "
 />
 
 

@@ -1,267 +1,230 @@
 import {
-
   collection,
-  addDoc,
   getDocs,
   getDoc,
-  deleteDoc,
   doc,
-  updateDoc,
-  serverTimestamp
-
 } from "firebase/firestore";
 
-
 import {
-  db
+  auth,
+  db,
 } from "@/lib/firebase/firebase";
 
-
-
-
+// ======================================================
+// TYPES
+// ======================================================
 
 export interface CategoryData {
-
-id:string;
-
-name:string;
-
-nameHi:string;
-
-slug:string;
-
-status:"active"|"inactive";
-
+  id: string;
+  name: string;
+  nameHi: string;
+  slug: string;
+  status: "active" | "inactive";
 }
 
+// ======================================================
+// AUTH TOKEN
+// ======================================================
 
+async function getAuthToken() {
+  const user =
+    auth.currentUser;
 
+  if (!user) {
+    throw new Error(
+      "Not logged in"
+    );
+  }
 
+  return user.getIdToken();
+}
 
-
+// ======================================================
 // GET CATEGORY BY ID
+// ======================================================
 
 export async function getCategoryById(
-id:string
-):Promise<CategoryData|null>{
+  id: string
+): Promise<CategoryData | null> {
+  const snapshot =
+    await getDoc(
+      doc(
+        db,
+        "categories",
+        id
+      )
+    );
 
+  if (!snapshot.exists()) {
+    return null;
+  }
 
-
-const snapshot =
-await getDoc(
-
-doc(
-db,
-"categories",
-id
-)
-
-);
-
-
-
-
-if(snapshot.exists()){
-
-
-
-return {
-
-
-id:snapshot.id,
-
-
-...snapshot.data()
-
-
-} as CategoryData;
-
-
-
+  return {
+    id: snapshot.id,
+    ...snapshot.data(),
+  } as CategoryData;
 }
 
-
-
-
-return null;
-
-
-
-}
-
-
-
-
-
-
-
-
+// ======================================================
 // CREATE CATEGORY
+//
+// Client
+// ↓
+// API
+// ↓
+// Firebase
+// ↓
+// GitHub
+// ======================================================
 
 export async function createCategory(
-data:Omit<CategoryData,"id">
-){
+  data: Omit<CategoryData, "id">
+) {
+  const token =
+    await getAuthToken();
 
+  const response =
+    await fetch(
+      "/api/admin/categories",
+      {
+        method: "POST",
 
+        headers: {
+          "Content-Type":
+            "application/json",
 
-const ref =
-await addDoc(
+          Authorization:
+            `Bearer ${token}`,
+        },
 
-collection(
-db,
-"categories"
-),
+        body:
+          JSON.stringify(data),
+      }
+    );
 
-{
+  const result =
+    await response.json();
 
+  if (!response.ok) {
+    throw new Error(
+      result?.message ||
+      "Failed to create category"
+    );
+  }
 
-...data,
-
-
-createdAt:
-serverTimestamp(),
-
-
-updatedAt:
-serverTimestamp()
-
-
+  return result;
 }
 
-);
-
-
-
-return ref.id;
-
-
-
-}
-
-
-
-
-
-
-
-
-
+// ======================================================
 // GET CATEGORIES
+//
+// Admin listing ke liye Firebase read
+// ======================================================
 
-export async function getCategories(){
+export async function getCategories() {
+  const snapshot =
+    await getDocs(
+      collection(
+        db,
+        "categories"
+      )
+    );
 
-
-
-const snapshot =
-await getDocs(
-
-collection(
-db,
-"categories"
-)
-
-);
-
-
-
-
-return snapshot.docs.map(
-
-(item)=>(
-
-
-{
-
-
-id:item.id,
-
-
-...item.data()
-
-
-} as CategoryData
-
-
-)
-
-);
-
-
-
+  return snapshot.docs.map(
+    (item) => ({
+      id: item.id,
+      ...item.data(),
+    })
+  ) as CategoryData[];
 }
 
-
-
-
-
-
-
-
-
-// DELETE CATEGORY
-
-export async function deleteCategory(
-id:string
-){
-
-
-
-await deleteDoc(
-
-doc(
-db,
-"categories",
-id
-)
-
-);
-
-
-
-}
-
-
-
-
-
-
-
-
-
+// ======================================================
 // UPDATE CATEGORY
+// ======================================================
 
 export async function updateCategory(
+  id: string,
+  data: Partial<CategoryData>
+) {
+  if (!id) {
+    throw new Error(
+      "Category ID missing"
+    );
+  }
 
-id:string,
+  const token =
+    await getAuthToken();
 
-data:Partial<CategoryData>
+  const response =
+    await fetch(
+      `/api/admin/categories/${id}`,
+      {
+        method: "PUT",
 
-){
+        headers: {
+          "Content-Type":
+            "application/json",
 
+          Authorization:
+            `Bearer ${token}`,
+        },
 
+        body:
+          JSON.stringify(data),
+      }
+    );
 
-await updateDoc(
+  const result =
+    await response.json();
 
-doc(
-db,
-"categories",
-id
-),
+  if (!response.ok) {
+    throw new Error(
+      result?.message ||
+      "Failed to update category"
+    );
+  }
 
-{
-
-
-...data,
-
-
-updatedAt:
-serverTimestamp()
-
-
+  return result;
 }
 
-);
+// ======================================================
+// DELETE CATEGORY
+// ======================================================
 
+export async function deleteCategory(
+  id: string
+) {
+  if (!id) {
+    throw new Error(
+      "Category ID missing"
+    );
+  }
 
+  const token =
+    await getAuthToken();
 
+  const response =
+    await fetch(
+      `/api/admin/categories/${id}`,
+      {
+        method: "DELETE",
+
+        headers: {
+          Authorization:
+            `Bearer ${token}`,
+        },
+      }
+    );
+
+  const result =
+    await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result?.message ||
+      "Failed to delete category"
+    );
+  }
+
+  return result;
 }

@@ -98,22 +98,25 @@ border-[#ECCA6D]/20
 >
 
 
-<div className="
-container-news
-overflow-x-auto
-">
-
+<div
+  className="
+    container-news
+    overflow-x-auto
+  "
+  style={{
+    scrollbarWidth: "none",
+    msOverflowStyle: "none",
+  }}
+>
 
 <div
-
-className="
-flex
-items-center
-gap-8
-h-12
-min-w-max
-"
-
+  className="
+    flex
+    items-center
+    gap-8
+    h-12
+    min-w-max
+  "
 >
 
 

@@ -8,16 +8,25 @@ import {
   Eye,
 } from "lucide-react";
 
+interface BaseCardData {
+  id: string;
+  title: string;
+  thumbnail: string;
+
+  category?: string;
+  createdAt?: any;
+  views?: number;
+
+  slug?: string;
+
+  // Native Ad
+  isNativeAd?: boolean;
+  adLink?: string;
+  openInNewTab?: boolean;
+}
+
 interface Props {
-  article: {
-    id: string;
-    slug: string;
-    title: string;
-    thumbnail: string;
-    category?: string;
-    createdAt?: any;
-    views?: number;
-  };
+  article: BaseCardData;
 }
 
 function generateViews(id: string) {
@@ -34,14 +43,14 @@ function generateViews(id: string) {
 
   if (views >= 1000) {
     return (
-      (views / 1000).toFixed(1) + "K"
+      (views / 1000).toFixed(1) +
+      "K"
     );
   }
 
   return String(views);
 }
 
-/* SAFE DATE FORMATTER */
 function formatArticleDate(value: any) {
   if (!value) {
     return "Today";
@@ -50,31 +59,27 @@ function formatArticleDate(value: any) {
   try {
     let date: Date;
 
-    /* Firestore Timestamp */
     if (
       value &&
       typeof value.toDate === "function"
     ) {
       date = value.toDate();
-    }
-
-    /* Firestore timestamp object */
-    else if (
+    } else if (
       typeof value === "object" &&
       typeof value.seconds === "number"
     ) {
       date = new Date(
         value.seconds * 1000
       );
-    }
-
-    /* Normal string / number */
-    else {
+    } else {
       date = new Date(value);
     }
 
-    /* Invalid date protection */
-    if (Number.isNaN(date.getTime())) {
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
       return "Today";
     }
 
@@ -92,196 +97,300 @@ export default function NewsCard({
 
   const {
     id,
-    slug,
     title,
     thumbnail,
     category,
     createdAt,
     views,
+    slug,
+
+    isNativeAd = false,
+    adLink,
+    openInNewTab,
   } = article;
 
-  return (
-    <Link
-      href={`/news/${slug}`}
+
+  // ==================================================
+  // SAME CARD FOR ARTICLE + NATIVE AD
+  // ==================================================
+
+  const card = (
+    <div
       className="
         group
-        block
+        flex
+        w-full
+        min-w-0
         h-full
+        gap-3
+        sm:gap-4
+        rounded-xl
+        overflow-hidden
+        bg-white
+        border
+        border-zinc-200
+        p-3
+        hover:border-red-600
+        hover:shadow-lg
+        transition-all
+        duration-300
       "
     >
+
+      {/* IMAGE */}
+
+      <div
+        className="
+          relative
+          w-[42%]
+          max-w-[220px]
+          min-w-[120px]
+          aspect-[16/9]
+          shrink-0
+          overflow-hidden
+          rounded-lg
+          bg-zinc-200
+        "
+      >
+
+        {thumbnail ? (
+          <Image
+            src={thumbnail}
+            alt={title}
+            fill
+            sizes="
+              (max-width:639px) 42vw,
+              (max-width:1023px) 35vw,
+              220px
+            "
+            className="
+              object-cover
+              transition-transform
+              duration-500
+              group-hover:scale-105
+            "
+          />
+        ) : (
+          <div
+            className="
+              absolute
+              inset-0
+              bg-zinc-200
+            "
+          />
+        )}
+
+        {/* AD LABEL */}
+
+        {isNativeAd && (
+          <span
+            className="
+              absolute
+              top-2
+              left-2
+              z-10
+              rounded
+              bg-black/75
+              px-2
+              py-1
+              text-[8px]
+              sm:text-[9px]
+              font-bold
+              uppercase
+              tracking-wide
+              text-white
+              backdrop-blur-sm
+            "
+          >
+            Advertisement
+          </span>
+        )}
+
+      </div>
+
+
+      {/* CONTENT */}
 
       <div
         className="
           flex
-          gap-3
-          sm:gap-4
-          rounded-xl
-          overflow-hidden
-          bg-white
-          border
-          border-zinc-200
-          p-3
-          hover:border-red-600
-          hover:shadow-lg
-          transition-all
-          duration-300
+          min-w-0
+          flex-1
+          flex-col
           h-full
         "
       >
 
-        {/* IMAGE */}
+        {/* CATEGORY */}
 
-        <div
+        <span
           className="
-            relative
-            w-[180px]
-            sm:w-[200px]
-            md:w-[220px]
-            aspect-[16/9]
-            shrink-0
-            overflow-hidden
-            rounded-lg
-            bg-zinc-200
+            inline-flex
+            self-start
+            max-w-full
+            truncate
+            bg-red-600
+            text-white
+            px-2
+            py-1
+            rounded
+            text-[10px]
+            font-black
+            uppercase
           "
         >
-
-          {thumbnail ? (
-            <Image
-              src={thumbnail}
-              alt={title}
-              fill
-              sizes="
-                (max-width:640px) 180px,
-                (max-width:1024px) 200px,
-                220px
-              "
-              className="
-                object-cover
-                transition-transform
-                duration-500
-                group-hover:scale-110
-              "
-            />
-          ) : (
-            <div
-              className="
-                absolute
-                inset-0
-                bg-gradient-to-br
-                from-zinc-300
-                via-zinc-200
-                to-zinc-100
-              "
-            />
-          )}
-
-        </div>
+          {isNativeAd
+            ? "Sponsored"
+            : category || "NEWS"}
+        </span>
 
 
-        {/* CONTENT */}
+        {/* TITLE */}
+
+        <h3
+          className="
+            mt-2
+            text-[14px]
+            sm:text-[15px]
+            md:text-base
+            font-extrabold
+            leading-5
+            line-clamp-3
+            text-zinc-900
+            group-hover:text-red-600
+            transition
+          "
+        >
+          {title}
+        </h3>
+
+
+        {/* META */}
 
         <div
           className="
+            mt-auto
+            pt-3
             flex
-            flex-col
-            justify-between
-            min-w-0
-            flex-1
+            items-center
+            gap-3
+            text-[10px]
+            sm:text-xs
+            text-zinc-500
           "
         >
 
-          {/* CATEGORY */}
+          {isNativeAd ? (
 
-          <span
-            className="
-              inline-flex
-              self-start
-              bg-red-600
-              text-white
-              px-2
-              py-1
-              rounded
-              text-[10px]
-              font-black
-              uppercase
-            "
-          >
-            {category || "NEWS"}
-          </span>
-
-
-          {/* TITLE */}
-
-          <h3
-            className="
-              mt-2
-              text-[14px]
-              sm:text-[15px]
-              md:text-base
-              font-extrabold
-              leading-5
-              line-clamp-3
-              text-zinc-900
-              group-hover:text-red-600
-              transition
-            "
-          >
-            {title}
-          </h3>
-
-
-          {/* META */}
-
-          <div
-            className="
-              mt-3
-              flex
-              items-center
-              gap-3
-              text-[10px]
-              sm:text-xs
-              text-zinc-500
-            "
-          >
-
-            {/* DATE */}
-
-            <span
-              className="
-                flex
-                items-center
-                gap-1
-              "
-            >
-              <Clock3 size={12} />
-
-              {formatArticleDate(
-                createdAt
-              )}
+            <span>
+              Advertisement
             </span>
 
+          ) : (
 
-            {/* VIEWS */}
+            <>
 
-            <span
-              className="
-                flex
-                items-center
-                gap-1
-              "
-            >
-              <Eye size={12} />
+              <span
+                className="
+                  flex
+                  items-center
+                  gap-1
+                "
+              >
+                <Clock3 size={12} />
 
-              {views ||
-                generateViews(id)}
-            </span>
+                {formatArticleDate(
+                  createdAt
+                )}
+              </span>
 
-          </div>
+              <span
+                className="
+                  flex
+                  items-center
+                  gap-1
+                "
+              >
+                <Eye size={12} />
+
+                {views ||
+                  generateViews(id)}
+              </span>
+
+            </>
+
+          )}
 
         </div>
 
       </div>
 
+    </div>
+  );
+
+
+  // ==================================================
+  // NATIVE AD
+  // ==================================================
+
+  if (isNativeAd) {
+
+    if (!adLink) {
+      return (
+        <div
+          className="
+            block
+            w-full
+            h-full
+            min-w-0
+          "
+        >
+          {card}
+        </div>
+      );
+    }
+
+    return (
+      <a
+        href={adLink}
+        target={
+          openInNewTab !== false
+            ? "_blank"
+            : "_self"
+        }
+        rel={
+          openInNewTab !== false
+            ? "noopener noreferrer"
+            : undefined
+        }
+        className="
+          block
+          w-full
+          h-full
+          min-w-0
+        "
+      >
+        {card}
+      </a>
+    );
+  }
+
+
+  // ==================================================
+  // NORMAL ARTICLE
+  // ==================================================
+
+  return (
+    <Link
+      href={`/news/${slug}`}
+      className="
+        block
+        w-full
+        h-full
+        min-w-0
+      "
+    >
+      {card}
     </Link>
   );
 }

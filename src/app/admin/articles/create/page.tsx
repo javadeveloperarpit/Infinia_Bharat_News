@@ -956,7 +956,7 @@ useEffect(() => {
               mb-2
             "
           >
-            SEO Title
+            Slug 
           </label>
 
 
@@ -989,9 +989,7 @@ useEffect(() => {
               mt-2
             "
           >
-            Your article slug will be
-            generated automatically from
-            this SEO title.
+            example: for Slug= pmmodi-news then you get url : https://infiniabharatnews.vercel.app/news/pmmodi-news-xxxx
           </p>
 
         </div>
