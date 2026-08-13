@@ -20,33 +20,87 @@ export default function GlobalAds() {
 
     async function loadAds() {
       try {
-        const response = await fetch(
-          "/data/ads.json",
-          {
-            cache: "no-store",
-          }
-        );
+        const response =
+          await fetch(
+            "/data/ads.json",
+            {
+              cache: "no-store",
+            }
+          );
+
+        // --------------------------------------------
+        // JSON FILE NOT AVAILABLE
+        // --------------------------------------------
 
         if (!response.ok) {
-          throw new Error(
-            `Ads JSON returned ${response.status}`
-          );
+          if (mounted) {
+            setAds([]);
+          }
+
+          return;
         }
 
-        const data = await response.json();
+        // --------------------------------------------
+        // READ AS TEXT FIRST
+        // --------------------------------------------
+
+        const text =
+          await response.text();
+
+        // --------------------------------------------
+        // EMPTY JSON FILE
+        // --------------------------------------------
+
+        if (!text.trim()) {
+          if (mounted) {
+            setAds([]);
+          }
+
+          return;
+        }
+
+        // --------------------------------------------
+        // SAFE JSON PARSE
+        // --------------------------------------------
+
+        let data: unknown;
+
+        try {
+          data = JSON.parse(text);
+        } catch {
+          if (mounted) {
+            setAds([]);
+          }
+
+          return;
+        }
+
+        // --------------------------------------------
+        // EXTRACT ADS
+        // --------------------------------------------
+
+        const loadedAds =
+          Array.isArray(
+            (data as { ads?: unknown })?.ads
+          )
+            ? (data as {
+                ads: BusinessAd[];
+              }).ads
+            : [];
 
         if (mounted) {
-          setAds(
-            Array.isArray(data?.ads)
-              ? data.ads
-              : []
-          );
+          setAds(loadedAds);
         }
-      } catch (error) {
-        console.error(
-          "Failed to load advertisements:",
-          error
-        );
+
+      } catch {
+        // ------------------------------------------
+        // ANY NETWORK / FETCH ERROR
+        // Treat as "no ads"
+        // ------------------------------------------
+
+        if (mounted) {
+          setAds([]);
+        }
       }
     }
 
@@ -57,9 +111,17 @@ export default function GlobalAds() {
     };
   }, []);
 
+  // ----------------------------------------------
+  // NO ADS
+  // ----------------------------------------------
+
   if (!ads.length) {
     return null;
   }
+
+  // ----------------------------------------------
+  // GLOBAL ADS
+  // ----------------------------------------------
 
   return (
     <>

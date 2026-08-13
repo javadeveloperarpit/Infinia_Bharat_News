@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { siteConfig } from "@/config/site";
 
 import {
   getVideoById,
@@ -41,8 +42,7 @@ export async function generateMetadata({
     `INFINIA BHARAT NEWS पर देखें: ${title}`;
 
   const url =
-    `/video/${video.id}`;
-
+  `${siteConfig.url}/video/${video.id}`;
   return {
     title,
 
@@ -72,20 +72,48 @@ export async function generateMetadata({
       },
     },
 
-    openGraph: {
-      type: "video.other",
-      title,
-      description,
-      url,
-      siteName: "INFINIA BHARAT NEWS",
-      locale: "hi_IN",
-    },
+   openGraph: {
+  type: "video.other",
 
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
+  title,
+
+  description,
+
+  url,
+
+  siteName:
+    siteConfig.name,
+
+  locale:
+    siteConfig.locale,
+
+  images: [
+    {
+      url:
+        video.thumbnail ||
+        `${siteConfig.url}${siteConfig.logo}`,
+
+      width: 1200,
+
+      height: 675,
+
+      alt: title,
     },
+  ],
+},
+
+twitter: {
+  card: "summary_large_image",
+
+  title,
+
+  description,
+
+  images: [
+    video.thumbnail ||
+    `${siteConfig.url}${siteConfig.logo}`,
+  ],
+},
   };
 }
 
@@ -108,41 +136,215 @@ export default async function VideoPage({
     video.categoryId,
     video.id
   );
+  function getYouTubeVideoId(url: string) {
+  try {
+    const parsed = new URL(url);
+
+    if (parsed.hostname.includes("youtu.be")) {
+      return parsed.pathname.slice(1);
+    }
+
+    if (
+      parsed.hostname.includes("youtube.com")
+    ) {
+      return parsed.searchParams.get("v");
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+const youtubeId =
+  getYouTubeVideoId(video.youtubeUrl);
+
+const url =
+  `${siteConfig.url}/video/${video.id}`;
+
+  
+
+const videoSchema = {
+  "@context": "https://schema.org",
+
+  "@type": "VideoObject",
+
+  "@id": `${url}#video`,
+
+  name: video.title,
+
+  description:
+    video.description ||
+    `INFINIA BHARAT NEWS पर देखें: ${video.title}`,
+
+  thumbnailUrl: [
+    youtubeId
+      ? `https://i.ytimg.com/vi/${youtubeId}/maxresdefault.jpg`
+      : `${siteConfig.url}${siteConfig.logo}`,
+  ],
+
+  uploadDate:
+    video.createdAt,
+
+  embedUrl:
+    youtubeId
+      ? `https://www.youtube.com/embed/${youtubeId}`
+      : undefined,
+
+  publisher: {
+    "@type": "Organization",
+
+    name:
+      siteConfig.name,
+
+    url:
+      siteConfig.url,
+
+    logo: {
+      "@type": "ImageObject",
+
+      url:
+        `${siteConfig.url}${siteConfig.logo}`,
+    },
+  },
+
+  inLanguage:
+    siteConfig.language,
+
+  isFamilyFriendly: true,
+};
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 py-5 sm:py-8 overflow-hidden">
-      
-      <div className="grid w-full min-w-0 grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+  <main className="w-full min-w-0">
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(videoSchema),
+      }}
+    />
 
-        {/* =========================
+    <div
+      className="
+        max-w-7xl
+        mx-auto
+        px-3
+        sm:px-4
+        py-5
+        sm:py-8
+      "
+    >
+
+      {/* =====================================================
+          VIDEO + DESKTOP RELATED
+      ===================================================== */}
+
+      <div
+        className="
+          grid
+          w-full
+          min-w-0
+          grid-cols-1
+          lg:grid-cols-12
+          gap-6
+          lg:gap-8
+        "
+      >
+
+        {/* =================================================
             MAIN VIDEO
-        ========================= */}
+        ================================================= */}
 
-        <main className="min-w-0 w-full max-w-full lg:col-span-8">
-          
-          <div className="w-full max-w-full min-w-0 overflow-hidden rounded-xl">
+        <main
+          className="
+            min-w-0
+            w-full
+            lg:col-span-8
+          "
+        >
+
+          {/* VIDEO */}
+
+          <div
+            className="
+              w-full
+              min-w-0
+              overflow-hidden
+              rounded-xl
+              bg-black
+            "
+          >
+
             <VideoPlayer
               youtubeUrl={video.youtubeUrl}
             />
+
           </div>
 
-          <div className="w-full min-w-0 max-w-full">
+
+          {/* VIDEO INFO */}
+
+          <div
+            className="
+              w-full
+              min-w-0
+              mt-4
+            "
+          >
+
             <VideoInfo
               video={video}
             />
+
           </div>
+
+
+          {/* =================================================
+              MOBILE RELATED VIDEOS
+
+              Desktop par hidden
+              Mobile par visible
+          ================================================= */}
+
+          <section
+            className="
+              mt-8
+              lg:hidden
+            "
+          >
+
+
+
+            <RelatedVideos
+              videos={related}
+            />
+
+          </section>
 
         </main>
 
 
-        {/* =========================
-            RELATED VIDEOS
-        ========================= */}
+        {/* =================================================
+            DESKTOP RELATED VIDEOS
+        ================================================= */}
 
-        <aside className="hidden lg:block min-w-0 w-full max-w-full lg:col-span-4">
+        <aside
+          className="
+            hidden
+            lg:block
+            min-w-0
+            w-full
+            lg:col-span-4
+          "
+        >
 
-          <div className="sticky top-24 w-full min-w-0 max-w-full">
-            
+          <div
+            className="
+              sticky
+              top-24
+              w-full
+              min-w-0
+            "
+          >
+
             <RelatedVideos
               videos={related}
             />
@@ -152,6 +354,9 @@ export default async function VideoPage({
         </aside>
 
       </div>
+
     </div>
-  );
+
+  </main>
+);
 }

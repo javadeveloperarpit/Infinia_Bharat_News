@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
-import { getCategories } from "@/services/category.service";
+import { siteConfig } from "@/config/site";
 
 import {
+  getCategoryBySlug,
   getCategoryArticles,
   getCategoryVideos,
 } from "@/services/public/category.public.service";
@@ -11,6 +12,11 @@ import {
 import CategoryHero from "@/components/category/category-hero";
 import CategoryGrid from "@/components/category/category-grid";
 import CategoryVideos from "@/components/category/category-videos";
+
+
+// ============================================================
+// TYPES
+// ============================================================
 
 interface Props {
   params: Promise<{
@@ -23,108 +29,251 @@ interface Props {
 }
 
 
+// ============================================================
+// METADATA
+// ============================================================
+
 export async function generateMetadata({
   params,
 }: Props): Promise<Metadata> {
-  const { slug } = await params;
 
-  const categories = await getCategories();
+  const { slug } =
+    await params;
 
-  const category = categories.find(
-    (item: any) => item.slug === slug
-  );
+
+  // ==========================================================
+  // CATEGORY FROM categories.json
+  // ==========================================================
+
+  const category =
+    await getCategoryBySlug(slug);
+
 
   if (!category) {
+
     return {
-      title: "Category Not Found",
-      description: "यह कैटेगरी उपलब्ध नहीं है।",
+
+      title:
+        "Category Not Found",
+
+      description:
+        "यह कैटेगरी उपलब्ध नहीं है।",
+
       robots: {
         index: false,
         follow: false,
       },
+
     };
+
   }
+
+
+  // ==========================================================
+  // CATEGORY NAME
+  // ==========================================================
 
   const name =
     category.nameHi ||
     category.name ||
     "समाचार";
 
+
+  // ==========================================================
+  // DESCRIPTION
+  // ==========================================================
+
   const description =
     `${name} से जुड़ी ताज़ा खबरें, ब्रेकिंग न्यूज़ और लेटेस्ट अपडेट INFINIA BHARAT NEWS पर पढ़ें।`;
 
+
+  // ==========================================================
+  // CANONICAL URL
+  // ==========================================================
+
   const url =
-    `/category/${category.slug}`;
+    `${siteConfig.url}/category/${category.slug}`;
+
+
+  // ==========================================================
+  // METADATA
+  // ==========================================================
 
   return {
-    title: `${name} News`,
+
+    title:
+      `${name} News`,
+
     description,
 
+
     keywords: [
+
       name,
+
       `${name} news`,
+
       `${name} समाचार`,
+
       "भारत समाचार",
+
       "हिंदी समाचार",
+
       "ब्रेकिंग न्यूज़",
+
       "INFINIA BHARAT NEWS",
+
     ],
+
 
     alternates: {
       canonical: url,
     },
 
+
     robots: {
+
       index: true,
+
       follow: true,
 
       googleBot: {
+
         index: true,
+
         follow: true,
-        "max-image-preview": "large",
+
+        "max-image-preview":
+          "large",
+
       },
+
     },
+
+
+    // ========================================================
+    // OPEN GRAPH
+    // ========================================================
 
     openGraph: {
+
       type: "website",
-      title: `${name} News | INFINIA BHARAT NEWS`,
+
+      title:
+        `${name} News | INFINIA BHARAT NEWS`,
+
       description,
+
       url,
-      siteName: "INFINIA BHARAT NEWS",
-      locale: "hi_IN",
+
+      siteName:
+        "INFINIA BHARAT NEWS",
+
+      locale:
+        "hi_IN",
+
+      images: [
+
+        {
+
+          url:
+            `${siteConfig.url}${siteConfig.logo}`,
+
+          width:
+            1200,
+
+          height:
+            630,
+
+          alt:
+            `${name} | INFINIA BHARAT NEWS`,
+
+        },
+
+      ],
+
     },
+
+
+    // ========================================================
+    // TWITTER
+    // ========================================================
 
     twitter: {
-      card: "summary_large_image",
-      title: `${name} News | INFINIA BHARAT NEWS`,
+
+      card:
+        "summary_large_image",
+
+      title:
+        `${name} News | INFINIA BHARAT NEWS`,
+
       description,
+
+      images: [
+
+        `${siteConfig.url}${siteConfig.logo}`,
+
+      ],
+
     },
+
   };
+
 }
 
+
+// ============================================================
+// LABELS
+// ============================================================
+
 const labels = {
+
   hi: {
-    articles: "ताज़ा खबरें",
-    videos: "वीडियो",
-    view: "सभी देखें",
 
-    articleSub: "इस कैटेगरी की बड़ी खबरें",
-    videoSub: "लेटेस्ट वीडियो अपडेट",
+    articles:
+      "ताज़ा खबरें",
 
-    noArticle: "अभी कोई खबर उपलब्ध नहीं है",
-    noVideo: "अभी कोई वीडियो उपलब्ध नहीं है",
+    videos:
+      "वीडियो",
+
+    view:
+      "सभी देखें",
+
+
+    articleSub:
+      "इस कैटेगरी की बड़ी खबरें",
+
+    videoSub:
+      "लेटेस्ट वीडियो अपडेट",
+
+
+    noArticle:
+      "अभी कोई खबर उपलब्ध नहीं है",
+
+    noVideo:
+      "अभी कोई वीडियो उपलब्ध नहीं है",
+
 
     articleDesc:
       "हमारी न्यूज़ टीम नई खबरों पर काम कर रही है। जल्द ही अपडेट मिलेगा।",
 
     videoDesc:
       "इस कैटेगरी के वीडियो अपडेट जल्द उपलब्ध होंगे।",
+
   },
 
+
   en: {
-    articles: "Latest Articles",
-    videos: "Videos",
-    view: "View All",
+
+    articles:
+      "Latest Articles",
+
+    videos:
+      "Videos",
+
+    view:
+      "View All",
+
 
     articleSub:
       "Top stories from this category",
@@ -132,19 +281,28 @@ const labels = {
     videoSub:
       "Latest video updates",
 
+
     noArticle:
       "No Articles Available",
 
     noVideo:
       "No Videos Available",
 
+
     articleDesc:
       "Our newsroom is preparing fresh updates. Stay tuned.",
 
     videoDesc:
       "Videos from this category will be available soon.",
+
   },
+
 };
+
+
+// ============================================================
+// SECTION TITLE
+// ============================================================
 
 function SectionTitle({
   title,
@@ -153,10 +311,19 @@ function SectionTitle({
   title: string;
   subtitle: string;
 }) {
+
   return (
+
     <div className="w-full min-w-0">
 
-      <div className="flex items-center gap-3 min-w-0">
+      <div
+        className="
+          flex
+          items-center
+          gap-3
+          min-w-0
+        "
+      >
 
         <div
           className="
@@ -167,6 +334,7 @@ function SectionTitle({
             shrink-0
           "
         />
+
 
         <div className="min-w-0">
 
@@ -181,6 +349,7 @@ function SectionTitle({
           >
             {title}
           </h2>
+
 
           <p
             className="
@@ -197,6 +366,7 @@ function SectionTitle({
 
       </div>
 
+
       <div
         className="
           mt-4
@@ -208,8 +378,15 @@ function SectionTitle({
       />
 
     </div>
+
   );
+
 }
+
+
+// ============================================================
+// EMPTY STATE
+// ============================================================
 
 function EmptyState({
   icon,
@@ -220,7 +397,9 @@ function EmptyState({
   title: string;
   description: string;
 }) {
+
   return (
+
     <div
       className="
         w-full
@@ -235,6 +414,7 @@ function EmptyState({
         {icon}
       </div>
 
+
       <h3
         className="
           text-lg
@@ -245,6 +425,7 @@ function EmptyState({
       >
         {title}
       </h3>
+
 
       <p
         className="
@@ -260,54 +441,134 @@ function EmptyState({
       </p>
 
     </div>
+
   );
+
 }
+
+
+// ============================================================
+// CATEGORY PAGE
+// ============================================================
 
 export default async function CategoryPage({
   params,
   searchParams,
 }: Props) {
 
-  const { slug } = await params;
 
-  const { lang = "hi" } =
-    await searchParams;
+  // ==========================================================
+  // PARAMS
+  // ==========================================================
 
-  const categories =
-    await getCategories();
+  const { slug } =
+    await params;
+
+
+  const {
+    lang = "hi",
+  } = await searchParams;
+
+
+  // ==========================================================
+  // CATEGORY
+  // ==========================================================
+  //
+  // IMPORTANT:
+  //
+  // Category comes from:
+  //
+  // public/data/categories.json
+  //
+  // NO FIREBASE REQUEST
+  //
+  // ==========================================================
 
   const category =
-    categories.find(
-      (item: any) =>
-        item.slug === slug
-    );
+    await getCategoryBySlug(slug);
+
 
   if (!category) {
+
     notFound();
+
   }
+
+
+  // ==========================================================
+  // CATEGORY CONTENT
+  // ==========================================================
+  //
+  // Articles:
+  // public/data/articles.json
+  //
+  // Videos:
+  // public/data/videos.json
+  //
+  // NO FIREBASE REQUEST
+  //
+  // ==========================================================
 
   const [
     articles,
     videos,
   ] = await Promise.all([
-    getCategoryArticles(category.id),
-    getCategoryVideos(category.id),
+
+    getCategoryArticles(
+      category.id
+    ),
+
+    getCategoryVideos(
+      category.id
+    ),
+
   ]);
 
-  const t = labels[lang];
+
+  // ==========================================================
+  // LANGUAGE
+  // ==========================================================
+
+  const t =
+    labels[
+      lang === "en"
+        ? "en"
+        : "hi"
+    ];
+
+
+  // ==========================================================
+  // RENDER
+  // ==========================================================
 
   return (
-    <main className="w-full min-w-0 overflow-hidden">
 
-      {/* CATEGORY HERO */}
+    <main
+      className="
+        w-full
+        min-w-0
+        overflow-hidden
+      "
+    >
+
+
+      {/* ====================================================
+          CATEGORY HERO
+      ==================================================== */}
 
       <CategoryHero
-        name={category.name}
-        nameHi={category.nameHi}
+        name={
+          category.name
+        }
+        nameHi={
+          category.nameHi
+        }
       />
 
 
-      {/* CONTENT */}
+      {/* ====================================================
+          CONTENT
+      ==================================================== */}
 
       <div
         className="
@@ -319,18 +580,31 @@ export default async function CategoryPage({
         "
       >
 
-        {/* ARTICLES */}
 
-        <section className="mb-16 w-full min-w-0">
+        {/* ==================================================
+            ARTICLES
+        ================================================== */}
+
+        <section
+          className="
+            mb-16
+            w-full
+            min-w-0
+          "
+        >
 
           <SectionTitle
-            title={t.articles}
-            subtitle={t.articleSub}
+            title={
+              t.articles
+            }
+            subtitle={
+              t.articleSub
+            }
           />
+
 
           {articles.length > 0 ? (
 
-           
             <div
               className="
                 w-full
@@ -339,17 +613,25 @@ export default async function CategoryPage({
                 mt-6
               "
             >
+
               <CategoryGrid
-                articles={articles}
+                articles={
+                  articles
+                }
               />
+
             </div>
 
           ) : (
 
             <EmptyState
               icon="📰"
-              title={t.noArticle}
-              description={t.articleDesc}
+              title={
+                t.noArticle
+              }
+              description={
+                t.articleDesc
+              }
             />
 
           )}
@@ -357,14 +639,26 @@ export default async function CategoryPage({
         </section>
 
 
-        {/* VIDEOS */}
+        {/* ==================================================
+            VIDEOS
+        ================================================== */}
 
-        <section className="w-full min-w-0">
+        <section
+          className="
+            w-full
+            min-w-0
+          "
+        >
 
           <SectionTitle
-            title={t.videos}
-            subtitle={t.videoSub}
+            title={
+              t.videos
+            }
+            subtitle={
+              t.videoSub
+            }
           />
+
 
           {videos.length > 0 ? (
 
@@ -376,17 +670,25 @@ export default async function CategoryPage({
                 mt-6
               "
             >
+
               <CategoryVideos
-                videos={videos}
+                videos={
+                  videos
+                }
               />
+
             </div>
 
           ) : (
 
             <EmptyState
               icon="🎥"
-              title={t.noVideo}
-              description={t.videoDesc}
+              title={
+                t.noVideo
+              }
+              description={
+                t.videoDesc
+              }
             />
 
           )}
@@ -396,6 +698,7 @@ export default async function CategoryPage({
       </div>
 
     </main>
-  );
-}
 
+  );
+
+}

@@ -5,15 +5,13 @@ import path from "path";
 // PUBLIC BREAKING NEWS SERVICE
 // ============================================================
 //
-// IMPORTANT:
-//
 // Public website Firebase se breaking news READ nahi karti.
 //
 // Source:
-//     GitHub -> public/data/breakingNews.json
+// GitHub -> public/data/breakingNews.json
 //
 // Firebase:
-//     ONLY admin/master database
+// ONLY admin/master database
 //
 // Flow:
 //
@@ -49,47 +47,99 @@ export interface PublicBreakingNews {
 // PATH
 // ============================================================
 
-const BREAKING_NEWS_PATH = path.join(
-  process.cwd(),
-  "public",
-  "data",
-  "breakingNews.json"
-);
+const BREAKING_NEWS_PATH =
+  path.join(
+    process.cwd(),
+    "public",
+    "data",
+    "breakingNews.json"
+  );
 
 // ============================================================
 // FORMAT TIMESTAMP
 // ============================================================
 
 function formatTimestamp(
-  value: any
+  value: unknown
 ): string | undefined {
 
   if (!value) {
     return undefined;
   }
 
+  // --------------------------------------------
   // Firestore Timestamp-like object
-  if (
-    typeof value?.toDate === "function"
-  ) {
-    return value
-      .toDate()
-      .toISOString();
-  }
+  // --------------------------------------------
 
-  // Serialized Firestore Timestamp
   if (
     typeof value === "object" &&
-    typeof value?.seconds === "number"
+    value !== null &&
+    "toDate" in value &&
+    typeof (
+      value as {
+        toDate?: unknown;
+      }
+    ).toDate === "function"
   ) {
-    return new Date(
-      value.seconds * 1000
-    ).toISOString();
+    try {
+      return (
+        value as {
+          toDate: () => Date;
+        }
+      )
+        .toDate()
+        .toISOString();
+
+    } catch {
+      return undefined;
+    }
   }
 
+  // --------------------------------------------
+  // Serialized Firestore Timestamp
+  // --------------------------------------------
+
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "seconds" in value &&
+    typeof (
+      value as {
+        seconds?: unknown;
+      }
+    ).seconds === "number"
+  ) {
+    const seconds =
+      (
+        value as {
+          seconds: number;
+        }
+      ).seconds;
+
+    const date =
+      new Date(
+        seconds * 1000
+      );
+
+    if (
+      !isNaN(
+        date.getTime()
+      )
+    ) {
+      return date.toISOString();
+    }
+
+    return undefined;
+  }
+
+  // --------------------------------------------
   // Normal date/string
+  // --------------------------------------------
+
   const date =
-    new Date(value);
+    new Date(
+      value as string
+    );
 
   if (
     isNaN(
@@ -106,13 +156,16 @@ function formatTimestamp(
 // LOAD BREAKING NEWS
 // ============================================================
 //
-// SERVER SIDE:
+// IMPORTANT:
 //
-// public/data/breakingNews.json
+// Empty JSON
+// Invalid JSON
+// Missing file
+// Incomplete JSON
 //
-// We use fs.readFile() instead of:
+// = NO BREAKING NEWS
 //
-// ❌ fetch("/data/breakingNews.json")
+// No error should reach the public website.
 //
 // ============================================================
 
@@ -126,26 +179,62 @@ async function loadBreakingNews(): Promise<any[]> {
         "utf-8"
       );
 
-    const data =
-      JSON.parse(file);
+    // --------------------------------------------
+    // EMPTY FILE
+    // --------------------------------------------
 
-    if (!Array.isArray(data)) {
+    if (!file.trim()) {
+      return [];
+    }
 
-      console.error(
-        "breakingNews.json is not an array"
-      );
+    // --------------------------------------------
+    // SAFE JSON PARSE
+    // --------------------------------------------
+
+    let data: unknown;
+
+    try {
+
+      data =
+        JSON.parse(file);
+
+    } catch {
+
+      // Invalid / incomplete JSON
+      // Treat as no breaking news.
 
       return [];
     }
 
-    return data;
+    // --------------------------------------------
+    // EXPECTED FORMAT
+    //
+    // [
+    //   {...},
+    //   {...}
+    // ]
+    // --------------------------------------------
 
-  } catch (error) {
+    if (
+      Array.isArray(data)
+    ) {
+      return data;
+    }
 
-    console.error(
-      "LOAD BREAKING NEWS JSON ERROR:",
-      error
-    );
+    // --------------------------------------------
+    // INVALID STRUCTURE
+    // --------------------------------------------
+
+    return [];
+
+  } catch {
+
+    // --------------------------------------------
+    // FILE DOES NOT EXIST
+    // OR READ ERROR
+    //
+    // Treat as no breaking news.
+    // --------------------------------------------
 
     return [];
   }
@@ -256,7 +345,6 @@ export async function getBreakingNews(): Promise<
 //
 // Only active news will be returned.
 //
-// ============================================================
 
 export async function getActiveBreakingNews(): Promise<
   PublicBreakingNews[]
@@ -297,5 +385,8 @@ export async function getLatestActiveBreakingNews(): Promise<
   const news =
     await getActiveBreakingNews();
 
-  return news[0] || null;
+  return (
+    news[0] ||
+    null
+  );
 }

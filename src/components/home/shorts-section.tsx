@@ -701,24 +701,20 @@ export default function ShortsSection({
                     {/* THUMBNAIL */}
 
                     <Image
-                      src={
-                        short.thumbnail
-                      }
-                      alt={
-                        short.title ||
-                        "News reel"
-                      }
-                      fill
-                      sizes="
-                        calc(45.45vw - 9px)
-                        sm:calc(14.28vw - 10px)
-                      "
-                      className="
-                        object-cover
-                        transition-opacity
-                        duration-500
-                      "
-                    />
+  src={short.thumbnail}
+  alt={short.title || "News reel"}
+  fill
+  sizes="
+    (min-width: 640px) calc(14.28vw - 10px),
+    calc(45.45vw - 9px)
+  "
+  className="
+    object-cover
+    transition-opacity
+    duration-500
+  "
+  priority={index === 0}
+/>
 
                     {/* =================================
                         PREVIEW

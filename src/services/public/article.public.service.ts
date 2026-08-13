@@ -643,30 +643,21 @@ export async function getArticleBySlug(
     return null;
   }
 
-
   const rawArticles =
     await loadArticles();
 
-
   const article =
     rawArticles.find(
-      (
-        item
-      ) =>
-        item?.slug ===
-        slug
+      (item) =>
+        item?.slug === slug &&
+        item?.status === "published"
     );
-
 
   if (!article) {
     return null;
   }
 
-
-  return formatArticle(
-    article
-  );
-
+  return formatArticle(article);
 }
 
 
@@ -718,4 +709,29 @@ export async function getRelatedArticles(
     5
   );
 
+}
+// ============================================================
+// ALL PUBLISHED ARTICLES
+// Used for sitemap / SEO
+// ============================================================
+
+export async function getAllPublishedArticles(): Promise<
+  PublicArticle[]
+> {
+
+  const rawArticles =
+    await loadArticles();
+
+  const articles =
+    rawArticles
+      .filter(
+        (article) =>
+          article?.status === "published"
+      )
+      .map(
+        (article) =>
+          formatArticle(article)
+      );
+
+  return sortArticles(articles);
 }

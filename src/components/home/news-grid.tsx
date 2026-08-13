@@ -89,7 +89,7 @@ if (
               tracking-tight
             "
           >
-            Latest News
+             ताज़ा खबरें
           </h2>
 
           <p

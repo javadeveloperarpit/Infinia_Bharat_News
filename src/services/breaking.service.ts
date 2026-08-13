@@ -17,6 +17,10 @@ export interface BreakingNewsData {
   updatedAt?: any;
 }
 
+// ======================================================
+// AUTH TOKEN
+// ======================================================
+
 async function getAuthToken() {
   const user = auth.currentUser;
 
@@ -25,6 +29,80 @@ async function getAuthToken() {
   }
 
   return user.getIdToken();
+}
+
+// ======================================================
+// EXPIRY CHECK
+// ======================================================
+//
+// Breaking news expires 24 hours after createdAt.
+//
+// IMPORTANT:
+// expiry field is currently "24h".
+//
+// ======================================================
+
+function isExpired(
+  item: BreakingNewsData
+): boolean {
+
+  // Only 24h expiry is currently supported
+  if (item.expiry !== "24h") {
+    return false;
+  }
+
+  if (!item.createdAt) {
+    return false;
+  }
+
+  let createdTime = 0;
+
+  // Firestore Timestamp
+  if (
+    typeof item.createdAt?.toMillis ===
+    "function"
+  ) {
+    createdTime =
+      item.createdAt.toMillis();
+  }
+
+  // Firestore Timestamp-like object
+  else if (
+    typeof item.createdAt === "object" &&
+    typeof item.createdAt?.seconds ===
+      "number"
+  ) {
+    createdTime =
+      item.createdAt.seconds * 1000;
+  }
+
+  // Date / string / number
+  else {
+    const date =
+      new Date(item.createdAt);
+
+    if (
+      !isNaN(
+        date.getTime()
+      )
+    ) {
+      createdTime =
+        date.getTime();
+    }
+  }
+
+  // Invalid createdAt
+  if (!createdTime) {
+    return false;
+  }
+
+  const expiryTime =
+    createdTime +
+    24 * 60 * 60 * 1000;
+
+  return (
+    Date.now() >= expiryTime
+  );
 }
 
 // ======================================================
@@ -37,23 +115,31 @@ export async function createBreakingNews(
     "id" | "createdAt" | "updatedAt"
   >
 ) {
-  const token = await getAuthToken();
 
-  const response = await fetch(
-    "/api/admin/breaking-news",
-    {
-      method: "POST",
+  const token =
+    await getAuthToken();
 
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+  const response =
+    await fetch(
+      "/api/admin/breaking-news",
+      {
+        method: "POST",
 
-      body: JSON.stringify(data),
-    }
-  );
+        headers: {
+          "Content-Type":
+            "application/json",
 
-  const result = await response.json();
+          Authorization:
+            `Bearer ${token}`,
+        },
+
+        body:
+          JSON.stringify(data),
+      }
+    );
+
+  const result =
+    await response.json();
 
   if (!response.ok) {
     throw new Error(
@@ -68,22 +154,50 @@ export async function createBreakingNews(
 // ======================================================
 // GET
 // ======================================================
+//
+// Returns only ACTIVE + NON-EXPIRED news.
+//
+// ======================================================
 
 export async function getBreakingNews(): Promise<
   BreakingNewsData[]
 > {
-  const snapshot = await getDocs(
-    collection(db, "breakingNews")
-  );
 
-  return snapshot.docs.map((item) => {
-    const data = item.data();
+  const snapshot =
+    await getDocs(
+      collection(
+        db,
+        "breakingNews"
+      )
+    );
 
-    return {
-      ...data,
-      id: item.id,
-    } as BreakingNewsData;
-  });
+  return snapshot.docs
+    .map((item) => {
+
+      const data =
+        item.data();
+
+      return {
+        ...data,
+        id: item.id,
+      } as BreakingNewsData;
+
+    })
+    .filter((item) => {
+
+      // Must be active
+      if (!item.active) {
+        return false;
+      }
+
+      // Must not be expired
+      if (isExpired(item)) {
+        return false;
+      }
+
+      return true;
+
+    });
 }
 
 // ======================================================
@@ -94,29 +208,37 @@ export async function updateBreakingNews(
   id: string,
   data: Partial<BreakingNewsData>
 ) {
+
   if (!id) {
     throw new Error(
       "Breaking News ID missing"
     );
   }
 
-  const token = await getAuthToken();
+  const token =
+    await getAuthToken();
 
-  const response = await fetch(
-    `/api/admin/breaking-news/${id}`,
-    {
-      method: "PUT",
+  const response =
+    await fetch(
+      `/api/admin/breaking-news/${id}`,
+      {
+        method: "PUT",
 
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+        headers: {
+          "Content-Type":
+            "application/json",
 
-      body: JSON.stringify(data),
-    }
-  );
+          Authorization:
+            `Bearer ${token}`,
+        },
 
-  const result = await response.json();
+        body:
+          JSON.stringify(data),
+      }
+    );
+
+  const result =
+    await response.json();
 
   if (!response.ok) {
     throw new Error(
@@ -135,27 +257,31 @@ export async function updateBreakingNews(
 export async function deleteBreakingNews(
   id: string
 ) {
+
   if (!id) {
     throw new Error(
       "Breaking News ID missing"
     );
   }
 
-  const token = await getAuthToken();
+  const token =
+    await getAuthToken();
 
-  const response = await fetch(
-    `/api/admin/breaking-news/${id}`,
-    {
-      method: "DELETE",
+  const response =
+    await fetch(
+      `/api/admin/breaking-news/${id}`,
+      {
+        method: "DELETE",
 
-      headers: {
-        Authorization:
-          `Bearer ${token}`,
-      },
-    }
-  );
+        headers: {
+          Authorization:
+            `Bearer ${token}`,
+        },
+      }
+    );
 
-  const result = await response.json();
+  const result =
+    await response.json();
 
   if (!response.ok) {
     throw new Error(

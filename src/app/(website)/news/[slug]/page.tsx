@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import {
   getArticleBySlug,
   getRelatedArticles,
+  getPublishedArticles,
 } from "@/services/public/article.public.service";
 
 import ArticleHeader from "@/components/article/article-header";
@@ -199,17 +200,20 @@ export default async function NewsPage({
   // RELATED ARTICLES + NATIVE ADS
   // ======================================================
 
-  const [
-    related,
-    nativeAds,
-  ] = await Promise.all([
-    getRelatedArticles(
-      article.categoryId,
-      article.slug
-    ),
+ const [
+  related,
+  latestArticles,
+  nativeAds,
+] = await Promise.all([
+  getRelatedArticles(
+    article.categoryId,
+    article.slug
+  ),
 
-    getAdsByType("native"),
-  ]);
+  getPublishedArticles(),
+
+  getAdsByType("native"),
+]);
 
 
   // ======================================================
@@ -284,7 +288,7 @@ export default async function NewsPage({
 
   const articleImage =
   article.thumbnail ||
-  `${siteUrl}/logos/logo-light.png`;
+  `${siteUrl}/icons/fallback.png`;
 
 const articleSchema = {
   "@context": "https://schema.org",
@@ -466,6 +470,23 @@ const articleSchema = {
             article={article}
           />
 
+{/* ==================================================
+    MOBILE TRENDING NEWS
+================================================== */}
+
+<div
+  className="
+    col-span-12
+    mt-10
+    w-full
+    min-w-0
+    lg:hidden
+  "
+>
+  <ArticleSidebar
+    trending={latestArticles}
+  />
+</div>
 
           {/* ==================================================
               RELATED NEWS + NATIVE ADS
@@ -479,23 +500,35 @@ const articleSchema = {
         </article>
 
 
+
+
         {/* ==================================================
-            RIGHT SIDEBAR
-        ================================================== */}
+    DESKTOP TRENDING NEWS
+================================================== */}
 
-        <aside
-          className="
-            hidden
-            min-w-0
-            lg:block
-            lg:col-span-3
-          "
-        >
-          <ArticleSidebar
-            related={related}
-          />
-        </aside>
-
+<aside
+  className="
+    hidden
+    min-w-0
+    w-full
+    lg:col-span-3
+    lg:block
+  "
+>
+  <div
+    className="
+      sticky
+      top-24
+      w-full
+      min-w-0
+      self-start
+    "
+  >
+    <ArticleSidebar
+      trending={latestArticles}
+    />
+  </div>
+</aside>
       </div>
 
     </main>

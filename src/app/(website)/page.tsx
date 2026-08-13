@@ -1,3 +1,7 @@
+import type { Metadata } from "next";
+
+import { siteConfig } from "@/config/site";
+
 import {
   getPublishedArticles,
   getFeaturedArticles,
@@ -11,7 +15,7 @@ import {
 
 import {
   getCategories,
-} from "@/services/category.service";
+} from "@/services/public/category.public.service";
 
 import BreakingStrip
   from "@/components/home/breaking-strip";
@@ -37,7 +41,7 @@ import BannerAd
 
 import {
   getAdsByType,
-} from "@/services/ads.service";
+} from "@/services/public/ads.public.service";
 
 import type {
   NativeAd,
@@ -46,6 +50,70 @@ import type {
 import {
   getActiveBreakingNews,
 } from "@/services/public/breaking.public.service";
+
+
+
+export const metadata: Metadata = {
+  title:
+    "हिंदी न्यूज़, ताज़ा खबरें और ब्रेकिंग न्यूज़",
+
+  description:
+    "INFINIA BHARAT NEWS पर पढ़ें भारत और दुनिया की ताज़ा खबरें, ब्रेकिंग न्यूज़, राजनीति, उत्तर प्रदेश, खेल, बिजनेस, टेक्नोलॉजी और मनोरंजन की हर महत्वपूर्ण खबर।",
+
+  alternates: {
+    canonical: "/",
+  },
+
+  openGraph: {
+    type: "website",
+
+    locale: "hi_IN",
+
+    url: "/",
+
+    siteName: "INFINIA BHARAT NEWS",
+
+    title:
+      "INFINIA BHARAT NEWS | हिंदी न्यूज़, ताज़ा खबरें और ब्रेकिंग न्यूज़",
+
+    description:
+      "भारत और दुनिया की ताज़ा खबरें, ब्रेकिंग न्यूज़, राजनीति, खेल, बिजनेस, टेक्नोलॉजी और मनोरंजन।",
+
+    images: [
+      {
+        url: "/logos/logo-light.png",
+        width: 1200,
+        height: 630,
+        alt: "INFINIA BHARAT NEWS",
+      },
+    ],
+  },
+
+  twitter: {
+    card: "summary_large_image",
+
+    title:
+      "INFINIA BHARAT NEWS | हिंदी न्यूज़, ताज़ा खबरें और ब्रेकिंग न्यूज़",
+
+    description:
+      "भारत और दुनिया की ताज़ा खबरें, ब्रेकिंग न्यूज़, राजनीति, खेल, बिजनेस, टेक्नोलॉजी और मनोरंजन।",
+
+    images: ["/logos/logo-light.png"],
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-video-preview": -1,
+      "max-snippet": -1,
+    },
+  },
+};
 
 export default async function Home() {
   // ======================================
@@ -365,11 +433,94 @@ export default async function Home() {
       )
     );
 
+
+    const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+
+  "@id": `${siteConfig.url}/#website`,
+
+  url: siteConfig.url,
+
+  name: siteConfig.name,
+
+  alternateName: siteConfig.shortName,
+
+  description: siteConfig.description,
+
+  inLanguage: "hi-IN",
+
+  publisher: {
+    "@type": "Organization",
+
+    "@id": `${siteConfig.url}/#organization`,
+
+    name: siteConfig.name,
+
+    url: siteConfig.url,
+
+    logo: {
+      "@type": "ImageObject",
+
+      url: `${siteConfig.url}${siteConfig.logo}`,
+    },
+  },
+};
+
+
+const organizationSchema = {
+  "@context": "https://schema.org",
+
+  "@type": "NewsMediaOrganization",
+
+  "@id": `${siteConfig.url}/#organization`,
+
+  name: siteConfig.name,
+
+  alternateName: siteConfig.shortName,
+
+  url: siteConfig.url,
+
+  logo: {
+    "@type": "ImageObject",
+
+    url: `${siteConfig.url}${siteConfig.logo}`,
+
+    width: 1200,
+
+    height: 630,
+  },
+
+  description: siteConfig.description,
+
+  inLanguage: "hi-IN",
+};
+
   // ======================================
   // PAGE
   // ======================================
 
   return (
+
+    <>
+
+     <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(
+          websiteSchema
+        ),
+      }}
+    />
+
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(
+          organizationSchema
+        ),
+      }}
+    />
     <main
       className="
         min-h-screen
@@ -459,5 +610,7 @@ export default async function Home() {
         )}
       </div>
     </main>
-  );
+ </> );
+
+
 }

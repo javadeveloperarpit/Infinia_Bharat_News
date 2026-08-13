@@ -860,55 +860,112 @@ export async function createAd(
 const GITHUB_ADS_URL =
   "https://raw.githubusercontent.com/javadeveloperarpit/Infinia_Bharat_News/main/public/data/ads.json";
 
+// ======================================================
+// GET ALL ADS
+//
+// ADMIN ONLY
+// Source: Firebase Firestore
+//
+// Collection:
+// businessAds/{type}/ads/{adId}
+// ======================================================
+
 export async function getAds(): Promise<BusinessAd[]> {
   try {
-    const response = await fetch(GITHUB_ADS_URL, {
-      cache: "no-store",
-    });
+    const types: AdType[] = [
+      "banner",
+      "cube",
+      "popup",
+      "page_transition",
+      "shorts_video",
+      "floating_tv",
+      "sticky_bottom",
+      "native",
+    ];
 
-    if (!response.ok) {
-      throw new Error(
-        `GitHub ads fetch failed: ${response.status}`
+    const results =
+      await Promise.all(
+        types.map(async (type) => {
+          const snapshot =
+            await getDocs(
+              getTypeCollection(type)
+            );
+
+          return snapshot.docs.map(
+            (item) => ({
+              id: item.id,
+              ...(item.data() as AdsData),
+            })
+          );
+        })
       );
-    }
 
-    const data = await response.json();
+    const ads =
+      results.flat();
 
-    if (!data || !Array.isArray(data.ads)) {
-      return [];
-    }
+    return ads
+      .filter(
+        (ad) =>
+          ad &&
+          ad.active === true
+      )
+      .sort(
+        (a, b) =>
+          (b.priority ?? 1) -
+          (a.priority ?? 1)
+      );
 
-    return data.ads.filter(
-      (ad: BusinessAd) => ad && ad.active === true
-    );
   } catch (error) {
     console.error(
-      "Failed to load ads from GitHub:",
+      "Failed to load ads from Firebase:",
       error
     );
 
     return [];
   }
 }
-
 // ======================================================
 // GET ADS BY TYPE
+//
+// ADMIN ONLY
+// Source: Firebase Firestore
 // ======================================================
 
 export async function getAdsByType(
   type: AdType
 ): Promise<BusinessAd[]> {
-  const snapshot =
-    await getDocs(
-      getTypeCollection(type)
+  try {
+    const snapshot =
+      await getDocs(
+        getTypeCollection(type)
+      );
+
+    return snapshot.docs
+      .map(
+        (item) => ({
+          id: item.id,
+          ...(item.data() as AdsData),
+        })
+      )
+      .filter(
+        (ad) =>
+          ad &&
+          ad.active === true
+      )
+      .sort(
+        (a, b) =>
+          (b.priority ?? 1) -
+          (a.priority ?? 1)
+      );
+
+  } catch (error) {
+    console.error(
+      `Failed to load ${type} ads from Firebase:`,
+      error
     );
 
-  return snapshot.docs.map(
-    (item) => ({
-      id: item.id,
-      ...(item.data() as AdsData),
-    })
-  );
+    return [];
+  }
 }
 
 // ======================================================

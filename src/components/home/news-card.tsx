@@ -115,7 +115,7 @@ export default function NewsCard({
   // ==================================================
 
   const card = (
-    <div
+    <article
       className="
         group
         flex
@@ -140,23 +140,27 @@ export default function NewsCard({
       {/* IMAGE */}
 
       <div
-        className="
-          relative
-          w-[42%]
-          max-w-[220px]
-          min-w-[120px]
-          aspect-[16/9]
-          shrink-0
-          overflow-hidden
-          rounded-lg
-          bg-zinc-200
-        "
-      >
+  className="
+    relative
+    w-[50%]
+    max-w-[220px]
+    min-w-[120px]
+    shrink-0
+    aspect-video
+    overflow-hidden
+    rounded-lg
+    bg-zinc-200
+  "
+>
 
         {thumbnail ? (
           <Image
             src={thumbnail}
-            alt={title}
+            alt={
+    isNativeAd
+      ? "Advertisement"
+      : title
+  }
             fill
             sizes="
               (max-width:639px) 42vw,
@@ -325,7 +329,7 @@ export default function NewsCard({
 
       </div>
 
-    </div>
+    </article>
   );
 
 

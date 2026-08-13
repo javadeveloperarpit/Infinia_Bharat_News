@@ -116,42 +116,15 @@ export default function AdminHeader({
   // ==========================================
 
   useEffect(() => {
-
-    loadReportCount();
-
-    const interval =
-      setInterval(
-        loadReportCount,
-        30000
-      );
-
-    return () => {
-      clearInterval(interval);
-    };
-
-  }, []);
-
+  loadReportCount();
+}, []);
   // ==========================================
   // BELL CLICK
   // ==========================================
 
-  async function handleBellClick() {
-
-    setShowReports(
-      (previous) =>
-        !previous
-    );
-
-    if (!showReports) {
-
-      setLoadingReports(true);
-
-      await loadReportCount();
-
-      setLoadingReports(false);
-
-    }
-  }
+  function handleBellClick() {
+  setShowReports((previous) => !previous);
+}
 
   return (
 

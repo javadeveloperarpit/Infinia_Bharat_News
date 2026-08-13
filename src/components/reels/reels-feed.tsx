@@ -891,44 +891,46 @@ export default function ReelsFeed({
 
 
   // ====================================================
-  // UPDATE URL ONLY FOR REELS
-  // ====================================================
+// UPDATE URL + DOCUMENT TITLE FOR ACTIVE REEL
+// ====================================================
 
-  useEffect(() => {
+useEffect(() => {
 
-    if (!feed.length) {
-      return;
-    }
-
-
-    const activeItem =
-      feed[
-        activeIndex
-      ];
+  if (!feed.length) {
+    return;
+  }
 
 
-    if (
-      !activeItem ||
-      activeItem.kind !==
-        "reel"
-    ) {
-      return;
-    }
+  const activeItem =
+    feed[activeIndex];
 
 
-    const newUrl =
-      `/reel/${encodeURIComponent(
-        activeItem.data.id
-      )}`;
+  if (
+    !activeItem ||
+    activeItem.kind !== "reel"
+  ) {
+    return;
+  }
 
 
-    if (
-      window.location.pathname ===
-      newUrl
-    ) {
-      return;
-    }
+  const reel =
+    activeItem.data;
 
+
+  const newUrl =
+    `/reel/${encodeURIComponent(
+      reel.id
+    )}`;
+
+
+  // ==================================================
+  // UPDATE URL
+  // ==================================================
+
+  if (
+    window.location.pathname !==
+    newUrl
+  ) {
 
     window.history.replaceState(
       null,
@@ -936,11 +938,26 @@ export default function ReelsFeed({
       newUrl
     );
 
-  }, [
-    activeIndex,
-    feed,
-  ]);
+  }
 
+
+  // ==================================================
+  // UPDATE BROWSER TAB TITLE
+  // ==================================================
+
+  const title =
+    reel.title?.trim()
+      ? `${reel.title.trim()} | INFINIA BHARAT NEWS`
+      : "INFINIA BHARAT NEWS";
+
+
+  document.title = title;
+
+
+}, [
+  activeIndex,
+  feed,
+]);
 
   // ====================================================
   // EMPTY

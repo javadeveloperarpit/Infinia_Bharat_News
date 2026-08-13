@@ -471,3 +471,29 @@ getRelatedVideos(
     videos
   ).slice(0, 6);
 }
+
+// ============================================================
+// ALL PUBLISHED VIDEOS
+// Used for sitemap / SEO
+// ============================================================
+
+export async function getAllPublishedVideos(): Promise<
+  PublicVideo[]
+> {
+
+  const rawVideos =
+    await loadVideos();
+
+  const videos =
+    rawVideos
+      .filter(
+        (video) =>
+          video?.status === "published"
+      )
+      .map(
+        (video) =>
+          formatVideo(video)
+      );
+
+  return sortVideos(videos);
+}

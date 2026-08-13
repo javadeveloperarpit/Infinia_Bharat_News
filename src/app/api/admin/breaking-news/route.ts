@@ -92,6 +92,24 @@ export async function POST(
 
 
     // ==================================================
+    // EXPIRY
+    //
+    // Default = 24 HOURS
+    //
+    // We store an actual timestamp instead of
+    // only storing "24h".
+    // ==================================================
+
+    const expiryHours = 24;
+
+    const expiresAt =
+      new Date(
+        Date.now() +
+        expiryHours * 60 * 60 * 1000
+      );
+
+
+    // ==================================================
     // FIREBASE CREATE
     // ==================================================
 
@@ -102,9 +120,12 @@ export async function POST(
       active:
         body?.active !== false,
 
+      // Human-readable value
       expiry:
-        body?.expiry ||
         "24h",
+
+      // Actual expiry timestamp
+      expiresAt,
 
       createdAt:
         FieldValue.serverTimestamp(),
@@ -127,7 +148,9 @@ export async function POST(
 
     console.log(
       "BREAKING NEWS CREATED:",
-      ref.id
+      ref.id,
+      "EXPIRES AT:",
+      expiresAt.toISOString()
     );
 
 
@@ -188,6 +211,9 @@ export async function POST(
         githubCount,
 
         githubError,
+
+        expiresAt:
+          expiresAt.toISOString(),
       },
       {
         status: 200,
@@ -223,10 +249,17 @@ export async function POST(
 // GET BREAKING NEWS
 // ======================================================
 //
-// Admin listing
+// Admin listing.
 //
 // Firebase direct read is okay.
-// Public website GitHub JSON read karegi.
+//
+// IMPORTANT:
+// Expired news are automatically marked inactive
+// when admin GET is called.
+//
+// Public website will receive only non-expired
+// news through GitHub sync.
+//
 // ======================================================
 
 export async function GET() {
@@ -241,14 +274,71 @@ export async function GET() {
         .get();
 
 
+    const now =
+      Date.now();
+
+
     const news =
       snapshot.docs.map(
-        (doc) => ({
-          id:
-            doc.id,
+        (doc) => {
 
-          ...doc.data(),
-        })
+          const data =
+            doc.data();
+
+
+          // ==================================================
+          // CHECK EXPIRY
+          // ==================================================
+
+          let expired =
+            false;
+
+
+          if (
+            data?.expiresAt
+          ) {
+
+            const expiresAt =
+              data.expiresAt
+                ?.toDate
+                ? data.expiresAt.toDate()
+                : new Date(
+                    data.expiresAt
+                  );
+
+            if (
+              !isNaN(
+                expiresAt.getTime()
+              ) &&
+              expiresAt.getTime() <= now
+            ) {
+
+              expired =
+                true;
+
+            }
+
+          }
+
+
+          return {
+            id:
+              doc.id,
+
+            ...data,
+
+            // Expired news is returned as inactive
+            active:
+              expired
+                ? false
+                : Boolean(
+                    data?.active
+                  ),
+
+            expired,
+          };
+
+        }
       );
 
 
