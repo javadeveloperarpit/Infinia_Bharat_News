@@ -144,35 +144,29 @@ gap-4
 
 
 <article
-className="
-relative
-overflow-hidden
-h-[420px]
-sm:h-[520px]
-lg:h-[560px]
-"
+  className="
+    relative
+    overflow-hidden
+    aspect-[16/10]
+    sm:aspect-[16/10]
+    lg:aspect-auto
+    lg:h-[560px]
+  "
 >
 
 
 <Image
-
-src={hero.thumbnail}
-
-alt={hero.title}
-
-fill
-
-priority
-
-sizes="(max-width:1024px)100vw,70vw"
-
-className="
-object-cover
-transition
-duration-700
-group-hover:scale-105
-"
-
+  src={hero.thumbnail}
+  alt={hero.title}
+  fill
+  priority
+  sizes="(max-width:1024px)100vw,70vw"
+  className="
+    object-cover
+    transition
+    duration-700
+    group-hover:scale-105
+  "
 />
 
 
