@@ -2219,14 +2219,14 @@ function cancelEdit() {
   {form.type === "banner" && (
     <p className="mt-1 mb-2 text-[11px] font-semibold text-blue-600">
       Recommended image size:{" "}
-      <strong>1200 x 300 px or 4:1</strong>
+      <strong>8:1</strong>
     </p>
   )}
 
   {form.type === "sticky_bottom" && (
     <p className="mt-1 mb-2 text-[11px] font-semibold text-orange-600">
       Recommended image size:{" "}
-      <strong>1200 x 180 px or 6.67:1 or 8:1</strong>
+      <strong>8:1</strong>
     </p>
   )}
 
