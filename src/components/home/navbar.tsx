@@ -15,8 +15,8 @@ usePathname
 
 
 import {
-getCategories
-} from "@/services/category.service";
+  getCategories
+} from "@/services/public/category.public.service";
 
 
 import {
