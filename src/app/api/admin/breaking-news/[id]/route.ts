@@ -334,7 +334,8 @@ export async function DELETE(
       token,
       [
         "admin",
-        "superAdmin",
+    "editor",
+    "superAdmin",
       ]
     );
 
