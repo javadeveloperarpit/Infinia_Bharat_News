@@ -142,14 +142,14 @@ export default function NewsCard({
       <div
   className="
     relative
-    w-[50%]
-    max-w-[220px]
-    min-w-[120px]
-    shrink-0
-    aspect-video
+    w-[60%]
+    basis-[60%]
+    flex-[0_0_60%]
+    min-w-0
     overflow-hidden
     rounded-lg
     bg-zinc-200
+    aspect-video
   "
 >
 
