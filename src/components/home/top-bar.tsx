@@ -577,7 +577,7 @@ transition
 href="https://www.facebook.com/share/1jBhdb8phJ/"
 >
 
-<FaFacebookF size={13}/>
+<FaFacebookF size={18}/>
 
 </a>
 
@@ -595,7 +595,7 @@ transition
 href="https://twitter.com/"
 >
 
-<FaXTwitter size={13}/>
+<FaXTwitter size={18}/>
 
 </a>
 
@@ -613,7 +613,7 @@ transition
 href="https://www.youtube.com/@Infinia_Bharat_News"
 >
 
-<FaYoutube size={13}/>
+<FaYoutube size={18}/>
 
 </a>
 
@@ -631,7 +631,7 @@ transition
 href="https://www.instagram.com/infiniabharatnews?igsh=eHptM29kbGV3ZXlw"
 >
 
-<FaInstagram size={13}/>
+<FaInstagram size={18}/>
 
 </a>
 
