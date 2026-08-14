@@ -399,39 +399,56 @@ export default async function Home() {
     .slice(0, 3);
 
   // ======================================
-  // CATEGORY DATA
-  // ======================================
+// CATEGORY DATA
+// MOST CONTENT FIRST
+// Articles + Videos count
+// ======================================
 
-  const categoryData =
-    await Promise.all(
-      categories.map(
-        async (category) => {
-          const categoryId =
-            category.id;
+const categoryData =
+  await Promise.all(
+    categories.map(
+      async (category) => {
+        const categoryId =
+          category.id;
 
-          const [
-            articles,
-            videos,
-          ] = await Promise.all([
-            getPublishedArticlesByCategory(
-              categoryId
-            ),
+        const [
+          articles,
+          videos,
+        ] = await Promise.all([
+          getPublishedArticlesByCategory(
+            categoryId
+          ),
 
-            getPublishedVideosByCategory(
-              categoryId
-            ),
-          ]);
+          getPublishedVideosByCategory(
+            categoryId
+          ),
+        ]);
 
-          return {
-            ...category,
+        return {
+          ...category,
 
-            articles,
+          articles,
+          videos,
 
-            videos,
-          };
-        }
-      )
-    );
+          // Total published content
+          totalContent:
+            articles.length +
+            videos.length,
+        };
+      }
+    )
+  );
+
+// ======================================
+// SORT CATEGORIES
+// HIGHEST CONTENT COUNT FIRST
+// ======================================
+
+categoryData.sort(
+  (a, b) =>
+    b.totalContent -
+    a.totalContent
+);
 
 
     const websiteSchema = {
