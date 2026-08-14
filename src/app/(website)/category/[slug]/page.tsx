@@ -9,7 +9,6 @@ import {
   getCategoryVideos,
 } from "@/services/public/category.public.service";
 
-import CategoryHero from "@/components/category/category-hero";
 import CategoryGrid from "@/components/category/category-grid";
 import CategoryVideos from "@/components/category/category-videos";
 
@@ -568,41 +567,78 @@ const breadcrumbSchema = {
 <div className="container-news pt-5">
   <nav
     aria-label="Breadcrumb"
-    className="text-sm text-zinc-500"
+    className="w-full"
   >
-    <ol className="flex flex-wrap items-center gap-2">
-      <li>
+    <ol
+      className="
+        flex
+        items-center
+        gap-2
+        overflow-hidden
+        text-sm
+        font-medium
+      "
+    >
+      {/* HOME */}
+      <li className="shrink-0">
         <a
           href="/"
-          className="hover:text-red-600 transition-colors"
+          className="
+            text-zinc-500
+            transition-colors
+            hover:text-red-600
+          "
         >
           होम
         </a>
       </li>
 
-      <li aria-hidden="true">/</li>
+      {/* SEPARATOR */}
+      <li
+        aria-hidden="true"
+        className="
+          shrink-0
+          text-zinc-300
+          select-none
+        "
+      >
+        /
+      </li>
 
+      {/* CURRENT CATEGORY */}
       <li
         aria-current="page"
-        className="font-semibold text-zinc-800"
+        className="
+          min-w-0
+          max-w-[75vw]
+          sm:max-w-none
+          shrink
+        "
       >
-        {categoryName}
+        <span
+          className="
+            inline-flex
+            max-w-full
+            items-center
+            bg-red-600
+            px-3
+            py-1.5
+            text-xs
+            sm:text-sm
+            font-bold
+            text-white
+            tracking-wide
+            truncate
+          "
+          title={categoryName}
+        >
+          {categoryName}
+        </span>
       </li>
     </ol>
   </nav>
 </div>
-      {/* ====================================================
-          CATEGORY HERO
-      ==================================================== */}
-
-      <CategoryHero
-        name={
-          category.name
-        }
-        nameHi={
-          category.nameHi
-        }
-      />
+      
 
 
       {/* ====================================================
