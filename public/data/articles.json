@@ -91,16 +91,20 @@
     "seoDescription": "Chamoli Tunnel Accident: उत्तराखंड के चमोली में निर्माणाधीन टनल में पानी और मलबा घुसने से बड़ा हादसा हुआ। 7 मजदूरों की मौत और 14 घायल, रेस्क्यू ऑपरेशन जारी।",
     "featured": true,
     "breaking": true,
-    "priority": 0,
     "status": "published",
-    "slug": "chamoli-tunnel-accident-7-workers-dead-14-injured-20260814-102842167",
     "author": {
       "uid": "ot1ROJzof6MARUixgKpPubUnnoX2",
       "name": "Arpit Mishra",
       "email": "arpitmishraqq1801@gmail.com",
       "role": "admin"
     },
-    "createdAt": "2026-08-14T10:28:42.364Z",
-    "updatedAt": "2026-08-14T10:28:42.364Z"
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1786703322,
+      "nanoseconds": 364000000
+    },
+    "priority": 3,
+    "slug": "chamoli-tunnel-accident-7-workers-dead-14-injured-20260814-103801189",
+    "updatedAt": "2026-08-14T10:38:01.382Z"
   }
 ]
