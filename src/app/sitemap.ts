@@ -141,14 +141,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticUrls: MetadataRoute.Sitemap = [
 
     {
-      url: siteConfig.url,
+  url: siteConfig.url,
 
-      lastModified: new Date(),
+  changeFrequency: "hourly",
 
-      changeFrequency: "hourly",
-
-      priority: 1,
-    },
+  priority: 1,
+},
 
     {
       url:

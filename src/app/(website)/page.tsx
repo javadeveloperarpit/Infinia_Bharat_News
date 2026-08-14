@@ -67,11 +67,11 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
 
-    locale: "hi_IN",
+    locale: siteConfig.locale,
 
-    url: "/",
+    url: siteConfig.url,
 
-    siteName: "INFINIA BHARAT NEWS",
+    siteName: siteConfig.name,
 
     title:
       "INFINIA BHARAT NEWS | हिंदी न्यूज़, ताज़ा खबरें और ब्रेकिंग न्यूज़",
@@ -81,10 +81,10 @@ export const metadata: Metadata = {
 
     images: [
       {
-        url: "/icon-512x512.png",
+        url: siteConfig.logo,
         width: 1200,
         height: 630,
-        alt: "INFINIA BHARAT NEWS",
+        alt: siteConfig.name,
       },
     ],
   },
@@ -98,7 +98,7 @@ export const metadata: Metadata = {
     description:
       "भारत और दुनिया की ताज़ा खबरें, ब्रेकिंग न्यूज़, राजनीति, खेल, बिजनेस, टेक्नोलॉजी और मनोरंजन।",
 
-    images: ["/icon-512x512.png"],
+    images: [siteConfig.logo],
   },
 
   robots: {

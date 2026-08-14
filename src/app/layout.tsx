@@ -6,6 +6,7 @@ import "./globals.css";
 import Providers from "./providers";
 import { siteConfig } from "@/config/site";
 import PageLoadingBar from "@/components/navigation/PageLoadingBar";
+import ServiceWorkerRegister from "@/components/pwa/service-worker-register";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,6 +47,8 @@ export const metadata: Metadata = {
 
   category: "news",
 
+  keywords: [...siteConfig.keywords],
+
   robots: {
     index: true,
     follow: true,
@@ -60,35 +63,41 @@ export const metadata: Metadata = {
   },
 
   icons: {
-    icon: [
-      {
-        url: "/favicon.ico",
-        type: "image/x-icon",
-      },
-      {
-        url: "/favicon.svg",
-        type: "image/svg+xml",
-      },
-      {
-        url: "/favicon-96x96.png",
-        type: "image/png",
-        sizes: "96x96",
-      },
-    ],
+  icon: [
+    {
+      url: "/favicon.svg",
+      type: "image/svg+xml",
+    },
+    {
+      url: "/icons/favicon-96x96.png",
+      type: "image/png",
+      sizes: "96x96",
+    },
+    {
+      url: "/icons/favicon-192x192.png",
+      type: "image/png",
+      sizes: "192x192",
+    },
+    {
+      url: "/icons/favicon-512x512.png",
+      type: "image/png",
+      sizes: "512x512",
+    },
+  ],
 
-    apple: [
-      {
-        url: "/apple-touch-icon.png",
-        sizes: "180x180",
-        type: "image/png",
-      },
-    ],
-  },
+  apple: [
+    {
+      url: "/icons/favicon-192x192.png",
+      sizes: "192x192",
+      type: "image/png",
+    },
+  ],
+},
 
   openGraph: {
     type: "website",
 
-    locale: "hi_IN",
+    locale: siteConfig.locale,
 
     url: siteConfig.url,
 
@@ -119,14 +128,65 @@ export const metadata: Metadata = {
 
     images: [siteConfig.logo],
   },
-  
 };
+
 export const viewport: Viewport = {
-  themeColor: "#C8102E",
+  themeColor: siteConfig.themeColor,
+
   width: "device-width",
+
   initialScale: 1,
 };
 
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "NewsMediaOrganization",
+
+  "@id": `${siteConfig.url}/#organization`,
+
+  name: siteConfig.name,
+
+  url: siteConfig.url,
+
+  logo: {
+    "@type": "ImageObject",
+    url: `${siteConfig.url}/logos/logo-light.png`,
+    width: 1200,
+    height: 630,
+  },
+
+  image: `${siteConfig.url}${siteConfig.logo}`,
+
+  description: siteConfig.description,
+
+  publishingPrinciples:
+    `${siteConfig.url}/about`,
+
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "customer support",
+    url: `${siteConfig.url}/contact`,
+  },
+};
+
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+
+  "@id": `${siteConfig.url}/#website`,
+
+  name: siteConfig.name,
+
+  url: siteConfig.url,
+
+  description: siteConfig.description,
+
+  inLanguage: siteConfig.language,
+
+  publisher: {
+    "@id": `${siteConfig.url}/#organization`,
+  },
+};
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -134,11 +194,30 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="hi"
+      lang={siteConfig.language.split("-")[0]}
       data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable}`}
     >
       <body className="min-h-screen antialiased">
+        <ServiceWorkerRegister />
+
+<script
+    type="application/ld+json"
+    dangerouslySetInnerHTML={{
+      __html: JSON.stringify(
+        organizationSchema
+      ),
+    }}
+  />
+
+  <script
+    type="application/ld+json"
+    dangerouslySetInnerHTML={{
+      __html: JSON.stringify(
+        websiteSchema
+      ),
+    }}
+  />
         <PageLoadingBar />
 
         <Providers>

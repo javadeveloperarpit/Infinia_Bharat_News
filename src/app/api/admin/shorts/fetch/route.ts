@@ -39,54 +39,195 @@ function createThumbnail(id: string): string {
 }
 
 // ==========================================
-// FETCH REAL YOUTUBE TITLE
+// FETCH YOUTUBE TITLE + DATE/TIME
 // ==========================================
 
-async function getYoutubeTitle(
+async function getYoutubeData(
   id: string
-): Promise<string> {
+): Promise<{
+  title: string;
+  publishedAt?: string;
+}> {
+  let title = "";
+  let publishedAt: string | undefined;
+
   try {
     const videoUrl =
       createShortUrl(id);
 
+    // ======================================
+    // FETCH YOUTUBE VIDEO PAGE
+    // ======================================
+
     const response =
       await fetch(
-        `https://www.youtube.com/oembed?url=${encodeURIComponent(
-          videoUrl
-        )}&format=json`,
+        videoUrl,
         {
           headers: {
             "User-Agent":
-              "Mozilla/5.0",
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36",
+
+            Accept:
+              "text/html,application/xhtml+xml",
+
+            "Accept-Language":
+              "en-US,en;q=0.9",
           },
 
           cache: "no-store",
         }
       );
 
-    if (!response.ok) {
-      return "";
+    if (response.ok) {
+      const html =
+        await response.text();
+
+      // ====================================
+      // TITLE - og:title
+      // ====================================
+
+      const ogTitleMatch =
+        html.match(
+          /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i
+        );
+
+      if (ogTitleMatch?.[1]) {
+        title =
+          ogTitleMatch[1].trim();
+      }
+
+      // ====================================
+      // TITLE - <title>
+      // ====================================
+
+      if (!title) {
+        const titleMatch =
+          html.match(
+            /<title[^>]*>([\s\S]*?)<\/title>/i
+          );
+
+        if (titleMatch?.[1]) {
+          title =
+            titleMatch[1]
+              .replace(
+                /\s*-\s*YouTube\s*$/i,
+                ""
+              )
+              .trim();
+        }
+      }
+
+      // ====================================
+      // PUBLISHED DATE + TIME
+      // ====================================
+
+      const uploadDateMatch =
+        html.match(
+          /"uploadDate":"([^"]+)"/
+        );
+
+      if (
+        uploadDateMatch?.[1]
+      ) {
+        const parsedDate =
+          new Date(
+            uploadDateMatch[1]
+          );
+
+        if (
+          !isNaN(
+            parsedDate.getTime()
+          )
+        ) {
+          publishedAt =
+            parsedDate.toISOString();
+        }
+      }
+
+      // ====================================
+      // FALLBACK DATE
+      // ====================================
+
+      if (!publishedAt) {
+        const publishDateMatch =
+          html.match(
+            /"publishDate":"([^"]+)"/
+          );
+
+        if (
+          publishDateMatch?.[1]
+        ) {
+          const parsedDate =
+            new Date(
+              publishDateMatch[1]
+            );
+
+          if (
+            !isNaN(
+              parsedDate.getTime()
+            )
+          ) {
+            publishedAt =
+              parsedDate.toISOString();
+          }
+        }
+      }
     }
 
-    const data =
-      await response.json();
-
-    if (
-      typeof data.title ===
-      "string"
-    ) {
-      return data.title.trim();
-    }
-
-    return "";
   } catch (error) {
     console.error(
-      `YOUTUBE TITLE ERROR ${id}:`,
+      `YOUTUBE PAGE ERROR ${id}:`,
       error
     );
-
-    return "";
   }
+
+  // ======================================
+  // FALLBACK: YOUTUBE OEMBED TITLE
+  // ======================================
+
+  if (!title) {
+    try {
+      const oembedResponse =
+        await fetch(
+          `https://www.youtube.com/oembed?url=${encodeURIComponent(
+            createShortUrl(id)
+          )}&format=json`,
+          {
+            headers: {
+              "User-Agent":
+                "Mozilla/5.0",
+            },
+
+            cache: "no-store",
+          }
+        );
+
+      if (
+        oembedResponse.ok
+      ) {
+        const oembedData =
+          await oembedResponse.json();
+
+        if (
+          typeof oembedData.title ===
+          "string"
+        ) {
+          title =
+            oembedData.title.trim();
+        }
+      }
+    } catch (error) {
+      console.error(
+        `YOUTUBE OEMBED ERROR ${id}:`,
+        error
+      );
+    }
+  }
+
+  return {
+    title,
+    publishedAt,
+  };
 }
 
 // ==========================================
@@ -95,6 +236,7 @@ async function getYoutubeTitle(
 
 export async function GET() {
   try {
+
     // ======================================
     // FETCH YOUTUBE SHORTS PAGE
     // ======================================
@@ -134,26 +276,32 @@ export async function GET() {
     const ids =
       extractShortIds(html);
 
-    if (ids.length === 0) {
+    if (
+      ids.length === 0
+    ) {
       return NextResponse.json({
         success: true,
+
         channel:
           "Infinia Bharat News",
+
         count: 0,
+
         shorts: [],
       });
     }
 
     // ======================================
-    // FETCH TITLES
+    // FETCH TITLE + DATE/TIME
     // ======================================
 
     const shorts =
       await Promise.all(
         ids.map(
           async (id) => {
-            const title =
-              await getYoutubeTitle(
+
+            const youtubeData =
+              await getYoutubeData(
                 id
               );
 
@@ -161,18 +309,46 @@ export async function GET() {
               id,
 
               title:
-                title ||
-                "Infinia Bharat News",
-
+  youtubeData.title ||
+  "",
               url:
                 createShortUrl(id),
 
               thumbnail:
                 createThumbnail(id),
+
+              publishedAt:
+                youtubeData.publishedAt,
             };
           }
         )
       );
+
+    // ======================================
+    // SORT
+    // LATEST → OLDEST
+    // ======================================
+
+    shorts.sort(
+      (a, b) => {
+
+        const dateA =
+          a.publishedAt
+            ? new Date(
+                a.publishedAt
+              ).getTime()
+            : 0;
+
+        const dateB =
+          b.publishedAt
+            ? new Date(
+                b.publishedAt
+              ).getTime()
+            : 0;
+
+        return dateB - dateA;
+      }
+    );
 
     // ======================================
     // RESPONSE
@@ -189,7 +365,9 @@ export async function GET() {
 
       shorts,
     });
+
   } catch (error) {
+
     console.error(
       "FETCH YOUTUBE SHORTS ERROR:",
       error

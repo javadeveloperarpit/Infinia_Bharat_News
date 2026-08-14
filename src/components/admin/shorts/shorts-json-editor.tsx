@@ -369,12 +369,34 @@ export default function ShortsJsonEditor() {
       // Existing JSON untouched.
       // ======================================
 
-      const mergedShorts:
-        AdminShort[] = [
-          ...trulyNewShorts,
-          ...existingJsonShorts,
-        ];
+      const mergedShorts: AdminShort[] = [
+  ...trulyNewShorts,
+  ...existingJsonShorts,
+];
 
+// ======================================
+// SORT LATEST → OLDEST
+// ======================================
+
+mergedShorts.sort((a, b) => {
+  const timeA = a.publishedAt
+    ? Date.parse(a.publishedAt)
+    : 0;
+
+  const timeB = b.publishedAt
+    ? Date.parse(b.publishedAt)
+    : 0;
+
+  const safeA = Number.isFinite(timeA)
+    ? timeA
+    : 0;
+
+  const safeB = Number.isFinite(timeB)
+    ? timeB
+    : 0;
+
+  return safeB - safeA;
+});
       // ======================================
       // 10. UPDATE EDITOR ONLY
       //

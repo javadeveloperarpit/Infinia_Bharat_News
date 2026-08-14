@@ -9,6 +9,7 @@ import {
 
 import ArticleHeader from "@/components/article/article-header";
 import ArticleContent from "@/components/article/article-content";
+import ArticleBreadcrumb from "@/components/article/article-breadcrumb";
 import ShareButtons from "@/components/article/share-buttons";
 import AuthorBox from "@/components/article/author-box";
 import RelatedNews from "@/components/article/related-news";
@@ -17,13 +18,21 @@ import CommentsList from "@/components/comments/comments-list";
 
 import {
   getAdsByType,
-} from "@/services/ads.service";
+} from "@/services/public/ads.public.service";
 
 import type {
   NativeAd,
 } from "@/services/ads.service";
 
+import { siteConfig } from "@/config/site";
 
+import {
+  getCategories,
+} from "@/services/public/category.public.service";
+
+// ==========================================================
+// METADATA
+// ==========================================================
 
 export async function generateMetadata({
   params,
@@ -39,7 +48,10 @@ export async function generateMetadata({
   if (!article) {
     return {
       title: "News Not Found",
-      description: "यह खबर उपलब्ध नहीं है।",
+
+      description:
+        "यह खबर उपलब्ध नहीं है।",
+
       robots: {
         index: false,
         follow: false,
@@ -47,25 +59,24 @@ export async function generateMetadata({
     };
   }
 
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    "https://infiniabharatnews.vercel.app";
-
   const articleUrl =
-    `${siteUrl}/news/${article.slug}`;
+    `${siteConfig.url}/news/${article.slug}`;
 
   const title =
-    article.seoTitle?.trim() ||
     article.title;
 
   const description =
     article.seoDescription?.trim() ||
-    article.shortDescription ||
-    `${article.title} - INFINIA BHARAT NEWS`;
+    article.shortDescription?.trim() ||
+    `${article.title} - ${siteConfig.name}`;
 
   const image =
     article.thumbnail ||
-    `${siteUrl}/logos/logo-light.png`;
+    `${siteConfig.url}${siteConfig.logo}`;
+
+  const authorName =
+    article.author?.name ||
+    siteConfig.name;
 
   return {
     title,
@@ -79,23 +90,18 @@ export async function generateMetadata({
       "हिंदी समाचार",
       "ताजा खबर",
       "ब्रेकिंग न्यूज़",
-      "INFINIA BHARAT NEWS",
+      siteConfig.name,
     ].filter(Boolean),
 
     authors: [
       {
-        name:
-          article.author?.name ||
-          "INFINIA BHARAT NEWS",
+        name: authorName,
       },
     ],
 
-    creator:
-      article.author?.name ||
-      "INFINIA BHARAT NEWS",
+    creator: authorName,
 
-    publisher:
-      "INFINIA BHARAT NEWS",
+    publisher: siteConfig.name,
 
     alternates: {
       canonical: articleUrl,
@@ -106,10 +112,15 @@ export async function generateMetadata({
       follow: true,
 
       googleBot: {
-        index: article.status === "published",
+        index:
+          article.status === "published",
+
         follow: true,
+
         "max-image-preview": "large",
+
         "max-video-preview": -1,
+
         "max-snippet": -1,
       },
     },
@@ -117,11 +128,11 @@ export async function generateMetadata({
     openGraph: {
       type: "article",
 
-      locale: "hi_IN",
+      locale: siteConfig.locale,
 
       url: articleUrl,
 
-      siteName: "INFINIA BHARAT NEWS",
+      siteName: siteConfig.name,
 
       title,
 
@@ -131,11 +142,11 @@ export async function generateMetadata({
         article.createdAt,
 
       modifiedTime:
-        article.updatedAt,
+        article.updatedAt ||
+        article.createdAt,
 
       authors: [
-        article.author?.name ||
-          "INFINIA BHARAT NEWS",
+        authorName,
       ],
 
       section:
@@ -146,9 +157,8 @@ export async function generateMetadata({
       images: [
         {
           url: image,
+
           alt: article.title,
-          width: 1200,
-          height: 675,
         },
       ],
     },
@@ -160,11 +170,16 @@ export async function generateMetadata({
 
       description,
 
-      images: [image],
+      images: [
+        image,
+      ],
     },
   };
 }
 
+// ==========================================================
+// NEWS PAGE
+// ==========================================================
 
 export default async function NewsPage({
   params,
@@ -173,59 +188,59 @@ export default async function NewsPage({
     slug: string;
   }>;
 }) {
-
-  // ======================================================
+  // ========================================================
   // PARAMS
-  // ======================================================
+  // ========================================================
 
   const {
     slug,
   } = await params;
 
-
-  // ======================================================
+  // ========================================================
   // ARTICLE
-  // ======================================================
+  // ========================================================
 
   const article =
     await getArticleBySlug(slug);
-
 
   if (!article) {
     notFound();
   }
 
+  // ========================================================
+  // RELATED + LATEST + ADS + CATEGORIES
+  // ========================================================
 
-  // ======================================================
-  // RELATED ARTICLES + NATIVE ADS
-  // ======================================================
+  const [
+    related,
+    latestArticles,
+    nativeAds,
+    categories,
+  ] = await Promise.all([
+    getRelatedArticles(
+      article.categoryId,
+      article.slug
+    ),
 
- const [
-  related,
-  latestArticles,
-  nativeAds,
-] = await Promise.all([
-  getRelatedArticles(
-    article.categoryId,
-    article.slug
-  ),
+    getPublishedArticles(),
 
-  getPublishedArticles(),
+    getAdsByType("native"),
 
-  getAdsByType("native"),
-]);
+    getCategories(),
+  ]);
 
-
-  // ======================================================
-  // PLAIN NATIVE ADS
-  // ======================================================
+  // ========================================================
+  // NATIVE ADS
+  // ========================================================
 
   const nativeAdsPlain =
     nativeAds
       .filter(
         (
           ad
-        ): ad is NativeAd & { id: string } =>
+        ): ad is NativeAd & {
+          id: string;
+        } =>
           ad.type === "native" &&
           ad.active
       )
@@ -268,102 +283,232 @@ export default async function NewsPage({
           (a.priority ?? 1)
       );
 
-
-  // ======================================================
-  // ARTICLE URL
-  // ======================================================
-
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    "https://infiniabharatnews.vercel.app";
-
-  const articleUrl =
-    `${siteUrl}/news/${article.slug}`;
-
-
-  // ======================================================
-  // PAGE
-  // ======================================================
-
+  // ========================================================
+  // ARTICLE SEO DATA
+  // ========================================================
 
   const articleImage =
-  article.thumbnail ||
-  `${siteUrl}/icons/fallback.png`;
+    article.thumbnail ||
+    `${siteConfig.url}${siteConfig.logo}`;
 
-const articleSchema = {
-  "@context": "https://schema.org",
+  const articleUrl =
+    `${siteConfig.url}/news/${article.slug}`;
 
-  "@type": "NewsArticle",
+  // ========================================================
+  // CATEGORY
+  //
+  // article.categoryId = Firebase document ID
+  // ========================================================
 
-  "@id": `${articleUrl}#newsarticle`,
+  const category =
+    categories.find(
+      (item) =>
+        item.id === article.categoryId
+    );
 
-  mainEntityOfPage: {
-    "@type": "WebPage",
-    "@id": articleUrl,
-  },
-
-  headline: article.title,
-
-  description:
-    article.seoDescription ||
-    article.shortDescription ||
-    "",
-
-  image: [
-    articleImage,
-  ],
-
-  datePublished:
-    article.createdAt,
-
-  dateModified:
-    article.updatedAt ||
-    article.createdAt,
-
-  author: {
-    "@type": "Person",
-
-    name:
-      article.author?.name ||
-      "INFINIA BHARAT NEWS",
-
-    url: article.author?.slug
-      ? `${siteUrl}/author/${article.author.slug}`
-      : undefined,
-  },
-
-  publisher: {
-    "@type": "Organization",
-
-    name: "INFINIA BHARAT NEWS",
-
-    url: siteUrl,
-
-    logo: {
-      "@type": "ImageObject",
-
-      url:
-        `${siteUrl}/logos/logo-light.png`,
-    },
-  },
-
-  articleSection:
+  const categoryName =
     article.categoryHi ||
     article.category ||
-    "समाचार",
+    category?.name ||
+    "समाचार";
 
-  inLanguage: "hi-IN",
+  const categorySlug =
+    category?.slug;
 
-  isAccessibleForFree: true,
-};
+  const categoryUrl =
+    categorySlug
+      ? `${siteConfig.url}/category/${categorySlug}`
+      : `${siteConfig.url}/category`;
+
+  // ========================================================
+  // BREADCRUMB SCHEMA
+  // ========================================================
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+
+    "@type": "BreadcrumbList",
+
+    itemListElement: [
+      {
+        "@type": "ListItem",
+
+        position: 1,
+
+        name: "होम",
+
+        item: siteConfig.url,
+      },
+
+      ...(categorySlug
+        ? [
+            {
+              "@type": "ListItem",
+
+              position: 2,
+
+              name: categoryName,
+
+              item: categoryUrl,
+            },
+          ]
+        : []),
+
+      {
+        "@type": "ListItem",
+
+        position:
+          categorySlug ? 3 : 2,
+
+        name: article.title,
+
+        item: articleUrl,
+      },
+    ],
+  };
+
+  // ========================================================
+  // NEWS ARTICLE SCHEMA
+  // ========================================================
+
+  const articleSchema = {
+    "@context": "https://schema.org",
+
+    "@type": "NewsArticle",
+
+    "@id":
+      `${articleUrl}#newsarticle`,
+
+    mainEntityOfPage: {
+      "@type": "WebPage",
+
+      "@id": articleUrl,
+    },
+
+    headline:
+      article.title,
+
+    description:
+      article.seoDescription?.trim() ||
+      article.shortDescription?.trim() ||
+      "",
+
+    image: [
+      {
+        "@type": "ImageObject",
+
+        url: articleImage,
+
+        width: 1200,
+
+        height: 630,
+
+        caption: article.title,
+      },
+    ],
+
+    datePublished:
+      article.createdAt,
+
+    dateModified:
+      article.updatedAt ||
+      article.createdAt,
+
+    author: {
+      "@type": "Person",
+
+      name:
+        article.author?.name ||
+        siteConfig.name,
+
+      ...(article.author?.slug
+        ? {
+            url:
+              `${siteConfig.url}/author/${article.author.slug}`,
+          }
+        : {}),
+    },
+
+    publisher: {
+      "@type":
+        "NewsMediaOrganization",
+
+      "@id":
+        `${siteConfig.url}/#organization`,
+
+      name:
+        siteConfig.name,
+
+      url:
+        siteConfig.url,
+
+      logo: {
+        "@type":
+          "ImageObject",
+
+        url:
+          `${siteConfig.url}/logos/logo-light.png`,
+
+        width: 1200,
+
+        height: 630,
+      },
+    },
+
+    articleSection:
+      categoryName,
+
+    ...(article.categoryId
+      ? {
+          about: {
+            "@type": "Thing",
+
+            name: categoryName,
+          },
+        }
+      : {}),
+
+    inLanguage:
+      siteConfig.language,
+
+    isAccessibleForFree:
+      true,
+  };
+
+  // ========================================================
+  // PAGE
+  // ========================================================
+
   return (
     <main className="container-news py-8">
+
+      {/* ==================================================
+          NEWS ARTICLE SCHEMA
+      ================================================== */}
+
       <script
-  type="application/ld+json"
-  dangerouslySetInnerHTML={{
-    __html: JSON.stringify(articleSchema),
-  }}
-/>
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html:
+            JSON.stringify(
+              articleSchema
+            ),
+        }}
+      />
+
+      {/* ==================================================
+          BREADCRUMB SCHEMA
+      ================================================== */}
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html:
+            JSON.stringify(
+              breadcrumbSchema
+            ),
+        }}
+      />
 
       <div
         className="
@@ -376,14 +521,14 @@ const articleSchema = {
       >
 
         {/* ==================================================
-            SHARE SIDEBAR
+            DESKTOP SHARE
         ================================================== */}
 
         <aside
           className="
             hidden
-            lg:block
             lg:col-span-1
+            lg:block
           "
         >
           <ShareButtons
@@ -391,7 +536,6 @@ const articleSchema = {
             url={articleUrl}
           />
         </aside>
-
 
         {/* ==================================================
             ARTICLE
@@ -405,10 +549,22 @@ const articleSchema = {
           "
         >
 
+          {/* ==================================================
+              BREADCRUMB
+          ================================================== */}
+
+          <ArticleBreadcrumb
+            article={article}
+            category={category}
+          />
+
+          {/* ==================================================
+              ARTICLE HEADER
+          ================================================== */}
+
           <ArticleHeader
             article={article}
           />
-
 
           {/* ==================================================
               MOBILE SHARE
@@ -416,14 +572,14 @@ const articleSchema = {
 
           <div
             className="
-              lg:hidden
               sticky
               top-20
               z-40
+              mb-6
+              border-y
               bg-white
               py-3
-              border-y
-              mb-6
+              lg:hidden
             "
           >
             <ShareButtons
@@ -432,7 +588,6 @@ const articleSchema = {
             />
           </div>
 
-
           {/* ==================================================
               AUTHOR
           ================================================== */}
@@ -440,7 +595,6 @@ const articleSchema = {
           <AuthorBox
             article={article}
           />
-
 
           {/* ==================================================
               COMMENTS
@@ -461,7 +615,6 @@ const articleSchema = {
             />
           </section>
 
-
           {/* ==================================================
               ARTICLE CONTENT
           ================================================== */}
@@ -470,65 +623,69 @@ const articleSchema = {
             article={article}
           />
 
-{/* ==================================================
-    MOBILE TRENDING NEWS
-================================================== */}
+          {/* ==================================================
+              MOBILE TRENDING
+          ================================================== */}
 
-<div
-  className="
-    col-span-12
-    mt-10
-    w-full
-    min-w-0
-    lg:hidden
-  "
->
-  <ArticleSidebar
-    trending={latestArticles}
-  />
-</div>
+          <div
+            className="
+              col-span-12
+              mt-10
+              w-full
+              min-w-0
+              lg:hidden
+            "
+          >
+            <ArticleSidebar
+              trending={
+                latestArticles
+              }
+            />
+          </div>
 
           {/* ==================================================
-              RELATED NEWS + NATIVE ADS
+              RELATED NEWS + ADS
           ================================================== */}
 
           <RelatedNews
             articles={related}
-            nativeAds={nativeAdsPlain}
+            nativeAds={
+              nativeAdsPlain
+            }
           />
 
         </article>
 
-
-
-
         {/* ==================================================
-    DESKTOP TRENDING NEWS
-================================================== */}
+            DESKTOP TRENDING
+        ================================================== */}
 
-<aside
-  className="
-    hidden
-    min-w-0
-    w-full
-    lg:col-span-3
-    lg:block
-  "
->
-  <div
-    className="
-      sticky
-      top-24
-      w-full
-      min-w-0
-      self-start
-    "
-  >
-    <ArticleSidebar
-      trending={latestArticles}
-    />
-  </div>
-</aside>
+        <aside
+          className="
+            hidden
+            w-full
+            min-w-0
+            lg:col-span-3
+            lg:block
+          "
+        >
+          <div
+            className="
+              sticky
+              top-24
+              w-full
+              min-w-0
+              self-start
+            "
+          >
+            <ArticleSidebar
+              trending={
+                latestArticles
+              }
+            />
+          </div>
+        </aside>
+
       </div>
 
     </main>

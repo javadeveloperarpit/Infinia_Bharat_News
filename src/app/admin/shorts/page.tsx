@@ -397,19 +397,31 @@ async function handleGoogleLogin() {
       // OLD JSON AFTER
       // ======================================
 
-      const mergedShorts: AdminShort[] = [
+     const mergedShorts: AdminShort[] = [
   ...trulyNewShorts,
   ...existingJsonShorts,
-].sort((a, b) => {
-  const dateA = a.publishedAt
-    ? new Date(a.publishedAt).getTime()
-    : 0;
+];
 
-  const dateB = b.publishedAt
-    ? new Date(b.publishedAt).getTime()
-    : 0;
+mergedShorts.sort((a, b) => {
+  const timeA = Date.parse(
+    a.publishedAt || ""
+  );
 
-  return dateB - dateA;
+  const timeB = Date.parse(
+    b.publishedAt || ""
+  );
+
+  const safeA =
+    Number.isFinite(timeA)
+      ? timeA
+      : 0;
+
+  const safeB =
+    Number.isFinite(timeB)
+      ? timeB
+      : 0;
+
+  return safeB - safeA;
 });
 
       // ======================================

@@ -36,189 +36,112 @@ interface Props {
 export async function generateMetadata({
   params,
 }: Props): Promise<Metadata> {
+  const { slug } = await params;
 
-  const { slug } =
-    await params;
-
-
-  // ==========================================================
-  // CATEGORY FROM categories.json
-  // ==========================================================
-
-  const category =
-    await getCategoryBySlug(slug);
-
+  const category = await getCategoryBySlug(slug);
 
   if (!category) {
-
     return {
-
-      title:
-        "Category Not Found",
-
-      description:
-        "यह कैटेगरी उपलब्ध नहीं है।",
+      title: "Category Not Found",
+      description: "यह कैटेगरी उपलब्ध नहीं है।",
 
       robots: {
         index: false,
         follow: false,
       },
-
     };
-
   }
-
-
-  // ==========================================================
-  // CATEGORY NAME
-  // ==========================================================
 
   const name =
     category.nameHi ||
     category.name ||
     "समाचार";
 
-
-  // ==========================================================
-  // DESCRIPTION
-  // ==========================================================
-
   const description =
-    `${name} से जुड़ी ताज़ा खबरें, ब्रेकिंग न्यूज़ और लेटेस्ट अपडेट INFINIA BHARAT NEWS पर पढ़ें।`;
-
-
-  // ==========================================================
-  // CANONICAL URL
-  // ==========================================================
+    `${name} से जुड़ी ताज़ा खबरें, ब्रेकिंग न्यूज़ और लेटेस्ट अपडेट ${siteConfig.name} पर पढ़ें।`;
 
   const url =
     `${siteConfig.url}/category/${category.slug}`;
 
-
-  // ==========================================================
-  // METADATA
-  // ==========================================================
+  const title =
+    `${name} News`;
 
   return {
-
-    title:
-      `${name} News`,
+    title,
 
     description,
 
-
     keywords: [
-
       name,
-
       `${name} news`,
-
       `${name} समाचार`,
-
       "भारत समाचार",
-
       "हिंदी समाचार",
-
       "ब्रेकिंग न्यूज़",
-
-      "INFINIA BHARAT NEWS",
-
+      siteConfig.name,
     ],
-
 
     alternates: {
       canonical: url,
     },
 
-
     robots: {
-
       index: true,
-
       follow: true,
 
       googleBot: {
-
         index: true,
-
         follow: true,
-
-        "max-image-preview":
-          "large",
-
+        "max-image-preview": "large",
+        "max-video-preview": -1,
+        "max-snippet": -1,
       },
-
     },
 
-
-    // ========================================================
-    // OPEN GRAPH
-    // ========================================================
-
     openGraph: {
-
       type: "website",
 
       title:
-        `${name} News | INFINIA BHARAT NEWS`,
+        `${name} News | ${siteConfig.name}`,
 
       description,
 
       url,
 
       siteName:
-        "INFINIA BHARAT NEWS",
+        siteConfig.name,
 
       locale:
-        "hi_IN",
+        siteConfig.locale,
 
       images: [
-
         {
-
           url:
             `${siteConfig.url}${siteConfig.logo}`,
 
-          width:
-            1200,
+          width: 1200,
 
-          height:
-            630,
+          height: 630,
 
           alt:
-            `${name} | INFINIA BHARAT NEWS`,
-
+            `${name} | ${siteConfig.name}`,
         },
-
       ],
-
     },
 
-
-    // ========================================================
-    // TWITTER
-    // ========================================================
-
     twitter: {
-
-      card:
-        "summary_large_image",
+      card: "summary_large_image",
 
       title:
-        `${name} News | INFINIA BHARAT NEWS`,
+        `${name} News | ${siteConfig.name}`,
 
       description,
 
       images: [
-
         `${siteConfig.url}${siteConfig.logo}`,
-
       ],
-
     },
-
   };
-
 }
 
 
@@ -494,6 +417,82 @@ export default async function CategoryPage({
 
   }
 
+  const categoryUrl =
+  `${siteConfig.url}/category/${category.slug}`;
+
+const categoryName =
+  category.nameHi ||
+  category.name ||
+  "समाचार";
+
+const categoryDescription =
+  `${categoryName} से जुड़ी ताज़ा खबरें, ब्रेकिंग न्यूज़ और लेटेस्ट अपडेट ${siteConfig.name} पर पढ़ें।`;
+
+const categorySchema = {
+  "@context": "https://schema.org",
+
+  "@type": "CollectionPage",
+
+  "@id": `${categoryUrl}#webpage`,
+
+  url: categoryUrl,
+
+  name:
+    `${categoryName} News | ${siteConfig.name}`,
+
+  description:
+    categoryDescription,
+
+  inLanguage:
+    siteConfig.language,
+
+  isPartOf: {
+    "@type": "WebSite",
+
+    "@id":
+      `${siteConfig.url}/#website`,
+  },
+
+  publisher: {
+    "@type": "NewsMediaOrganization",
+
+    "@id":
+      `${siteConfig.url}/#organization`,
+
+    name:
+      siteConfig.name,
+
+    url:
+      siteConfig.url,
+
+    logo: {
+      "@type": "ImageObject",
+
+      url:
+        `${siteConfig.url}/logos/logo-light.png`,
+    },
+  },
+};
+
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "होम",
+      item: siteConfig.url,
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: categoryName,
+      item: categoryUrl,
+    },
+  ],
+};
 
   // ==========================================================
   // CATEGORY CONTENT
@@ -542,6 +541,21 @@ export default async function CategoryPage({
   // ==========================================================
 
   return (
+  <>
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(
+          categorySchema
+        ),
+      }}
+    />
+    <script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify(breadcrumbSchema),
+  }}
+/>
 
     <main
       className="
@@ -551,7 +565,32 @@ export default async function CategoryPage({
       "
     >
 
+<div className="container-news pt-5">
+  <nav
+    aria-label="Breadcrumb"
+    className="text-sm text-zinc-500"
+  >
+    <ol className="flex flex-wrap items-center gap-2">
+      <li>
+        <a
+          href="/"
+          className="hover:text-red-600 transition-colors"
+        >
+          होम
+        </a>
+      </li>
 
+      <li aria-hidden="true">/</li>
+
+      <li
+        aria-current="page"
+        className="font-semibold text-zinc-800"
+      >
+        {categoryName}
+      </li>
+    </ol>
+  </nav>
+</div>
       {/* ====================================================
           CATEGORY HERO
       ==================================================== */}
@@ -698,6 +737,7 @@ export default async function CategoryPage({
       </div>
 
     </main>
+    </>
 
   );
 

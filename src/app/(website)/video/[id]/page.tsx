@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+
 import { siteConfig } from "@/config/site";
 
 import {
@@ -11,6 +12,33 @@ import VideoPlayer from "@/components/video/video-player";
 import VideoInfo from "@/components/video/video-info";
 import RelatedVideos from "@/components/video/related-videos";
 
+// ==========================================================
+// YOUTUBE VIDEO ID
+// ==========================================================
+
+function getYouTubeVideoId(youtubeUrl: string) {
+  try {
+    const parsed = new URL(youtubeUrl);
+
+    if (parsed.hostname.includes("youtu.be")) {
+      return parsed.pathname
+        .replace("/", "")
+        .split("?")[0];
+    }
+
+    if (parsed.hostname.includes("youtube.com")) {
+      return parsed.searchParams.get("v");
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// ==========================================================
+// METADATA
+// ==========================================================
 
 export async function generateMetadata({
   params,
@@ -39,10 +67,21 @@ export async function generateMetadata({
     "Latest News Video";
 
   const description =
+    video.description?.trim() ||
     `INFINIA BHARAT NEWS पर देखें: ${title}`;
 
   const url =
-  `${siteConfig.url}/video/${video.id}`;
+    `${siteConfig.url}/video/${video.id}`;
+
+  const youtubeId =
+    getYouTubeVideoId(video.youtubeUrl);
+
+  // YouTube thumbnail क्योंकि database में thumbnail नहीं है
+  const thumbnail =
+    youtubeId
+      ? `https://i.ytimg.com/vi/${youtubeId}/maxresdefault.jpg`
+      : `${siteConfig.url}${siteConfig.logo}`;
+
   return {
     title,
 
@@ -53,6 +92,8 @@ export async function generateMetadata({
       "Hindi News Video",
       "Latest News Video",
       "Breaking News Video",
+      "हिंदी न्यूज़ वीडियो",
+      "ब्रेकिंग न्यूज़ वीडियो",
       "INFINIA BHARAT NEWS",
     ],
 
@@ -69,53 +110,53 @@ export async function generateMetadata({
         follow: true,
         "max-image-preview": "large",
         "max-video-preview": -1,
+        "max-snippet": -1,
       },
     },
 
-   openGraph: {
-  type: "video.other",
+    openGraph: {
+      type: "video.other",
 
-  title,
+      title,
 
-  description,
+      description,
 
-  url,
+      url,
 
-  siteName:
-    siteConfig.name,
+      siteName:
+        siteConfig.name,
 
-  locale:
-    siteConfig.locale,
+      locale:
+        siteConfig.locale,
 
-  images: [
-    {
-      url:
-        video.thumbnail ||
-        `${siteConfig.url}${siteConfig.logo}`,
+      images: [
+        {
+          url: thumbnail,
 
-      width: 1200,
+          width: 1280,
 
-      height: 675,
+          height: 720,
 
-      alt: title,
+          alt: title,
+        },
+      ],
     },
-  ],
-},
 
-twitter: {
-  card: "summary_large_image",
+    twitter: {
+      card: "summary_large_image",
 
-  title,
+      title,
 
-  description,
+      description,
 
-  images: [
-    video.thumbnail ||
-    `${siteConfig.url}${siteConfig.logo}`,
-  ],
-},
+      images: [thumbnail],
+    },
   };
 }
+
+// ==========================================================
+// VIDEO PAGE
+// ==========================================================
 
 export default async function VideoPage({
   params,
@@ -126,237 +167,399 @@ export default async function VideoPage({
 }) {
   const { id } = await params;
 
-  const video = await getVideoById(id);
+  // ========================================================
+  // VIDEO
+  // ========================================================
+
+  const video =
+    await getVideoById(id);
 
   if (!video) {
     notFound();
   }
 
-  const related = await getRelatedVideos(
-    video.categoryId,
-    video.id
-  );
-  function getYouTubeVideoId(url: string) {
-  try {
-    const parsed = new URL(url);
+  // ========================================================
+  // RELATED VIDEOS
+  // ========================================================
 
-    if (parsed.hostname.includes("youtu.be")) {
-      return parsed.pathname.slice(1);
-    }
+  const related =
+    await getRelatedVideos(
+      video.categoryId,
+      video.id
+    );
 
-    if (
-      parsed.hostname.includes("youtube.com")
-    ) {
-      return parsed.searchParams.get("v");
-    }
+  // ========================================================
+  // URL
+  // ========================================================
 
-    return null;
-  } catch {
-    return null;
-  }
-}
-const youtubeId =
-  getYouTubeVideoId(video.youtubeUrl);
+  const url =
+    `${siteConfig.url}/video/${video.id}`;
 
-const url =
-  `${siteConfig.url}/video/${video.id}`;
+  // ========================================================
+  // YOUTUBE ID
+  // ========================================================
 
-  
+  const youtubeId =
+    getYouTubeVideoId(
+      video.youtubeUrl
+    );
 
-const videoSchema = {
-  "@context": "https://schema.org",
+  // ========================================================
+  // YOUTUBE THUMBNAIL
+  // ========================================================
 
-  "@type": "VideoObject",
-
-  "@id": `${url}#video`,
-
-  name: video.title,
-
-  description:
-    video.description ||
-    `INFINIA BHARAT NEWS पर देखें: ${video.title}`,
-
-  thumbnailUrl: [
+  const thumbnail =
     youtubeId
       ? `https://i.ytimg.com/vi/${youtubeId}/maxresdefault.jpg`
-      : `${siteConfig.url}${siteConfig.logo}`,
-  ],
+      : `${siteConfig.url}${siteConfig.logo}`;
 
-  uploadDate:
-    video.createdAt,
+  // ========================================================
+  // YOUTUBE EMBED
+  // ========================================================
 
-  embedUrl:
+  const embedUrl =
     youtubeId
       ? `https://www.youtube.com/embed/${youtubeId}`
-      : undefined,
+      : undefined;
 
-  publisher: {
-    "@type": "Organization",
+  // ========================================================
+  // BREADCRUMB SCHEMA
+  // ========================================================
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+
+    "@type": "BreadcrumbList",
+
+    itemListElement: [
+      {
+        "@type": "ListItem",
+
+        position: 1,
+
+        name: "होम",
+
+        item: siteConfig.url,
+      },
+
+      {
+        "@type": "ListItem",
+
+        position: 2,
+
+        name: "वीडियो",
+
+        item:
+          `${siteConfig.url}/video`,
+      },
+
+      {
+        "@type": "ListItem",
+
+        position: 3,
+
+        name: video.title,
+
+        item: url,
+      },
+    ],
+  };
+
+  // ========================================================
+  // VIDEO SCHEMA
+  // ========================================================
+
+  const videoSchema = {
+    "@context": "https://schema.org",
+
+    "@type": "VideoObject",
+
+    "@id":
+      `${url}#video`,
 
     name:
-      siteConfig.name,
+      video.title,
 
-    url:
-      siteConfig.url,
+    description:
+      video.description?.trim() ||
+      `INFINIA BHARAT NEWS पर देखें: ${video.title}`,
 
-    logo: {
-      "@type": "ImageObject",
+    url,
+
+    mainEntityOfPage: {
+      "@type": "WebPage",
+
+      "@id": url,
+    },
+
+    thumbnailUrl: [
+      thumbnail,
+    ],
+
+    uploadDate:
+      video.createdAt,
+
+    ...(embedUrl
+      ? {
+          embedUrl,
+        }
+      : {}),
+
+    publisher: {
+      "@type":
+        "NewsMediaOrganization",
+
+      "@id":
+        `${siteConfig.url}/#organization`,
+
+      name:
+        siteConfig.name,
 
       url:
-        `${siteConfig.url}${siteConfig.logo}`,
+        siteConfig.url,
+
+      logo: {
+        "@type":
+          "ImageObject",
+
+        url:
+          `${siteConfig.url}/logos/logo-light.png`,
+
+        width: 1200,
+
+        height: 630,
+      },
     },
-  },
 
-  inLanguage:
-    siteConfig.language,
+    inLanguage:
+      siteConfig.language,
 
-  isFamilyFriendly: true,
-};
+    isFamilyFriendly:
+      true,
+  };
+
+  // ========================================================
+  // PAGE
+  // ========================================================
 
   return (
-  <main className="w-full min-w-0">
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{
-        __html: JSON.stringify(videoSchema),
-      }}
-    />
-
-    <div
+    <main
       className="
-        max-w-7xl
-        mx-auto
-        px-3
-        sm:px-4
-        py-5
-        sm:py-8
+        w-full
+        min-w-0
       "
     >
+      {/* ==================================================
+          VIDEO STRUCTURED DATA
+      ================================================== */}
 
-      {/* =====================================================
-          VIDEO + DESKTOP RELATED
-      ===================================================== */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html:
+            JSON.stringify(
+              videoSchema
+            ),
+        }}
+      />
+
+      {/* ==================================================
+          BREADCRUMB STRUCTURED DATA
+      ================================================== */}
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html:
+            JSON.stringify(
+              breadcrumbSchema
+            ),
+        }}
+      />
 
       <div
         className="
-          grid
-          w-full
-          min-w-0
-          grid-cols-1
-          lg:grid-cols-12
-          gap-6
-          lg:gap-8
+          max-w-7xl
+          mx-auto
+          px-3
+          sm:px-4
+          py-5
+          sm:py-8
         "
       >
+        {/* ==================================================
+            VISIBLE BREADCRUMB
+        ================================================== */}
 
-        {/* =================================================
-            MAIN VIDEO
-        ================================================= */}
-
-        <main
+        <nav
+          aria-label="Breadcrumb"
           className="
-            min-w-0
-            w-full
-            lg:col-span-8
+            mb-5
+            text-sm
+            text-zinc-500
           "
         >
-
-          {/* VIDEO */}
-
-          <div
+          <ol
             className="
-              w-full
-              min-w-0
-              overflow-hidden
-              rounded-xl
-              bg-black
+              flex
+              flex-wrap
+              items-center
+              gap-2
             "
           >
+            <li>
+              <a
+                href="/"
+                className="
+                  hover:text-red-600
+                  transition-colors
+                "
+              >
+                होम
+              </a>
+            </li>
 
-            <VideoPlayer
-              youtubeUrl={video.youtubeUrl}
-            />
+            <li
+              aria-hidden="true"
+            >
+              /
+            </li>
 
-          </div>
+            <li>
+              <a
+                href="/video"
+                className="
+                  hover:text-red-600
+                  transition-colors
+                "
+              >
+                वीडियो
+              </a>
+            </li>
 
+            <li
+              aria-hidden="true"
+            >
+              /
+            </li>
 
-          {/* VIDEO INFO */}
+            <li
+              aria-current="page"
+              className="
+                font-semibold
+                text-zinc-800
+                truncate
+                max-w-[250px]
+                sm:max-w-none
+              "
+            >
+              {video.title}
+            </li>
+          </ol>
+        </nav>
 
-          <div
-            className="
-              w-full
-              min-w-0
-              mt-4
-            "
-          >
+        {/* ==================================================
+            VIDEO + RELATED
+        ================================================== */}
 
-            <VideoInfo
-              video={video}
-            />
-
-          </div>
-
-
+        <div
+          className="
+            grid
+            w-full
+            min-w-0
+            grid-cols-1
+            lg:grid-cols-12
+            gap-6
+            lg:gap-8
+          "
+        >
           {/* =================================================
-              MOBILE RELATED VIDEOS
-
-              Desktop par hidden
-              Mobile par visible
+              MAIN VIDEO
           ================================================= */}
 
-          <section
+          <main
             className="
-              mt-8
-              lg:hidden
-            "
-          >
-
-
-
-            <RelatedVideos
-              videos={related}
-            />
-
-          </section>
-
-        </main>
-
-
-        {/* =================================================
-            DESKTOP RELATED VIDEOS
-        ================================================= */}
-
-        <aside
-          className="
-            hidden
-            lg:block
-            min-w-0
-            w-full
-            lg:col-span-4
-          "
-        >
-
-          <div
-            className="
-              sticky
-              top-24
-              w-full
               min-w-0
+              w-full
+              lg:col-span-8
             "
           >
+            {/* VIDEO */}
 
-            <RelatedVideos
-              videos={related}
-            />
+            <div
+              className="
+                w-full
+                min-w-0
+                overflow-hidden
+                rounded-xl
+                bg-black
+              "
+            >
+              <VideoPlayer
+                youtubeUrl={
+                  video.youtubeUrl
+                }
+              />
+            </div>
 
-          </div>
+            {/* VIDEO INFO */}
 
-        </aside>
+            <div
+              className="
+                w-full
+                min-w-0
+                mt-4
+              "
+            >
+              <VideoInfo
+                video={video}
+              />
+            </div>
 
+            {/* =================================================
+                MOBILE RELATED VIDEOS
+            ================================================= */}
+
+            <section
+              className="
+                mt-8
+                lg:hidden
+              "
+            >
+              <RelatedVideos
+                videos={related}
+              />
+            </section>
+          </main>
+
+          {/* =================================================
+              DESKTOP RELATED VIDEOS
+          ================================================= */}
+
+          <aside
+            className="
+              hidden
+              lg:block
+              min-w-0
+              w-full
+              lg:col-span-4
+            "
+          >
+            <div
+              className="
+                sticky
+                top-24
+                w-full
+                min-w-0
+              "
+            >
+              <RelatedVideos
+                videos={related}
+              />
+            </div>
+          </aside>
+        </div>
       </div>
-
-    </div>
-
-  </main>
-);
+    </main>
+  );
 }

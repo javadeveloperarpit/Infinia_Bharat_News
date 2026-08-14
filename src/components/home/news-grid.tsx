@@ -2,6 +2,7 @@ import NewsCard from "./news-card";
 import VideoCard from "./video-card";
 import type { NativeAd } from "@/services/ads.service";
 
+
 interface Props {
   articles: any[];
   nativeAds?: (NativeAd & { id: string })[];
