@@ -189,17 +189,18 @@ export default function HeroSection({
     ================================================== */}
 
     <div
-      className="
-        relative
-        h-[310px]
-        w-full
-        overflow-hidden
-        rounded-t-2xl
-        bg-black
-        sm:h-[400px]
-        lg:h-[560px]
-      "
-    >
+  className="
+    relative
+    aspect-[16/9]
+    w-full
+    overflow-hidden
+    rounded-t-2xl
+    bg-black
+    sm:aspect-auto
+    sm:h-[400px]
+    lg:h-[560px]
+  "
+>
 
       <Image
         src={hero.thumbnail}
