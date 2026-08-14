@@ -92,15 +92,19 @@
     "featured": false,
     "breaking": false,
     "priority": 0,
-    "status": "draft",
-    "slug": "6-14-20260814-070229626",
     "author": {
       "uid": "kgw8DI6rdEVLRfuGPKqZFVHSHk73",
       "name": "Shubhi Mishra",
       "email": "Shubhimishraqq180@gmail.com",
       "role": "editor"
     },
-    "createdAt": "2026-08-14T07:02:29.817Z",
-    "updatedAt": "2026-08-14T07:02:29.817Z"
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1786690949,
+      "nanoseconds": 817000000
+    },
+    "slug": "6-14-20260814-070333563",
+    "status": "published",
+    "updatedAt": "2026-08-14T07:03:33.775Z"
   }
 ]
