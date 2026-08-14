@@ -38,16 +38,20 @@
     "featured": true,
     "breaking": true,
     "priority": 1,
-    "status": "draft",
-    "slug": "uss-abraham-lincoln-centcom-20260814-032937915",
     "author": {
       "uid": "ot1ROJzof6MARUixgKpPubUnnoX2",
       "name": "Arpit Mishra",
       "email": "arpitmishraqq1801@gmail.com",
       "role": "admin"
     },
-    "createdAt": "2026-08-14T03:29:38.116Z",
-    "updatedAt": "2026-08-14T03:29:38.116Z"
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1786678178,
+      "nanoseconds": 116000000
+    },
+    "slug": "uss-abraham-lincoln-centcom-20260814-033138862",
+    "status": "published",
+    "updatedAt": "2026-08-14T03:31:39.055Z"
   },
   {
     "id": "kTTxln0ygnJ93ldDaAUh",
