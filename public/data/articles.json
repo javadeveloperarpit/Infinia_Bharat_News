@@ -38,16 +38,20 @@
     "featured": true,
     "breaking": true,
     "priority": 5,
-    "status": "draft",
-    "slug": "chetan-hansraj-seven-roles-ramayana-ranbir-kapoor-yash-ravana-20260814-145007324",
     "author": {
       "uid": "ot1ROJzof6MARUixgKpPubUnnoX2",
       "name": "Arpit Mishra",
       "email": "arpitmishraqq1801@gmail.com",
       "role": "admin"
     },
-    "createdAt": "2026-08-14T14:50:07.515Z",
-    "updatedAt": "2026-08-14T14:50:07.515Z"
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1786719007,
+      "nanoseconds": 515000000
+    },
+    "slug": "chetan-hansraj-seven-roles-ramayana-ranbir-kapoor-yash-ravana-20260814-145030926",
+    "status": "published",
+    "updatedAt": "2026-08-14T14:50:32.182Z"
   },
   {
     "id": "XmchbO1UACUd6f8ypRYv",
