@@ -90,10 +90,9 @@ export async function POST(
     // ==================================================
 
     const slug =
-      createSlug(
-        body.title
-      );
-
+  createSlug(
+    body.seoTitle
+  );
 
     // ==================================================
     // TIME FOR GITHUB JSON

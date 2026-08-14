@@ -277,9 +277,20 @@ async function handleGoogleLogin() {
         );
       }
 
-      const fetchedShorts:
-        AdminShort[] =
-        result.shorts;
+      const fetchedShorts: AdminShort[] =
+  [...result.shorts].sort(
+    (a, b) => {
+      const dateA = a.publishedAt
+        ? new Date(a.publishedAt).getTime()
+        : 0;
+
+      const dateB = b.publishedAt
+        ? new Date(b.publishedAt).getTime()
+        : 0;
+
+      return dateB - dateA;
+    }
+  );
 
       // ======================================
       // 3. YOUTUBE COUNT
@@ -386,11 +397,20 @@ async function handleGoogleLogin() {
       // OLD JSON AFTER
       // ======================================
 
-      const mergedShorts:
-        AdminShort[] = [
-          ...trulyNewShorts,
-          ...existingJsonShorts,
-        ];
+      const mergedShorts: AdminShort[] = [
+  ...trulyNewShorts,
+  ...existingJsonShorts,
+].sort((a, b) => {
+  const dateA = a.publishedAt
+    ? new Date(a.publishedAt).getTime()
+    : 0;
+
+  const dateB = b.publishedAt
+    ? new Date(b.publishedAt).getTime()
+    : 0;
+
+  return dateB - dateA;
+});
 
       // ======================================
       // 10. UPDATE EDITOR ONLY

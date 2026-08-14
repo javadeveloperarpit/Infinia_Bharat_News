@@ -65,8 +65,8 @@ export default function LatestNews({
               {sidebar.map((item, index) => (
 
                 <a
-                  href={`/news/${item.id}`}
-                  key={item.id}
+                   href={`/news/${item.slug}`}
+  key={item.id}
                   className="flex gap-4 p-4 hover:bg-zinc-50 transition"
                 >
 

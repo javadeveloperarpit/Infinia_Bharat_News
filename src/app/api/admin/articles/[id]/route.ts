@@ -155,9 +155,9 @@ export async function PUT(
     // ==================================================
 
     const slug =
-      body.title
-        ? createSlug(body.title)
-        : oldData.slug || "";
+  body.seoTitle
+    ? createSlug(body.seoTitle)
+    : oldData.slug || "";
 
 
     // ==================================================

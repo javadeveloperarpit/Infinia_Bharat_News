@@ -81,7 +81,7 @@ export const metadata: Metadata = {
 
     images: [
       {
-        url: "/logos/logo-light.png",
+        url: "/icon-512x512.png",
         width: 1200,
         height: 630,
         alt: "INFINIA BHARAT NEWS",
@@ -98,7 +98,7 @@ export const metadata: Metadata = {
     description:
       "भारत और दुनिया की ताज़ा खबरें, ब्रेकिंग न्यूज़, राजनीति, खेल, बिजनेस, टेक्नोलॉजी और मनोरंजन।",
 
-    images: ["/logos/logo-light.png"],
+    images: ["/icon-512x512.png"],
   },
 
   robots: {

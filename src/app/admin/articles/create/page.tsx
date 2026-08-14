@@ -962,7 +962,7 @@ useEffect(() => {
 
           <input
             name="seoTitle"
-            placeholder="SEO Title"
+            placeholder="pm-modi-latest-news"
             value={
               form.seoTitle
             }

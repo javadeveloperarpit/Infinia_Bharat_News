@@ -20,6 +20,8 @@ thumbnail:string;
 
 shortDescription?:string;
 
+slug?:string;
+
 categoryId:string;
 
 createdAt?:string;
