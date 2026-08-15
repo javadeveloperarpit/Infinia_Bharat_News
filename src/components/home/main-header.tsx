@@ -66,222 +66,220 @@ function handleLogoClick() {
           MAIN HEADER
       ========================================= */}
 
-      <header
+
+<header
+  className="
+    sticky
+    top-0
+    z-50
+    w-full
+    border-b
+    border-[#ECCA6D]/20
+    bg-[#090909]/95
+    backdrop-blur-xl
+  "
+>
+  <div
+    className="
+      mx-auto
+      flex
+      h-[68px]
+      w-full
+      max-w-[1600px]
+      items-center
+      justify-between
+      px-3
+      sm:h-[74px]
+      sm:px-5
+      lg:h-[84px]
+      lg:px-8
+    "
+  >
+
+    {/* ==============================
+        LOGO
+    ============================== */}
+
+    <Link
+      href="/"
+      onClick={handleLogoClick}
+      className="
+        flex
+        shrink-0
+        items-center
+        outline-none
+      "
+    >
+      <Image
+        src="/logo.png"
+        alt="INFINIA Bharat News"
+        width={220}
+        height={70}
+        priority
         className="
-          sticky
-          top-0
-          z-50
-          w-full
-          overflow-x-clip
-          bg-[#090909]/95
-          backdrop-blur-xl
-          border-b
-          border-[#ECCA6D]/20
+          h-auto
+          w-[115px]
+          object-contain
+          sm:w-[155px]
+          lg:w-[220px]
+        "
+      />
+    </Link>
+
+
+    {/* ==============================
+        RIGHT ACTIONS
+    ============================== */}
+
+    <div
+      className="
+        flex
+        shrink-0
+        items-center
+        gap-2
+        sm:gap-3
+      "
+    >
+
+      {/* SEARCH */}
+
+<button
+  type="button"
+  aria-label="Search news"
+  onClick={() => setSearchOpen(true)}
+  className="
+    flex
+    h-10
+    shrink-0
+    items-center
+    gap-2
+    rounded-xl
+    border
+    border-white/10
+    bg-white/[0.04]
+    px-3
+    text-zinc-200
+    transition-all
+    duration-300
+    hover:border-[#ECCA6D]/60
+    hover:bg-[#ECCA6D]/5
+    hover:text-[#ECCA6D]
+    active:scale-95
+    sm:px-4
+  "
+>
+  <Search
+    size={17}
+    strokeWidth={2.2}
+    className="shrink-0"
+  />
+
+  <span
+    className="
+      text-xs
+      font-semibold
+      tracking-wide
+      sm:text-sm
+    "
+  >
+    Search
+  </span>
+</button>
+
+      {/* ==============================
+          LIVE TV
+      ============================== */}
+
+      <Link
+        href="/live-tv"
+        aria-label="Live TV"
+        className="
+          group
+          flex
+          h-10
+          items-center
+          gap-2
+          rounded-xl
+          border
+          border-red-600/40
+          bg-red-600/[0.06]
+          px-3
+          text-white
+          transition-all
+          duration-300
+          hover:border-[#ECCA6D]/70
+          hover:bg-red-600/10
+          sm:px-4
         "
       >
-        <div
+
+        {/* LIVE DOT */}
+
+        <span
           className="
-            mx-auto
+            relative
             flex
-            h-[80px]
-            w-full
-            max-w-[1600px]
-            items-center
-            justify-between
-            gap-3
-            px-3
-            sm:h-[76px]
-            sm:px-5
-            lg:h-[85px]
-            lg:px-8
+            h-2.5
+            w-2.5
+            shrink-0
           "
         >
-          {/* =====================================
-              LOGO
-          ===================================== */}
-
-          <Link
-            href="/"
-  onClick={handleLogoClick}
+          <span
             className="
-              flex
-              min-w-0
-              shrink
-              items-center
-              outline-none
+              absolute
+              inset-0
+              animate-ping
+              rounded-full
+              bg-red-500
+              opacity-60
             "
-          >
-            <Image
-              src="/logo.png"
-              alt="INFINIA Bharat News"
-              width={220}
-              height={70}
-              priority
-              className="
-                h-auto
-                w-[125px]
-                object-contain
-                sm:w-[165px]
-                lg:w-[220px]
-              "
-            />
-          </Link>
+          />
 
-          {/* =====================================
-              ACTIONS
-          ===================================== */}
-
-          <div
+          <span
             className="
-              flex
-              shrink-0
-              items-center
-              gap-2
-              sm:gap-3
+              relative
+              h-2.5
+              w-2.5
+              rounded-full
+              bg-red-500
             "
-          >
-            {/* =================================
-                SEARCH BUTTON
-            ================================= */}
+          />
+        </span>
 
-            <button
-              type="button"
-              aria-label="Search"
-              onClick={() => setSearchOpen(true)}
-              className="
-                flex
-                h-10
-                w-10
-                shrink-0
-                items-center
-                justify-center
-                rounded-xl
-                border
-                border-white/15
-                bg-white/[0.04]
-                text-white/70
-                transition-all
-                duration-300
-                hover:border-[#ECCA6D]
-                hover:text-[#ECCA6D]
-                sm:w-auto
-                sm:gap-2
-                sm:px-4
-              "
-            >
-              <Search size={18} />
 
-              <span
-                className="
-                  hidden
-                  text-sm
-                  font-medium
-                  sm:block
-                "
-              >
-                Search
-              </span>
-            </button>
+        {/* RADIO ICON */}
 
-            {/* =================================
-                LIVE TV
-            ================================= */}
+        <Radio
+          size={16}
+          className="
+            text-[#ECCA6D]
+          "
+        />
 
-            <Link
-              href="/live-tv"
-              aria-label="Live TV"
-              className="
-                group
-                relative
-                flex
-                h-10
-                shrink-0
-                items-center
-                justify-center
-                gap-2
-                overflow-hidden
-                rounded-xl
-                border
-                border-red-600/50
-                bg-black
-                px-3
-                text-white
-                transition-all
-                duration-300
-                hover:border-[#ECCA6D]
-                sm:px-4
-                lg:px-5
-              "
-            >
-              {/* Hover Glow */}
 
-              <span
-                className="
-                  absolute
-                  inset-0
-                  bg-red-600/10
-                  opacity-0
-                  transition
-                  group-hover:opacity-100
-                "
-              />
+        {/* TEXT */}
 
-              {/* Live Dot */}
+        <span
+          className="
+            text-xs
+            font-bold
+            tracking-wide
+            sm:text-sm
+          "
+        >
+          LIVE
+          <span className="hidden sm:inline">
+            {" "}TV
+          </span>
+        </span>
 
-              <span
-                className="
-                  relative
-                  flex
-                  h-2.5
-                  w-2.5
-                  shrink-0
-                "
-              >
-                <span
-                  className="
-                    absolute
-                    h-full
-                    w-full
-                    animate-ping
-                    rounded-full
-                    bg-red-500
-                    opacity-75
-                  "
-                />
+      </Link>
 
-                <span
-                  className="
-                    relative
-                    h-2.5
-                    w-2.5
-                    rounded-full
-                    bg-red-500
-                  "
-                />
-              </span>
+    </div>
 
-              <Radio
-                size={15}
-                className="
-                  relative
-                  text-[#ECCA6D]
-                "
-              />
+  </div>
+</header>
 
-              <span
-                className="
-                  relative
-                  text-xs
-                  font-semibold
-                  sm:text-sm
-                "
-              >
-                LIVE TV
-              </span>
-            </Link>
-          </div>
-        </div>
-      </header>
 
       {/* =========================================
           SEARCH OVERLAY
