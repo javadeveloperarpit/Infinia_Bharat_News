@@ -10,6 +10,8 @@ interface XPost {
 }
 
 const PEOPLE = [
+  // 🇮🇳 NATIONAL LEADERS
+
   {
     person: "Narendra Modi",
     handle: "narendramodi",
@@ -23,8 +25,97 @@ const PEOPLE = [
     handle: "AmitShah",
   },
   {
+    person: "Rajnath Singh",
+    handle: "rajnathsingh",
+  },
+  {
+    person: "S. Jaishankar",
+    handle: "DrSJaishankar",
+  },
+  {
+    person: "Nitin Gadkari",
+    handle: "nitin_gadkari",
+  },
+  {
+    person: "Piyush Goyal",
+    handle: "PiyushGoyal",
+  },
+  {
+    person: "Ashwini Vaishnaw",
+    handle: "AshwiniVaishnaw",
+  },
+  {
+    person: "Dharmendra Pradhan",
+    handle: "dpradhanbjp",
+  },
+  {
+    person: "J. P. Nadda",
+    handle: "JPNadda",
+  },
+
+  // 🏛️ OPPOSITION / NATIONAL POLITICS
+
+  {
     person: "Rahul Gandhi",
     handle: "RahulGandhi",
+  },
+  {
+    person: "Mallikarjun Kharge",
+    handle: "kharge",
+  },
+  {
+    person: "Priyanka Gandhi Vadra",
+    handle: "priyankagandhi",
+  },
+
+  // 🟠 BJP / IMPORTANT NATIONAL VOICES
+
+  {
+    person: "Yogi Adityanath",
+    handle: "myogiadityanath",
+  },
+  {
+    person: "Himanta Biswa Sarma",
+    handle: "himantabiswa",
+  },
+  {
+    person: "Shivraj Singh Chouhan",
+    handle: "ChouhanShivraj",
+  },
+  {
+    person: "Manohar Lal",
+    handle: "mlkhattar",
+  },
+  {
+    person: "Devendra Fadnavis",
+    handle: "Dev_Fadnavis",
+  },
+
+  // 🇮🇳 OTHER MAJOR POLITICAL LEADERS
+
+  {
+    person: "Arvind Kejriwal",
+    handle: "ArvindKejriwal",
+  },
+  {
+    person: "Mamata Banerjee",
+    handle: "MamataOfficial",
+  },
+  {
+    person: "Akhilesh Yadav",
+    handle: "yadavakhilesh",
+  },
+  {
+    person: "Tejashwi Yadav",
+    handle: "yadavtejashwi",
+  },
+  {
+    person: "Uddhav Thackeray",
+    handle: "uddhavthackeray",
+  },
+  {
+    person: "Sharad Pawar",
+    handle: "PawarSpeaks",
   },
 ];
 
