@@ -573,7 +573,7 @@ export default async function NewsPage({
           <div
             className="
               sticky
-              top-20
+              top-16
               z-40
               mb-6
               border-y

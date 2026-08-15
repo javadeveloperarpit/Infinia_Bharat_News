@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -13,8 +12,8 @@ import {
   Settings,
   X,
   Sparkles,
+  Radio,
 } from "lucide-react";
-
 
 const menu = [
 
@@ -35,12 +34,23 @@ const menu = [
     href: "/admin/videos",
     icon: Video,
   },
-  
+
+  // ==================================================
+  // LIVE TV
+  // ==================================================
+
   {
-  name: "Shorts",
-  href: "/admin/shorts",
-  icon: Video,
-}, 
+    name: "Live TV",
+    href: "/admin/live-tv",
+    icon: Radio,
+  },
+
+  {
+    name: "Shorts",
+    href: "/admin/shorts",
+    icon: Video,
+  },
+
   {
     name: "AI Newsroom",
     href: "/admin/ai-news",
@@ -73,7 +83,6 @@ const menu = [
 
 ];
 
-
 export default function AdminSidebar({
   open,
   setOpen,
@@ -87,6 +96,7 @@ export default function AdminSidebar({
   return (
 
     <>
+
       {/* Mobile Overlay */}
 
       {open && (
@@ -96,14 +106,13 @@ export default function AdminSidebar({
           className="
             fixed
             inset-0
-            bg-black/50
             z-40
+            bg-black/50
             md:hidden
           "
         />
 
       )}
-
 
       <aside
         className={`
@@ -140,13 +149,13 @@ export default function AdminSidebar({
 
         <div
           className="
-            h-16
             flex
+            h-16
             items-center
             justify-between
-            px-5
             border-b
             border-zinc-800
+            px-5
           "
         >
 
@@ -164,7 +173,6 @@ export default function AdminSidebar({
 
           )}
 
-
           <button
             className="md:hidden"
             onClick={() => setOpen(false)}
@@ -179,8 +187,8 @@ export default function AdminSidebar({
 
         <nav
           className="
-            p-3
             space-y-2
+            p-3
           "
         >
 
@@ -190,6 +198,9 @@ export default function AdminSidebar({
 
             const isAI =
               item.name === "AI Newsroom";
+
+            const isLiveTV =
+              item.name === "Live TV";
 
             return (
 
@@ -207,8 +218,8 @@ export default function AdminSidebar({
                       : "gap-3"
                   }
 
-                  p-3
                   rounded-lg
+                  p-3
 
                   transition-all
                   duration-200
@@ -216,15 +227,23 @@ export default function AdminSidebar({
                   ${
                     isAI
                       ? `
+                        border
+                        border-red-500/20
                         bg-gradient-to-r
                         from-red-600/20
                         to-purple-600/20
                         text-white
-                        border
-                        border-red-500/20
                         hover:border-red-500/40
                         hover:from-red-600/30
                         hover:to-purple-600/30
+                      `
+                      : isLiveTV
+                      ? `
+                        border
+                        border-red-500/20
+                        bg-red-600/10
+                        hover:border-red-500/40
+                        hover:bg-red-600/20
                       `
                       : `
                         hover:bg-zinc-800
@@ -238,6 +257,8 @@ export default function AdminSidebar({
                   className={
                     isAI
                       ? "text-red-400"
+                      : isLiveTV
+                      ? "text-red-500"
                       : ""
                   }
                 />
@@ -252,17 +273,57 @@ export default function AdminSidebar({
                   {item.name}
                 </span>
 
+
+                {/* LIVE BADGE */}
+
+                {isLiveTV && !collapsed && (
+
+                  <span
+                    className="
+                      ml-auto
+                      flex
+                      items-center
+                      gap-1.5
+                      rounded-full
+                      bg-red-600
+                      px-2
+                      py-0.5
+                      text-[9px]
+                      font-bold
+                      text-white
+                    "
+                  >
+
+                    <span
+                      className="
+                        h-1.5
+                        w-1.5
+                        animate-pulse
+                        rounded-full
+                        bg-white
+                      "
+                    />
+
+                    LIVE
+
+                  </span>
+
+                )}
+
+
+                {/* AI BADGE */}
+
                 {isAI && !collapsed && (
 
                   <span
                     className="
                       ml-auto
-                      text-[9px]
-                      font-bold
-                      px-2
-                      py-0.5
                       rounded-full
                       bg-red-600
+                      px-2
+                      py-0.5
+                      text-[9px]
+                      font-bold
                       text-white
                     "
                   >
@@ -284,6 +345,4 @@ export default function AdminSidebar({
     </>
 
   );
-
 }
-
