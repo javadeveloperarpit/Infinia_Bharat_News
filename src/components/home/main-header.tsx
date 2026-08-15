@@ -111,7 +111,7 @@ function handleLogoClick() {
       "
     >
       <Image
-        src="/logo.png"
+        src="/logo.webp"
         alt="INFINIA Bharat News"
         width={220}
         height={70}

@@ -64,7 +64,7 @@ gap-10
 
 <Image
 
-src="/logo.png"
+src="/logo.webp"
 
 alt="INFINIA Bharat News"
 

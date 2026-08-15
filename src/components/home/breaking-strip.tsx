@@ -209,8 +209,8 @@ export default function BreakingStrip({
           <Image
             src={
               language === "hi"
-                ? "/images/breaking news tag.png"
-                : "/images/breaking news tag2.png"
+                ? "/images/breaking news tag.webp"
+                : "/images/breaking news tag2.webp"
             }
             alt="Breaking News"
             width={170}

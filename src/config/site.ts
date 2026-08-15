@@ -11,7 +11,7 @@ export const siteConfig = {
   url: "https://infiniabharatnews.vercel.app",
 
   // 1200x630 image — SEO / Open Graph / Social Sharing
-  logo: "/logo.png",
+  logo: "/logo.webp",
 
   // Actual brand logos
   logoLight: "/logos/logo-light.png",

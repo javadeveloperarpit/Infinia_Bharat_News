@@ -220,7 +220,7 @@ export default function PageLoadingBar() {
           />
 
           <Image
-            src="/loader.png"
+            src="/loader.webp"
             alt="Infinia Bharat News"
             width={100}
             height={100}

@@ -637,7 +637,7 @@ mergedShorts.sort((a, b) => {
         {/* Logo */}
         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
           <img
-            src="/loader.png"
+            src="/loader.webp"
             alt="Infinia Bharat News"
             className="h-full w-full object-contain p-2"
           />

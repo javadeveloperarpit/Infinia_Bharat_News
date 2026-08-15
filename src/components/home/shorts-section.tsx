@@ -871,7 +871,7 @@ export default function ShortsSection({
                       "
                     >
                       <Image
-                        src="/logo.png"
+                        src="/logo.webp"
                         alt=""
                         fill
                         sizes="32px"
