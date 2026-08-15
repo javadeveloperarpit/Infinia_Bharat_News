@@ -567,35 +567,39 @@ export default function HeroSection({
                   >
 
                     <span
-                      className="
-                        self-start
-                        max-w-full
-                        truncate
-                        rounded
-                        bg-[#AD0000]
-                        px-2
-                        py-1
-                        text-[9px]
-                        font-black
-                        uppercase
-                        text-white
-                      "
-                    >
+  className="
+    self-start
+    shrink-0
+    max-w-full
+    truncate
+    rounded
+    bg-[#AD0000]
+    px-2
+    py-1
+    text-[9px]
+    font-black
+    uppercase
+    text-white
+  "
+>
                       {story.category || "NEWS"}
                     </span>
 
                     <h2
-                      className="
-                        mt-2
-                        text-[13px]
-                        font-extrabold
-                        leading-[1.42]
-                        text-zinc-900
-                        transition-colors
-                        group-hover:text-[#AD0000]
-                        xl:text-[14px]
-                      "
-                    >
+  className="
+    mt-2
+    min-w-0
+    line-clamp-4
+    break-words
+    text-[13px]
+    font-extrabold
+    leading-[1.35]
+    text-zinc-900
+    transition-colors
+    group-hover:text-[#AD0000]
+    xl:text-[14px]
+  "
+>
                       {limitText(
                         story.title,
                         100
