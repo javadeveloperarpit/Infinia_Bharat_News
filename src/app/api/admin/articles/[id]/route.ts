@@ -22,7 +22,6 @@ import {
 } from "@/lib/utils/create-slug";
 
 import {
-  syncArticleCreate,
   syncArticleUpdate,
   syncArticleDelete,
 } from "@/lib/github/article-sync";
@@ -45,15 +44,9 @@ export async function PUT(
     // ==================================================
     // ARTICLE ID
     // ==================================================
-
-    const {
-      id,
-    } = await context.params;
-
-    console.log(
-      "UPDATE ARTICLE ID:",
-      id
-    );
+ 
+    const { id } =
+      await context.params;
 
     if (!id) {
       return NextResponse.json(
@@ -75,10 +68,7 @@ export async function PUT(
     const token =
       request.headers
         .get("authorization")
-        ?.replace(
-          "Bearer ",
-          ""
-        );
+        ?.replace("Bearer ", "");
 
     if (!token) {
       return NextResponse.json(
@@ -151,13 +141,123 @@ export async function PUT(
 
 
     // ==================================================
+    // FEATURED / PRIORITY VALIDATION
+    // ==================================================
+
+    const nextFeatured =
+      body.featured !== undefined
+        ? body.featured === true
+        : oldData.featured === true;
+
+
+    let nextPriority =
+      body.priority !== undefined
+        ? body.priority
+        : oldData.priority;
+
+
+    // ==================================================
+    // UNFEATURED
+    // ==================================================
+
+    if (!nextFeatured) {
+
+      nextPriority = null;
+
+    }
+
+
+    // ==================================================
+    // FEATURED ARTICLE
+    // ==================================================
+
+    if (nextFeatured) {
+
+      const priority =
+        Number(nextPriority);
+
+
+      // ----------------------------------------------
+      // PRIORITY REQUIRED
+      // ----------------------------------------------
+
+      if (
+        !Number.isInteger(priority) ||
+        priority < 1 ||
+        priority > 5
+      ) {
+
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Priority must be between 1 and 5.",
+          },
+          {
+            status: 400,
+          }
+        );
+
+      }
+
+
+      // ----------------------------------------------
+      // CHECK DUPLICATE PRIORITY
+      // ----------------------------------------------
+
+      const duplicateSnapshot =
+        await adminDb
+          .collection("articles")
+          .where(
+            "featured",
+            "==",
+            true
+          )
+          .where(
+            "priority",
+            "==",
+            priority
+          )
+          .get();
+
+
+      const duplicate =
+        duplicateSnapshot.docs.find(
+          (item) =>
+            item.id !== id
+        );
+
+
+      if (duplicate) {
+
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              `Priority ${priority} is already occupied.`,
+          },
+          {
+            status: 409,
+          }
+        );
+
+      }
+
+
+      nextPriority =
+        priority;
+
+    }
+
+
+    // ==================================================
     // SLUG
     // ==================================================
 
     const slug =
-  body.seoTitle
-    ? createSlug(body.seoTitle)
-    : oldData.slug || "";
+      body.seoTitle
+        ? createSlug(body.seoTitle)
+        : oldData.slug || "";
 
 
     // ==================================================
@@ -181,22 +281,41 @@ export async function PUT(
       };
 
 
-    // ==================================================
-    // FIREBASE UPDATE
-    // ==================================================
+   // ======================================================
+// PREPARE UPDATE DATA
+// ======================================================
 
-    await ref.update({
+const updateData: Record<string, any> = {
+  ...body,
 
-      ...body,
+  slug,
 
-      slug,
+  author,
 
-      author,
+  updatedAt:
+    FieldValue.serverTimestamp(),
+};
 
-      updatedAt:
-        FieldValue.serverTimestamp(),
-    });
 
+// ======================================================
+// REMOVE PRIORITY WHEN ARTICLE IS UNFEATURED
+// ======================================================
+
+if (body.featured === false) {
+
+  updateData.priority =
+    FieldValue.delete();
+
+}
+
+
+// ======================================================
+// FIREBASE UPDATE
+// ======================================================
+
+await ref.update(
+  updateData
+);
 
     // ==================================================
     // GITHUB ARTICLE
@@ -206,7 +325,15 @@ export async function PUT(
 
       id,
 
+      ...oldData,
+
       ...body,
+
+      featured:
+        nextFeatured,
+
+      priority:
+        nextPriority,
 
       slug,
 
@@ -214,8 +341,10 @@ export async function PUT(
 
       createdAt:
         oldData.createdAt &&
-        typeof oldData.createdAt === "object" &&
+        typeof oldData.createdAt ===
+          "object" &&
         "toDate" in oldData.createdAt
+
           ? (
               oldData.createdAt as {
                 toDate: () => Date;
@@ -223,12 +352,18 @@ export async function PUT(
             )
               .toDate()
               .toISOString()
-          : typeof oldData.createdAt === "string"
+
+          : typeof oldData.createdAt ===
+              "string"
+
           ? oldData.createdAt
-          : new Date().toISOString(),
+
+          : new Date()
+              .toISOString(),
 
       updatedAt:
-        new Date().toISOString(),
+        new Date()
+          .toISOString(),
     };
 
 
@@ -236,7 +371,8 @@ export async function PUT(
     // SYNC TO GITHUB
     // ==================================================
 
-    let githubSynced = false;
+    let githubSynced =
+      false;
 
     try {
 
@@ -244,7 +380,8 @@ export async function PUT(
         githubArticle
       );
 
-      githubSynced = true;
+      githubSynced =
+        true;
 
       console.log(
         "ARTICLE GITHUB UPDATE SUCCESS:",
@@ -258,11 +395,6 @@ export async function PUT(
         githubError
       );
 
-      /*
-       * Firebase update already succeeded.
-       *
-       * Therefore we don't return 500.
-       */
     }
 
 
@@ -270,21 +402,21 @@ export async function PUT(
     // SUCCESS
     // ==================================================
 
-    return NextResponse.json({
+    return NextResponse.json(
+      {
+        success: true,
 
-      success: true,
+        message:
+          "Updated successfully",
 
-      message:
-        "Updated successfully",
-
-      githubSynced,
-
-    });
+        githubSynced,
+      }
+    );
 
   } catch (error: any) {
 
     console.error(
-      "UPDATE ERROR:",
+      "UPDATE ARTICLE ERROR:",
       error
     );
 
@@ -300,8 +432,11 @@ export async function PUT(
         status: 500,
       }
     );
+
   }
 }
+
+
 // ======================================================
 // DELETE ARTICLE
 // ======================================================
@@ -320,14 +455,8 @@ export async function DELETE(
     // ARTICLE ID
     // ==================================================
 
-    const {
-      id,
-    } = await context.params;
-
-    console.log(
-      "DELETE ARTICLE ID:",
-      id
-    );
+    const { id } =
+      await context.params;
 
     if (!id) {
       return NextResponse.json(
@@ -349,10 +478,7 @@ export async function DELETE(
     const token =
       request.headers
         .get("authorization")
-        ?.replace(
-          "Bearer ",
-          ""
-        );
+        ?.replace("Bearer ", "");
 
     if (!token) {
       return NextResponse.json(
@@ -419,10 +545,11 @@ export async function DELETE(
 
 
     // ==================================================
-    // DELETE FROM GITHUB JSON
+    // DELETE FROM GITHUB
     // ==================================================
 
-    let githubSynced = false;
+    let githubSynced =
+      false;
 
     try {
 
@@ -430,7 +557,8 @@ export async function DELETE(
         id
       );
 
-      githubSynced = true;
+      githubSynced =
+        true;
 
       console.log(
         "ARTICLE GITHUB DELETE SUCCESS:",
@@ -444,12 +572,6 @@ export async function DELETE(
         githubError
       );
 
-      /*
-       * Firebase deletion already succeeded.
-       *
-       * Therefore don't report the whole operation
-       * as a 500 error.
-       */
     }
 
 
@@ -457,16 +579,16 @@ export async function DELETE(
     // SUCCESS
     // ==================================================
 
-    return NextResponse.json({
+    return NextResponse.json(
+      {
+        success: true,
 
-      success: true,
+        message:
+          "Article deleted successfully",
 
-      message:
-        "Article deleted successfully",
-
-      githubSynced,
-
-    });
+        githubSynced,
+      }
+    );
 
   } catch (error: any) {
 
@@ -487,5 +609,6 @@ export async function DELETE(
         status: 500,
       }
     );
+
   }
 }

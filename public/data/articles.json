@@ -22,9 +22,14 @@
     },
     "shortDescription": "Surya-Ketu Gochar 2026: सालों बाद पास आएंगे सूर्य-केतु, इन 4 राशियों को होगा धनलाभ, करियर में मिल सकती है बड़ी सफलता |",
     "slug": "surya-ketu-gochar-4-20260812-155202015",
+<<<<<<< HEAD
     "featured": true,
     "priority": 5,
     "updatedAt": "2026-08-15T04:00:00.235Z"
+=======
+    "featured": false,
+    "updatedAt": "2026-08-15T03:41:25.356Z"
+>>>>>>> f4beca3 (d)
   },
   {
     "id": "B5RAMTV4Udg4GwgG77ps",
@@ -141,9 +146,14 @@
       "role": "admin"
     },
     "createdAt": "2026-08-14T15:07:12.477Z",
+<<<<<<< HEAD
     "featured": false,
     "priority": null,
     "updatedAt": "2026-08-15T03:59:31.239Z"
+=======
+    "priority": 5,
+    "updatedAt": "2026-08-15T03:48:34.692Z"
+>>>>>>> f4beca3 (d)
   },
   {
     "id": "hh2Bcqa4wrBLJvwX8tzl",
