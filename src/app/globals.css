@@ -1229,7 +1229,117 @@ iframe {
   display: none;
 }
 
+/* ============================================================
+   ARTICLE MEDIA
+   ============================================================ */
+
+.article-media {
+  width: 100%;
+  max-width: 100%;
+  margin: 28px 0;
+}
+
+.article-media-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #000;
+}
+
+.article-media-wrapper iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
 
 
+/* ============================================================
+   DIRECT VIDEO
+   ============================================================ */
 
+.article-direct-video video {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 12px;
+  background: #000;
+}
+
+
+/* ============================================================
+   SPOTIFY
+   ============================================================ */
+
+.article-spotify-wrapper {
+  width: 100%;
+  min-height: 152px;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.article-spotify-wrapper iframe {
+  width: 100%;
+  min-height: 152px;
+  border: 0;
+  display: block;
+}
+
+
+/* ============================================================
+   SOUNDCLOUD
+   ============================================================ */
+
+.article-soundcloud-wrapper {
+  width: 100%;
+  min-height: 166px;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.article-soundcloud-wrapper iframe {
+  width: 100%;
+  height: 166px;
+  border: 0;
+  display: block;
+}
+
+
+/* ============================================================
+   INSTAGRAM / SOCIAL
+   ============================================================ */
+
+.article-social-wrapper {
+  width: 100%;
+  max-width: 550px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.article-social-wrapper iframe {
+  width: 100%;
+  min-height: 600px;
+  border: 0;
+  display: block;
+}
+
+
+/* ============================================================
+   UNKNOWN MEDIA
+   ============================================================ */
+
+.article-unknown-media {
+  padding: 16px;
+  border-radius: 10px;
+  background: #f4f4f5;
+}
+
+.article-unknown-media a {
+  font-weight: 600;
+}
 
