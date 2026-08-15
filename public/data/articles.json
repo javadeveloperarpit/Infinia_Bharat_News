@@ -133,7 +133,6 @@
     "seoDescription": "PUBG Mobile World Cup 2026 में GodLike Esports और Orangutan ने Grand Finals में जगह बनाकर इतिहास रच दिया। पहली बार दो भारतीय टीमें एक साथ PMWC फाइनल में पहुंचीं।",
     "featured": true,
     "breaking": false,
-    "priority": 4,
     "status": "published",
     "slug": "pubg-mobile-world-cup-2026-indian-teams-godlike-orangutan-grand-finals-paris-20260814-150711263",
     "author": {
@@ -143,7 +142,8 @@
       "role": "admin"
     },
     "createdAt": "2026-08-14T15:07:12.477Z",
-    "updatedAt": "2026-08-14T15:07:12.477Z"
+    "priority": 5,
+    "updatedAt": "2026-08-15T03:48:34.692Z"
   },
   {
     "id": "hh2Bcqa4wrBLJvwX8tzl",
