@@ -65,21 +65,21 @@ export const metadata: Metadata = {
   icons: {
   icon: [
     {
-      url: "/favicon.svg",
+      url: "/icon.svg",
       type: "image/svg+xml",
     },
     {
-      url: "/icons/favicon-96x96.png",
+      url: "/icons/favicon-96x96.webp",
       type: "image/png",
       sizes: "96x96",
     },
     {
-      url: "/icons/favicon-192x192.png",
+      url: "/icons/favicon-192x192.webp",
       type: "image/png",
       sizes: "192x192",
     },
     {
-      url: "/icons/favicon-512x512.png",
+      url: "/icons/favicon-512x512.webp",
       type: "image/png",
       sizes: "512x512",
     },
@@ -87,7 +87,7 @@ export const metadata: Metadata = {
 
   apple: [
     {
-      url: "/icons/favicon-192x192.png",
+      url: "/icons/favicon-192x192.webp",
       sizes: "192x192",
       type: "image/png",
     },
@@ -150,7 +150,7 @@ const organizationSchema = {
 
   logo: {
     "@type": "ImageObject",
-    url: `${siteConfig.url}/logos/logo-light.png`,
+    url: `${siteConfig.url}/logos/logo-light.webp`,
     width: 1200,
     height: 630,
   },

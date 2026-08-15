@@ -96,7 +96,7 @@ export async function generateMetadata({
 
   const image =
     reel.thumbnail ||
-    `${SITE_URL}/logos/logo-light.png`;
+    `${SITE_URL}/logos/logo-light.webp`;
 
 
   return {
@@ -337,7 +337,7 @@ export default async function ReelPage({
 
   const reelImage =
     reel.thumbnail ||
-    `${SITE_URL}/logos/logo-light.png`;
+    `${SITE_URL}/logos/logo-light.webp`;
 
 
   const videoSchema = {
@@ -390,7 +390,7 @@ export default async function ReelPage({
           "ImageObject",
 
         url:
-          `${SITE_URL}/logos/logo-light.png`,
+          `${SITE_URL}/logos/logo-light.webp`,
       },
     },
 

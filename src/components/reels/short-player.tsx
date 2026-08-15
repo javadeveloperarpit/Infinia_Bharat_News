@@ -909,7 +909,7 @@ function handleScreenClick() {
   "
 >
   <img
-    src="/logos/logo-light.png"
+    src="/logos/logo-light.webp"
     alt="Infinia Bharat News"
     className="h-full w-full object-cover"
   />

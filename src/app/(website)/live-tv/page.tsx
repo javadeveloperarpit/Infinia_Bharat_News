@@ -254,7 +254,7 @@ export default function LiveTvPage() {
           <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
             <div className="flex h-10 w-10 items-center justify-center border border-zinc-200 bg-white p-1.5">
               <img
-                src="/icons/favicon-512x512.png"
+                src="/icons/favicon-512x512.webp"
                 alt="Infinia Bharat News"
                 className="h-full w-full object-contain"
               />
@@ -320,7 +320,7 @@ export default function LiveTvPage() {
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-zinc-200 bg-white p-1.5">
               <img
-                src="/icons/favicon-512x512.png"
+                src="/icons/favicon-512x512.webp"
                 alt="Infinia Bharat News"
                 className="h-full w-full object-contain"
               />
@@ -392,7 +392,7 @@ export default function LiveTvPage() {
 
                   <div className="flex h-7 w-7 shrink-0 items-center justify-center bg-white p-1 sm:h-8 sm:w-8">
                     <img
-                      src="/icons/favicon-512x512.png"
+                      src="/icons/favicon-512x512.webp"
                       alt=""
                       className="h-full w-full object-contain"
                     />

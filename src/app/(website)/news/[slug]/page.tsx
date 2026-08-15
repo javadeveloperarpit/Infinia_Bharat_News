@@ -447,7 +447,7 @@ export default async function NewsPage({
           "ImageObject",
 
         url:
-          `${siteConfig.url}/logos/logo-light.png`,
+          `${siteConfig.url}/logos/logo-light.webp`,
 
         width: 1200,
 

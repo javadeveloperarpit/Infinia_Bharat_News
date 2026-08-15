@@ -37,7 +37,7 @@ export const metadata: Metadata = {
 
     images: [
       {
-        url: "https://infiniabharatnews.vercel.app/icons/favicon-512x512.png",
+        url: "https://infiniabharatnews.vercel.app/icons/favicon-512x512.webp",
         width: 512,
         height: 512,
         alt: "Infinia Bharat News",
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
       "Watch live news and television broadcasts online with Infinia Bharat News.",
 
     images: [
-      "https://infiniabharatnews.vercel.app/icons/favicon-512x512.png",
+      "https://infiniabharatnews.vercel.app/icons/favicon-512x512.webp",
     ],
   },
 

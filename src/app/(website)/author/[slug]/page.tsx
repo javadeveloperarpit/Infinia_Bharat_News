@@ -242,7 +242,7 @@ export default async function AuthorPage({
         "@type": "ImageObject",
 
         url:
-          `${siteConfig.url}/logos/logo-light.png`,
+          `${siteConfig.url}/logos/logo-light.webp`,
       },
     },
 

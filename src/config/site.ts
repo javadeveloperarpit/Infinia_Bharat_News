@@ -14,8 +14,8 @@ export const siteConfig = {
   logo: "/logo.webp",
 
   // Actual brand logos
-  logoLight: "/logos/logo-light.png",
-  logoDark: "/logos/logo-dark.png",
+  logoLight: "/logos/logo-light.webp",
+  logoDark: "/logos/logo-dark.webp",
 
   themeColor: "#C8102E",
 

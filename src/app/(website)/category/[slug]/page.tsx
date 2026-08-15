@@ -468,7 +468,7 @@ const categorySchema = {
       "@type": "ImageObject",
 
       url:
-        `${siteConfig.url}/logos/logo-light.png`,
+        `${siteConfig.url}/logos/logo-light.webp`,
     },
   },
 };

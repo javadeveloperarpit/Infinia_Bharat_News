@@ -323,7 +323,7 @@ export default async function VideoPage({
           "ImageObject",
 
         url:
-          `${siteConfig.url}/logos/logo-light.png`,
+          `${siteConfig.url}/logos/logo-light.webp`,
 
         width: 1200,
 
