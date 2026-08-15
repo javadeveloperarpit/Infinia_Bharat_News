@@ -1,130 +1,90 @@
-import { NextRequest, NextResponse } from "next/server";
-import fs from "fs/promises";
-import path from "path";
-import crypto from "crypto";
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
+
+import {
+  adminAuth,
+  adminDb,
+} from "@/lib/firebase/firebase-admin";
+
+import {
+  syncLiveTvToGithub,
+} from "@/lib/github/live-tv-sync";
 
 // ======================================================
-// TYPES
+// AUTH
 // ======================================================
 
-interface LiveTvChannel {
-  id: string;
-  title: string;
-  youtubeUrl: string;
-  enabled: boolean;
-  order: number;
-  logo?: string;
-}
-
-// ======================================================
-// FILE PATH
-// ======================================================
-
-const DATA_DIR = path.join(process.cwd(), "data");
-const DATA_FILE = path.join(DATA_DIR, "live-tv.json");
-
-// ======================================================
-// READ FILE SAFELY
-// ======================================================
-
-async function readLiveTv(): Promise<LiveTvChannel[]> {
-  try {
-    await fs.mkdir(DATA_DIR, {
-      recursive: true,
-    });
-
-    let raw = "";
-
-    try {
-      raw = await fs.readFile(
-        DATA_FILE,
-        "utf-8"
-      );
-    } catch {
-      // File doesn't exist.
-      // Create it automatically.
-      await fs.writeFile(
-        DATA_FILE,
-        "[]",
-        "utf-8"
-      );
-
-      return [];
-    }
-
-    // Empty file = empty array
-    if (!raw.trim()) {
-      return [];
-    }
-
-    try {
-      const parsed = JSON.parse(raw);
-
-      // JSON must be an array
-      if (!Array.isArray(parsed)) {
-        return [];
-      }
-
-      return parsed as LiveTvChannel[];
-    } catch {
-      // Invalid JSON should not crash the app.
-      return [];
-    }
-  } catch (error) {
-    console.error(
-      "Live TV JSON Read Error:",
-      error
+async function verifyAdmin(
+  request: NextRequest
+) {
+  const authorization =
+    request.headers.get(
+      "authorization"
     );
 
-    // Never crash because of an empty/broken file.
-    return [];
+  if (
+    !authorization?.startsWith(
+      "Bearer "
+    )
+  ) {
+    throw new Error(
+      "Unauthorized"
+    );
   }
-}
 
-// ======================================================
-// WRITE FILE SAFELY
-// ======================================================
+  const token =
+    authorization.substring(
+      7
+    );
 
-async function writeLiveTv(
-  channels: LiveTvChannel[]
-) {
-  await fs.mkdir(DATA_DIR, {
-    recursive: true,
-  });
+  if (!token) {
+    throw new Error(
+      "Unauthorized"
+    );
+  }
 
-  await fs.writeFile(
-    DATA_FILE,
-    JSON.stringify(
-      channels,
-      null,
-      2
-    ),
-    "utf-8"
+  return adminAuth.verifyIdToken(
+    token
   );
 }
 
 // ======================================================
 // GET
 // ======================================================
+// IMPORTANT:
+// GET Firebase ko read nahi karega.
+// Public JSON/API data source later file se hoga.
+// ======================================================
 
 export async function GET() {
   try {
-    const channels = await readLiveTv();
+    const snapshot =
+      await adminDb
+        .collection("liveTv")
+        .get();
 
-    const sorted = [...channels].sort(
-      (a, b) =>
-        Number(a.order ?? 0) -
-        Number(b.order ?? 0)
-    );
+    const channels =
+      snapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .sort(
+          (a: any, b: any) =>
+            Number(
+              a.order ?? 0
+            ) -
+            Number(
+              b.order ?? 0
+            )
+        );
 
     return NextResponse.json(
-      sorted,
+      channels,
       {
         status: 200,
-        headers: {
-          "Cache-Control":
-            "no-store, no-cache, must-revalidate",
-        },
       }
     );
   } catch (error) {
@@ -133,7 +93,6 @@ export async function GET() {
       error
     );
 
-    // Always return an array.
     return NextResponse.json(
       [],
       {
@@ -144,316 +103,161 @@ export async function GET() {
 }
 
 // ======================================================
-// POST
+// POST - CREATE
 // ======================================================
 
 export async function POST(
   request: NextRequest
 ) {
   try {
+    await verifyAdmin(
+      request
+    );
+
     const body =
       await request.json();
-
-    const channels =
-      await readLiveTv();
-
-    const newChannel: LiveTvChannel = {
-      id: crypto.randomUUID(),
-
-      title:
-        String(
-          body?.title ?? ""
-        ).trim(),
-
-      youtubeUrl:
-        String(
-          body?.youtubeUrl ?? ""
-        ).trim(),
-
-      enabled:
-        body?.enabled === true,
-
-      order:
-        Number(
-          body?.order ?? channels.length
-        ) || 0,
-
-      ...(body?.logo
-        ? {
-            logo: String(
-              body.logo
-            ),
-          }
-        : {}),
-    };
-
-    if (!newChannel.title) {
-      return NextResponse.json(
-        {
-          message:
-            "Channel title is required.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    if (!newChannel.youtubeUrl) {
-      return NextResponse.json(
-        {
-          message:
-            "YouTube URL is required.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    channels.push(
-      newChannel
-    );
-
-    await writeLiveTv(
-      channels
-    );
-
-    return NextResponse.json(
-      newChannel,
-      {
-        status: 201,
-      }
-    );
-  } catch (error) {
-    console.error(
-      "Live TV POST Error:",
-      error
-    );
-
-    return NextResponse.json(
-      {
-        message:
-          "Failed to create Live TV channel.",
-      },
-      {
-        status: 500,
-      }
-    );
-  }
-}
-
-// ======================================================
-// PUT
-// ======================================================
-
-export async function PUT(
-  request: NextRequest
-) {
-  try {
-    const body =
-      await request.json();
-
-    const id =
-      String(
-        body?.id ?? ""
-      ).trim();
-
-    if (!id) {
-      return NextResponse.json(
-        {
-          message:
-            "Channel ID is required.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    const channels =
-      await readLiveTv();
-
-    const index =
-      channels.findIndex(
-        (channel) =>
-          channel.id === id
-      );
-
-    if (index === -1) {
-      return NextResponse.json(
-        {
-          message:
-            "Live TV channel not found.",
-        },
-        {
-          status: 404,
-        }
-      );
-    }
-
-    const existing =
-      channels[index];
-
-    const updated: LiveTvChannel = {
-      ...existing,
-
-      ...(body.title !== undefined
-        ? {
-            title:
-              String(
-                body.title
-              ).trim(),
-          }
-        : {}),
-
-      ...(body.youtubeUrl !==
-      undefined
-        ? {
-            youtubeUrl:
-              String(
-                body.youtubeUrl
-              ).trim(),
-          }
-        : {}),
-
-      ...(body.enabled !==
-      undefined
-        ? {
-            enabled:
-              body.enabled === true,
-          }
-        : {}),
-
-      ...(body.order !==
-      undefined
-        ? {
-            order:
-              Number(
-                body.order
-              ) || 0,
-          }
-        : {}),
-
-      ...(body.logo !==
-      undefined
-        ? {
-            logo:
-              String(
-                body.logo
-              ),
-          }
-        : {}),
-    };
-
-    channels[index] =
-      updated;
-
-    await writeLiveTv(
-      channels
-    );
-
-    return NextResponse.json(
-      updated,
-      {
-        status: 200,
-      }
-    );
-  } catch (error) {
-    console.error(
-      "Live TV PUT Error:",
-      error
-    );
-
-    return NextResponse.json(
-      {
-        message:
-          "Failed to update Live TV channel.",
-      },
-      {
-        status: 500,
-      }
-    );
-  }
-}
-
-// ======================================================
-// DELETE
-// ======================================================
-
-export async function DELETE(
-  request: NextRequest
-) {
-  try {
-    const { searchParams } =
-      new URL(request.url);
-
-    const id =
-      searchParams
-        .get("id")
-        ?.trim();
-
-    if (!id) {
-      return NextResponse.json(
-        {
-          message:
-            "Channel ID is required.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    const channels =
-      await readLiveTv();
-
-    const filtered =
-      channels.filter(
-        (channel) =>
-          channel.id !== id
-      );
 
     if (
-      filtered.length ===
-      channels.length
+      !body?.title ||
+      !body?.youtubeUrl
     ) {
       return NextResponse.json(
         {
           message:
-            "Live TV channel not found.",
+            "Title and YouTube URL are required.",
         },
         {
-          status: 404,
+          status: 400,
         }
       );
     }
 
-    await writeLiveTv(
-      filtered
+    // --------------------------------------------------
+    // FIREBASE CREATE
+    // --------------------------------------------------
+
+    const reference =
+      adminDb
+        .collection("liveTv")
+        .doc();
+
+    const channel = {
+      title:
+        String(
+          body.title
+        ).trim(),
+
+      youtubeUrl:
+        String(
+          body.youtubeUrl
+        ).trim(),
+
+      enabled:
+        body.enabled !== false,
+
+      order:
+        Number(
+          body.order ?? 0
+        ),
+
+      ...(typeof body.logo ===
+        "string" &&
+      body.logo.trim()
+        ? {
+            logo:
+              body.logo.trim(),
+          }
+        : {}),
+
+      createdAt:
+        new Date(),
+
+      updatedAt:
+        new Date(),
+    };
+
+    await reference.set(
+      channel
     );
+
+    // --------------------------------------------------
+    // FIREBASE → GITHUB
+    // --------------------------------------------------
+
+    let syncResult;
+
+    try {
+      syncResult =
+        await syncLiveTvToGithub();
+    } catch (syncError) {
+      console.error(
+        "Live TV GitHub Sync Error:",
+        syncError
+      );
+
+      // Firebase creation successful
+      // but sync failed.
+      return NextResponse.json(
+        {
+          success: true,
+
+          id:
+            reference.id,
+
+          message:
+            "Channel created in Firebase, but GitHub sync failed.",
+
+          syncError:
+            syncError instanceof
+            Error
+              ? syncError.message
+              : "Unknown sync error.",
+        },
+        {
+          status: 207,
+        }
+      );
+    }
 
     return NextResponse.json(
       {
         success: true,
+
+        id:
+          reference.id,
+
+        channel: {
+          id:
+            reference.id,
+
+          ...channel,
+        },
+
+        sync:
+          syncResult,
       },
       {
-        status: 200,
+        status: 201,
       }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error(
-      "Live TV DELETE Error:",
+      "Create Live TV Error:",
       error
     );
 
     return NextResponse.json(
       {
         message:
-          "Failed to delete Live TV channel.",
+          error?.message ||
+          "Failed to create Live TV channel.",
       },
       {
-        status: 500,
+        status:
+          error?.message ===
+          "Unauthorized"
+            ? 401
+            : 500,
       }
     );
   }

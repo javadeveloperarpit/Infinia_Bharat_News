@@ -8,6 +8,9 @@ import {
   adminDb,
 } from "@/lib/firebase/firebase-admin";
 
+import {
+  syncLiveTvToGithub,
+} from "@/lib/github/live-tv-sync";
 
 // ======================================================
 // AUTH
@@ -16,7 +19,6 @@ import {
 async function verifyAdmin(
   request: NextRequest
 ) {
-
   const authorization =
     request.headers.get(
       "authorization"
@@ -48,9 +50,8 @@ async function verifyAdmin(
   );
 }
 
-
 // ======================================================
-// PUT - UPDATE CHANNEL
+// PUT - UPDATE
 // ======================================================
 
 export async function PUT(
@@ -61,9 +62,7 @@ export async function PUT(
     }>;
   }
 ) {
-
   try {
-
     await verifyAdmin(
       request
     );
@@ -72,9 +71,7 @@ export async function PUT(
       id,
     } = await context.params;
 
-
     if (!id) {
-
       return NextResponse.json(
         {
           message:
@@ -84,35 +81,20 @@ export async function PUT(
           status: 400,
         }
       );
-
     }
-
 
     const body =
       await request.json();
-
-
-    const {
-      title,
-      youtubeUrl,
-      enabled,
-      order,
-      logo,
-    } = body;
-
 
     const reference =
       adminDb
         .collection("liveTv")
         .doc(id);
 
-
     const existing =
       await reference.get();
 
-
     if (!existing.exists) {
-
       return NextResponse.json(
         {
           message:
@@ -122,100 +104,117 @@ export async function PUT(
           status: 404,
         }
       );
-
     }
-
 
     const updateData: Record<
       string,
       any
     > = {
-
       updatedAt:
         new Date(),
-
     };
 
-
     if (
-      typeof title ===
+      typeof body.title ===
       "string"
     ) {
-
       updateData.title =
-        title.trim();
-
+        body.title.trim();
     }
 
-
     if (
-      typeof youtubeUrl ===
+      typeof body.youtubeUrl ===
       "string"
     ) {
-
       updateData.youtubeUrl =
-        youtubeUrl.trim();
-
+        body.youtubeUrl.trim();
     }
 
-
     if (
-      typeof enabled ===
+      typeof body.enabled ===
       "boolean"
     ) {
-
       updateData.enabled =
-        enabled;
-
+        body.enabled;
     }
 
-
     if (
-      typeof order ===
+      typeof body.order ===
       "number"
     ) {
-
       updateData.order =
-        order;
-
+        body.order;
     }
-
 
     if (
-      typeof logo ===
+      typeof body.logo ===
       "string"
     ) {
-
       updateData.logo =
-        logo.trim();
-
+        body.logo.trim();
     }
-
 
     await reference.update(
       updateData
     );
 
+    // --------------------------------------------------
+    // FIREBASE → GITHUB
+    // --------------------------------------------------
 
-    return NextResponse.json({
+    let syncResult;
 
-      success: true,
+    try {
+      syncResult =
+        await syncLiveTvToGithub();
+    } catch (syncError) {
+      console.error(
+        "Live TV GitHub Sync Error:",
+        syncError
+      );
 
-      message:
-        "Live TV channel updated successfully.",
+      return NextResponse.json(
+        {
+          success: true,
 
-      id,
+          id,
 
-    });
+          message:
+            "Channel updated in Firebase, but GitHub sync failed.",
 
-  }
-  catch (error: any) {
+          syncError:
+            syncError instanceof
+            Error
+              ? syncError.message
+              : "Unknown sync error.",
+        },
+        {
+          status: 207,
+        }
+      );
+    }
 
+    return NextResponse.json(
+      {
+        success: true,
+
+        message:
+          "Live TV channel updated successfully.",
+
+        id,
+
+        sync:
+          syncResult,
+      },
+      {
+        status: 200,
+      }
+    );
+  } catch (error: any) {
     console.error(
       "Update Live TV Error:",
       error
     );
-
 
     return NextResponse.json(
       {
@@ -231,14 +230,11 @@ export async function PUT(
             : 500,
       }
     );
-
   }
-
 }
 
-
 // ======================================================
-// DELETE - DELETE CHANNEL
+// DELETE
 // ======================================================
 
 export async function DELETE(
@@ -249,9 +245,7 @@ export async function DELETE(
     }>;
   }
 ) {
-
   try {
-
     await verifyAdmin(
       request
     );
@@ -260,9 +254,7 @@ export async function DELETE(
       id,
     } = await context.params;
 
-
     if (!id) {
-
       return NextResponse.json(
         {
           message:
@@ -272,22 +264,17 @@ export async function DELETE(
           status: 400,
         }
       );
-
     }
-
 
     const reference =
       adminDb
         .collection("liveTv")
         .doc(id);
 
-
     const existing =
       await reference.get();
 
-
     if (!existing.exists) {
-
       return NextResponse.json(
         {
           message:
@@ -297,32 +284,71 @@ export async function DELETE(
           status: 404,
         }
       );
-
     }
 
+    // --------------------------------------------------
+    // FIREBASE DELETE
+    // --------------------------------------------------
 
     await reference.delete();
 
+    // --------------------------------------------------
+    // FIREBASE → GITHUB
+    // --------------------------------------------------
 
-    return NextResponse.json({
+    let syncResult;
 
-      success: true,
+    try {
+      syncResult =
+        await syncLiveTvToGithub();
+    } catch (syncError) {
+      console.error(
+        "Live TV GitHub Sync Error:",
+        syncError
+      );
 
-      message:
-        "Live TV channel deleted successfully.",
+      return NextResponse.json(
+        {
+          success: true,
 
-      id,
+          id,
 
-    });
+          message:
+            "Channel deleted from Firebase, but GitHub sync failed.",
 
-  }
-  catch (error: any) {
+          syncError:
+            syncError instanceof
+            Error
+              ? syncError.message
+              : "Unknown sync error.",
+        },
+        {
+          status: 207,
+        }
+      );
+    }
 
+    return NextResponse.json(
+      {
+        success: true,
+
+        message:
+          "Live TV channel deleted successfully.",
+
+        id,
+
+        sync:
+          syncResult,
+      },
+      {
+        status: 200,
+      }
+    );
+  } catch (error: any) {
     console.error(
       "Delete Live TV Error:",
       error
     );
-
 
     return NextResponse.json(
       {
@@ -338,7 +364,5 @@ export async function DELETE(
             : 500,
       }
     );
-
   }
-
 }

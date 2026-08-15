@@ -14,7 +14,9 @@ import {
   Radio,
 } from "lucide-react";
 
-import { getLiveTv } from "@/services/live-tv.service";
+import {
+  getPublicLiveTv,
+} from "@/services/public/live-tv.public.service";
 
 // ======================================================
 // TYPES
@@ -108,41 +110,46 @@ export default function LiveTvPage() {
   // ====================================================
 
   useEffect(() => {
-    async function loadChannels() {
-      try {
-        const data = await getLiveTv();
+  async function loadChannels() {
+    try {
+      const data =
+        await getPublicLiveTv();
 
-        const activeChannels =
-          (data as LiveTvChannel[])
-            .filter(
-              (channel) =>
-                channel.enabled === true
-            )
-            .sort(
-              (a, b) =>
-                Number(a.order ?? 0) -
-                Number(b.order ?? 0)
-            );
-
-        setChannels(activeChannels);
-
-        if (activeChannels.length) {
-          setActiveId(
-            activeChannels[0].id
+      const activeChannels =
+        data
+          .filter(
+            (channel) =>
+              channel.enabled === true
+          )
+          .sort(
+            (a, b) =>
+              Number(a.order ?? 0) -
+              Number(b.order ?? 0)
           );
-        }
-      } catch (error) {
-        console.error(
-          "Live TV Error:",
-          error
-        );
-      } finally {
-        setLoading(false);
-      }
-    }
 
-    loadChannels();
-  }, []);
+      setChannels(
+        activeChannels
+      );
+
+      if (
+        activeChannels.length > 0
+      ) {
+        setActiveId(
+          activeChannels[0].id
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Live TV Error:",
+        error
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  loadChannels();
+}, []);
 
   // ====================================================
   // ACTIVE CHANNEL

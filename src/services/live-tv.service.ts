@@ -1,6 +1,9 @@
-// ======================================================
-// TYPES
-// ======================================================
+import {
+  getCollection,
+  setDocument,
+  updateDocument,
+  deleteDocument,
+} from "@/lib/firebase/firestore";
 
 export interface LiveTvChannel {
   id: string;
@@ -11,51 +14,64 @@ export interface LiveTvChannel {
   logo?: string;
 }
 
+const COLLECTION_NAME = "liveTv";
+
 // ======================================================
-// GET LIVE TV
+// GET
 // ======================================================
 
 export async function getLiveTv(): Promise<
   LiveTvChannel[]
 > {
   try {
-    const response =
-      await fetch(
-        "/api/live-tv",
-        {
-          method: "GET",
-          cache: "no-store",
-        }
-      );
-
-    if (!response.ok) {
-      console.error(
-        "Live TV API Error:",
-        response.status
-      );
-
-      return [];
-    }
-
     const data =
-      await response.json();
+      await getCollection(
+        COLLECTION_NAME
+      );
 
-    // Empty / invalid response = []
-    if (!Array.isArray(data)) {
-      return [];
-    }
-
-    return data as LiveTvChannel[];
+    return (data as LiveTvChannel[]).sort(
+      (a, b) =>
+        Number(a.order ?? 0) -
+        Number(b.order ?? 0)
+    );
   } catch (error) {
     console.error(
-      "getLiveTv Error:",
+      "Firebase Live TV GET Error:",
       error
     );
 
-    // IMPORTANT:
-    // Never crash page when JSON is empty.
-    return [];
+    throw error;
   }
+}
+
+// ======================================================
+// SYNC GITHUB
+// ======================================================
+
+async function syncLiveTvToGitHub() {
+  const response =
+    await fetch(
+      "/api/admin/live-tv/sync",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+      }
+    );
+
+  const data =
+    await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+        "GitHub Live TV sync failed."
+    );
+  }
+
+  return data;
 }
 
 // ======================================================
@@ -63,37 +79,57 @@ export async function getLiveTv(): Promise<
 // ======================================================
 
 export async function createLiveTv(
-  data: Omit<
+  channel: Omit<
     LiveTvChannel,
     "id"
   >
 ) {
-  const response =
-    await fetch(
-      "/api/live-tv",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-        body: JSON.stringify(
-          data
+  try {
+    const id =
+      crypto.randomUUID();
+
+    const data: LiveTvChannel = {
+      id,
+
+      title:
+        channel.title.trim(),
+
+      youtubeUrl:
+        channel.youtubeUrl.trim(),
+
+      enabled:
+        channel.enabled !== false,
+
+      order:
+        Number(
+          channel.order ?? 0
         ),
-      }
+
+      ...(channel.logo
+        ? {
+            logo:
+              channel.logo,
+          }
+        : {}),
+    };
+
+    await setDocument(
+      COLLECTION_NAME,
+      id,
+      data
     );
 
-  const result =
-    await response.json();
+    await syncLiveTvToGitHub();
 
-  if (!response.ok) {
-    throw new Error(
-      result?.message ||
-        "Failed to create Live TV channel."
+    return data;
+  } catch (error) {
+    console.error(
+      "Live TV CREATE Error:",
+      error
     );
+
+    throw error;
   }
-
-  return result;
 }
 
 // ======================================================
@@ -102,40 +138,65 @@ export async function createLiveTv(
 
 export async function updateLiveTv(
   id: string,
-  data: Partial<
-    Omit<
-      LiveTvChannel,
-      "id"
-    >
+  channel: Partial<
+    LiveTvChannel
   >
 ) {
-  const response =
-    await fetch(
-      "/api/live-tv",
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-        body: JSON.stringify({
-          id,
-          ...data,
-        }),
-      }
+  try {
+    const updateData: Partial<
+      LiveTvChannel
+    > = {
+      ...channel,
+    };
+
+    delete updateData.id;
+
+    if (
+      updateData.title !==
+      undefined
+    ) {
+      updateData.title =
+        updateData.title.trim();
+    }
+
+    if (
+      updateData.youtubeUrl !==
+      undefined
+    ) {
+      updateData.youtubeUrl =
+        updateData.youtubeUrl.trim();
+    }
+
+    if (
+      updateData.order !==
+      undefined
+    ) {
+      updateData.order =
+        Number(
+          updateData.order
+        );
+    }
+
+    await updateDocument(
+      COLLECTION_NAME,
+      id,
+      updateData
     );
 
-  const result =
-    await response.json();
+    await syncLiveTvToGitHub();
 
-  if (!response.ok) {
-    throw new Error(
-      result?.message ||
-        "Failed to update Live TV channel."
+    return {
+      id,
+      ...updateData,
+    };
+  } catch (error) {
+    console.error(
+      "Live TV UPDATE Error:",
+      error
     );
+
+    throw error;
   }
-
-  return result;
 }
 
 // ======================================================
@@ -145,27 +206,25 @@ export async function updateLiveTv(
 export async function deleteLiveTv(
   id: string
 ) {
-  const response =
-    await fetch(
-      `/api/live-tv?id=${encodeURIComponent(
-        id
-      )}`,
-      {
-        method: "DELETE",
-      }
+  try {
+    await deleteDocument(
+      COLLECTION_NAME,
+      id
     );
 
-  const result =
-    await response.json();
+    await syncLiveTvToGitHub();
 
-  if (!response.ok) {
-    throw new Error(
-      result?.message ||
-        "Failed to delete Live TV channel."
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error(
+      "Live TV DELETE Error:",
+      error
     );
+
+    throw error;
   }
-
-  return result;
 }
 
 // ======================================================
