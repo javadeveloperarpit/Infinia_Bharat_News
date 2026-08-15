@@ -83,7 +83,6 @@
     "seoDescription": "Ramayana Movie: चेतन हंसराज ने खुलासा किया कि वह रामायण में 7 किरदार निभाएंगे। इनमें राजा माली, रावण के परिवार से जुड़ा किरदार और मोशन-कैप्चर कैरेक्टर शामिल हैं।   ",
     "featured": true,
     "breaking": true,
-    "priority": 5,
     "author": {
       "uid": "ot1ROJzof6MARUixgKpPubUnnoX2",
       "name": "Arpit Mishra",
@@ -97,7 +96,8 @@
     },
     "slug": "chetan-hansraj-seven-roles-ramayana-ranbir-kapoor-yash-ravana-20260814-145030926",
     "status": "published",
-    "updatedAt": "2026-08-14T14:50:32.182Z"
+    "priority": 2,
+    "updatedAt": "2026-08-15T03:48:03.135Z"
   },
   {
     "id": "XmchbO1UACUd6f8ypRYv",
