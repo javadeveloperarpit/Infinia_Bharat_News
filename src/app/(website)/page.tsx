@@ -51,6 +51,8 @@ import {
   getActiveBreakingNews,
 } from "@/services/public/breaking.public.service";
 
+import LeadersOnX from "@/components/home/leaders-on-x";
+
 
 
 export const metadata: Metadata = {
@@ -560,6 +562,8 @@ const organizationSchema = {
         ads={bannerAdsPlain}
       />
 
+      <LeadersOnX />
+
       {/* ================================
           HERO
       ================================= */}
@@ -575,6 +579,7 @@ const organizationSchema = {
             featuredWithCategory
           }
         />
+        
       </section>
 
       {/* ================================
