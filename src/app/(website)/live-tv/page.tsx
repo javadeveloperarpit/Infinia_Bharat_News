@@ -265,9 +265,9 @@ export default function LiveTvPage() {
                 Infinia Bharat News
               </p>
 
-              <h1 className="text-lg font-black leading-none text-zinc-950">
-                LIVE TELEVISION
-              </h1>
+              <h1 className="text-lg font-black leading-tight tracking-tight text-zinc-950 sm:text-xl">
+  LIVE TV NEWS
+</h1>
             </div>
           </div>
         </header>
@@ -332,8 +332,8 @@ export default function LiveTvPage() {
               </p>
 
               <h1 className="text-lg font-black leading-tight tracking-tight text-zinc-950 sm:text-xl">
-                LIVE TELEVISION
-              </h1>
+  LIVE TV NEWS
+</h1>
             </div>
           </div>
 
@@ -502,8 +502,8 @@ export default function LiveTvPage() {
                   </div>
 
                   <h2 className="mt-1 truncate text-base font-bold text-white sm:text-lg">
-                    {activeChannel.title}
-                  </h2>
+  {activeChannel.title}
+</h2>
                 </div>
 
                 <div className="hidden shrink-0 text-right sm:block">
