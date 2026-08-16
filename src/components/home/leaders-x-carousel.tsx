@@ -7,7 +7,11 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-import { useEffect, useRef } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 interface XPost {
   person: string;
@@ -21,6 +25,56 @@ interface XPost {
 interface Props {
   posts: XPost[];
 }
+
+/* =========================================================
+   OFFICIAL X MARK
+========================================================= */
+
+function XLogo({
+  size = 14,
+}: {
+  size?: number;
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817-5.964 6.817H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z" />
+    </svg>
+  );
+}
+
+/* =========================================================
+   BLACK CIRCULAR X LOGO
+========================================================= */
+
+function XCircle({
+  size = 26,
+  iconSize = 13,
+}: {
+  size?: number;
+  iconSize?: number;
+}) {
+  return (
+    <span
+      className="flex shrink-0 items-center justify-center rounded-full bg-black text-white"
+      style={{
+        width: size,
+        height: size,
+      }}
+    >
+      <XLogo size={iconSize} />
+    </span>
+  );
+}
+
+/* =========================================================
+   DATE
+========================================================= */
 
 function formatPostDate(date: string) {
   const d = new Date(date);
@@ -38,289 +92,824 @@ function formatPostDate(date: string) {
   });
 }
 
+/* =========================================================
+   PROFILE IMAGE
+========================================================= */
+
 function getProfileImage(handle: string) {
   return `https://unavatar.io/x/${handle}`;
 }
 
+/* =========================================================
+   COMPONENT
+========================================================= */
+
 export default function LeadersXCarousel({
   posts,
 }: Props) {
-  const sliderRef = useRef<HTMLDivElement>(null);
+  const trackRef =
+    useRef<HTMLDivElement>(null);
+
+  const animationRef =
+    useRef<number | null>(null);
+
+  const lastTimeRef =
+    useRef<number>(0);
+
+  const positionRef =
+    useRef<number>(0);
+
+  const pausedRef =
+    useRef(false);
+
+  const resumeTimerRef =
+    useRef<ReturnType<typeof setTimeout> | null>(
+      null
+    );
+
+  const [loopWidth, setLoopWidth] =
+    useState(0);
+
+  /*
+   * ========================================================
+   * SPEED
+   * ========================================================
+   *
+   * 8  = very slow
+   * 12 = slow
+   * 16 = smooth
+   * 20 = normal
+   * 25 = fast
+   *
+   */
+
+  const SPEED = 120;
+
+  /*
+   * ========================================================
+   * MEASURE FIRST SET
+   * ========================================================
+   */
 
   useEffect(() => {
-    const slider = sliderRef.current;
+    const track = trackRef.current;
 
-    if (!slider) return;
+    if (!track) {
+      return;
+    }
 
-    const interval = setInterval(() => {
-      const maxScroll =
-        slider.scrollWidth - slider.clientWidth;
+    const measure = () => {
+      const firstSet =
+        track.querySelector(
+          "[data-x-set='first']"
+        ) as HTMLElement | null;
 
-      if (slider.scrollLeft >= maxScroll - 10) {
-        slider.scrollTo({
-          left: 0,
-          behavior: "smooth",
-        });
-      } else {
-        slider.scrollBy({
-          left: 380,
-          behavior: "smooth",
-        });
+      if (!firstSet) {
+        return;
       }
-    }, 5000);
 
-    return () => clearInterval(interval);
+      setLoopWidth(
+        firstSet.offsetWidth
+      );
+    };
+
+    measure();
+
+    const observer =
+      new ResizeObserver(measure);
+
+    observer.observe(track);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [posts]);
+
+  /*
+   * ========================================================
+   * CONTINUOUS MOVEMENT
+   * ========================================================
+   */
+
+  useEffect(() => {
+    if (!loopWidth) {
+      return;
+    }
+
+    lastTimeRef.current =
+      performance.now();
+
+    const animate = (
+      currentTime: number
+    ) => {
+      const delta =
+        currentTime -
+        lastTimeRef.current;
+
+      lastTimeRef.current =
+        currentTime;
+
+      if (!pausedRef.current) {
+        positionRef.current +=
+          (SPEED * delta) / 1000;
+
+        /*
+         * When first set is completely crossed,
+         * reset by exactly one set width.
+         */
+        if (
+          positionRef.current >=
+          loopWidth
+        ) {
+          positionRef.current -=
+            loopWidth;
+        }
+
+        if (trackRef.current) {
+          trackRef.current.style.transform =
+            `translate3d(${-positionRef.current}px, 0, 0)`;
+        }
+      }
+
+      animationRef.current =
+        requestAnimationFrame(animate);
+    };
+
+    animationRef.current =
+      requestAnimationFrame(animate);
+
+    return () => {
+      if (
+        animationRef.current !== null
+      ) {
+        cancelAnimationFrame(
+          animationRef.current
+        );
+      }
+    };
+  }, [loopWidth]);
+
+  /*
+   * ========================================================
+   * PAUSE
+   * ========================================================
+   */
+
+  function pauseTemporarily() {
+    pausedRef.current = true;
+
+    if (resumeTimerRef.current) {
+      clearTimeout(
+        resumeTimerRef.current
+      );
+    }
+
+    resumeTimerRef.current =
+      setTimeout(() => {
+        pausedRef.current = false;
+        lastTimeRef.current =
+          performance.now();
+      }, 1200);
+  }
+
+  /*
+   * ========================================================
+   * MANUAL MOVE
+   * ========================================================
+   */
+
+  function move(
+    direction: "left" | "right"
+  ) {
+    if (!loopWidth) {
+      return;
+    }
+
+    pausedRef.current = true;
+
+    const card =
+      trackRef.current?.querySelector(
+        "[data-x-card]"
+      ) as HTMLElement | null;
+
+    if (!card) {
+      return;
+    }
+
+    const gap = 8;
+
+    const amount =
+      card.offsetWidth + gap;
+
+    if (direction === "right") {
+      positionRef.current += amount;
+
+      if (
+        positionRef.current >=
+        loopWidth
+      ) {
+        positionRef.current -=
+          loopWidth;
+      }
+    } else {
+      positionRef.current -= amount;
+
+      if (
+        positionRef.current < 0
+      ) {
+        positionRef.current +=
+          loopWidth;
+      }
+    }
+
+    if (trackRef.current) {
+      trackRef.current.style.transform =
+        `translate3d(${-positionRef.current}px, 0, 0)`;
+    }
+
+    if (resumeTimerRef.current) {
+      clearTimeout(
+        resumeTimerRef.current
+      );
+    }
+
+    resumeTimerRef.current =
+      setTimeout(() => {
+        pausedRef.current = false;
+        lastTimeRef.current =
+          performance.now();
+      }, 1200);
+  }
+
+  /*
+   * ========================================================
+   * CLEANUP
+   * ========================================================
+   */
+
+  useEffect(() => {
+    return () => {
+      if (resumeTimerRef.current) {
+        clearTimeout(
+          resumeTimerRef.current
+        );
+      }
+
+      if (animationRef.current) {
+        cancelAnimationFrame(
+          animationRef.current
+        );
+      }
+    };
   }, []);
 
-  function move(direction: "left" | "right") {
-    sliderRef.current?.scrollBy({
-      left: direction === "right" ? 380 : -380,
-      behavior: "smooth",
-    });
+  if (!posts.length) {
+    return null;
   }
 
   return (
-    <section className="relative bg-white py-5">
+    <section
+      className="
+        relative
+        overflow-hidden
+        bg-white
+        py-3
+        sm:py-4
+      "
+    >
+      {/* =================================================
+          HEADER
+      ================================================= */}
 
-      {/* SECTION HEADER */}
-
-      <div className="mx-auto mb-4 max-w-[1400px] px-4">
-
-        <div className="flex items-center justify-between">
-
-          <div>
-            <div className="flex items-center gap-2">
-
-              <span className="h-7 w-1 rounded-full bg-red-600" />
-
-              <h2 className="text-xl font-black tracking-tight text-zinc-900 sm:text-2xl">
-                Leaders on X
-              </h2>
-
-              <span className="rounded-full bg-black px-2 py-0.5 text-xs font-bold text-white">
-                𝕏
-              </span>
-
-            </div>
-
-            <p className="mt-1 text-xs text-zinc-500 sm:text-sm">
-              Latest posts from India's public figures
-            </p>
-          </div>
-
-          {/* CONTROLS */}
-
-          <div className="hidden gap-2 sm:flex">
-
-            <button
-              type="button"
-              onClick={() => move("left")}
-              aria-label="Previous posts"
-              className="
-                flex h-9 w-9 items-center justify-center
-                rounded-full border border-zinc-200
-                bg-white text-zinc-700
-                shadow-sm transition
-                hover:bg-zinc-100
-              "
-            >
-              <ChevronLeft size={18} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => move("right")}
-              aria-label="Next posts"
-              className="
-                flex h-9 w-9 items-center justify-center
-                rounded-full border border-zinc-200
-                bg-white text-zinc-700
-                shadow-sm transition
-                hover:bg-zinc-100
-              "
-            >
-              <ChevronRight size={18} />
-            </button>
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-      {/* CAROUSEL */}
-
-      <div className="relative">
-
+      <div
+        className="
+          mx-auto
+          mb-2
+          max-w-[1400px]
+          px-3
+          sm:mb-3
+          sm:px-4
+        "
+      >
         <div
-          ref={sliderRef}
           className="
             flex
-            gap-4
-            overflow-x-auto
-            scroll-smooth
-            px-4
-            pb-3
-            [scrollbar-width:none]
-            [&::-webkit-scrollbar]:hidden
+            items-center
+            justify-between
           "
         >
+          {/* TITLE */}
 
-          {posts.map((post, index) => {
-
-            const profileImage =
-              getProfileImage(post.handle);
-
-            return (
-              <a
-                key={`${post.handle}-${post.pubDate}-${index}`}
-                href={post.link}
-                target="_blank"
-                rel="noopener noreferrer"
+          <div className="min-w-0">
+            <div
+              className="
+                flex
+                items-center
+                gap-2
+              "
+            >
+              <span
                 className="
-                  group
-                  w-[320px]
-                  min-w-[320px]
+                  relative
+                  h-6
+                  w-1
                   overflow-hidden
-                  rounded-2xl
-                  border
-                  border-zinc-200
-                  bg-white
-                  p-4
-                  shadow-sm
-                  transition-all
-                  duration-300
-                  hover:-translate-y-1
-                  hover:shadow-lg
-                  sm:w-[390px]
-                  sm:min-w-[390px]
+                  rounded-full
+                  bg-red-600
+                  sm:h-7
                 "
               >
-
-                {/* USER */}
-
-                <div className="flex items-center gap-3">
-
-                  <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-zinc-200">
-
-                    <img
-                      src={profileImage}
-                      alt={post.person}
-                      loading="lazy"
-                      className="h-full w-full object-cover"
-                    />
-
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-
-                    <div className="flex items-center gap-1">
-
-                      <span className="truncate text-sm font-bold text-zinc-900">
-                        {post.person}
-                      </span>
-
-                      <BadgeCheck
-                        size={16}
-                        strokeWidth={2.5}
-                        fill="#1d9bf0"
-                        color="white"
-                        className="shrink-0"
-                      />
-
-                    </div>
-
-                    <div className="text-xs text-zinc-500">
-                      @{post.handle}
-                    </div>
-
-                  </div>
-
-                  <span className="text-lg font-black">
-                    𝕏
-                  </span>
-
-                </div>
-
-
-                {/* POST */}
-
-                <div
+                <span
                   className="
-                    mt-4
-                    break-words
-                    whitespace-pre-wrap
-                    text-[14px]
-                    leading-[1.55]
-                    text-zinc-800
-                    sm:text-[15px]
+                    absolute
+                    left-1/2
+                    top-1/2
+                    h-1.5
+                    w-1.5
+                    -translate-x-1/2
+                    -translate-y-1/2
+                    rounded-full
+                    bg-white
+                    animate-pulse
+                  "
+                />
+              </span>
+
+              <div className="flex items-center gap-1.5">
+                <h2
+                  className="
+                    text-base
+                    font-black
+                    tracking-tight
+                    text-zinc-900
+                    sm:text-xl
                   "
                 >
-                  {post.title}
-                  <span className="ml-1 font-medium text-zinc-400">
-                    ...
-                  </span>
-                </div>
+                  Leaders on
+                </h2>
 
+                <XCircle
+                  size={22}
+                  iconSize={18}
+                />
+              </div>
+            </div>
 
-                {/* IMAGE */}
+            <div
+              className="
+                mt-0.5
+                flex
+                items-center
+                gap-1.5
+                text-[9px]
+                text-zinc-500
+                sm:mt-1
+                sm:text-xs
+              "
+            >
+              <span
+                className="
+                  h-1.5
+                  w-1.5
+                  rounded-full
+                  bg-red-500
+                "
+              />
 
-                {post.image && (
-                  <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100">
+              <span>
+                Latest posts from India's public figures
+              </span>
+            </div>
+          </div>
 
-                    <img
-                      src={post.image}
-                      alt=""
-                      loading="lazy"
-                      className="
-                        h-44
-                        w-full
-                        object-cover
-                        transition-transform
-                        duration-500
-                        group-hover:scale-[1.03]
-                      "
-                    />
+          {/* DESKTOP CONTROLS */}
 
-                  </div>
-                )}
+          <div
+            className="
+              hidden
+              gap-1.5
+              sm:flex
+            "
+          >
+            <button
+              type="button"
+              onClick={() =>
+                move("left")
+              }
+              aria-label="Previous posts"
+              className="
+                flex
+                h-7
+                w-7
+                items-center
+                justify-center
+                rounded-full
+                border
+                border-zinc-200
+                bg-white
+                text-zinc-700
+                shadow-sm
+                transition
+                hover:bg-zinc-100
+                active:scale-95
+              "
+            >
+              <ChevronLeft size={15} />
+            </button>
 
-
-                {/* FOOTER */}
-
-                <div className="mt-4 flex items-center justify-between">
-
-                  <div>
-
-                    <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
-                      Posted on X
-                    </div>
-
-                    <div className="mt-0.5 text-[10px] text-zinc-400">
-                      {formatPostDate(post.pubDate)}
-                    </div>
-
-                  </div>
-
-                  <div className="flex items-center gap-1 text-xs font-semibold text-zinc-400 transition group-hover:text-[#1d9bf0]">
-
-                    View post
-
-                    <ExternalLink size={13} />
-
-                  </div>
-
-                </div>
-
-              </a>
-            );
-          })}
-
+            <button
+              type="button"
+              onClick={() =>
+                move("right")
+              }
+              aria-label="Next posts"
+              className="
+                flex
+                h-7
+                w-7
+                items-center
+                justify-center
+                rounded-full
+                border
+                border-zinc-200
+                bg-white
+                text-zinc-700
+                shadow-sm
+                transition
+                hover:bg-zinc-100
+                active:scale-95
+              "
+            >
+              <ChevronRight size={15} />
+            </button>
+          </div>
         </div>
-
       </div>
 
+      {/* =================================================
+          CAROUSEL VIEWPORT
+      ================================================= */}
+
+      <div
+        className="relative overflow-hidden"
+        onMouseEnter={() => {
+          pausedRef.current = true;
+        }}
+        onMouseLeave={() => {
+          pausedRef.current = false;
+          lastTimeRef.current =
+            performance.now();
+        }}
+        onTouchStart={pauseTemporarily}
+      >
+        {/* =================================================
+            MOVING TRACK
+        ================================================= */}
+
+        <div
+          ref={trackRef}
+          className="
+            flex
+            w-max
+            gap-2
+            will-change-transform
+          "
+        >
+          {/* FIRST SET */}
+
+          <div
+            data-x-set="first"
+            className="
+              flex
+              shrink-0
+              gap-2
+              px-3
+            "
+          >
+            {posts.map(
+              (post, index) => (
+                <XCard
+                  key={`first-${post.handle}-${post.pubDate}-${index}`}
+                  post={post}
+                  profileImage={getProfileImage(
+                    post.handle
+                  )}
+                />
+              )
+            )}
+          </div>
+
+          {/* SECOND SET */}
+
+          <div
+            data-x-set="second"
+            className="
+              flex
+              shrink-0
+              gap-2
+              pr-3
+            "
+          >
+            {posts.map(
+              (post, index) => (
+                <XCard
+                  key={`second-${post.handle}-${post.pubDate}-${index}`}
+                  post={post}
+                  profileImage={getProfileImage(
+                    post.handle
+                  )}
+                />
+              )
+            )}
+          </div>
+        </div>
+
+        {/* MOBILE FADE */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            right-0
+            top-0
+            h-full
+            w-8
+            bg-gradient-to-l
+            from-white
+            to-transparent
+            sm:hidden
+          "
+        />
+      </div>
     </section>
+  );
+}
+
+/* =========================================================
+   X CARD
+========================================================= */
+
+function XCard({
+  post,
+  profileImage,
+}: {
+  post: XPost;
+  profileImage: string;
+}) {
+  return (
+    <a
+      data-x-card
+      href={post.link}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="
+        group
+        flex
+        h-[138px]
+        w-[205px]
+        min-w-[205px]
+        flex-col
+        overflow-hidden
+        rounded-xl
+        border
+        border-zinc-200
+        bg-white
+        p-2
+        shadow-[0_2px_7px_rgba(0,0,0,0.045)]
+        transition
+        duration-300
+        hover:-translate-y-0.5
+        hover:shadow-md
+
+        sm:h-[205px]
+        sm:w-[315px]
+        sm:min-w-[315px]
+        sm:p-3
+      "
+    >
+      {/* USER */}
+
+      <div
+        className="
+          flex
+          items-center
+          gap-1.5
+        "
+      >
+        <div
+          className="
+            h-7
+            w-7
+            shrink-0
+            overflow-hidden
+            rounded-full
+            bg-zinc-200
+            sm:h-9
+            sm:w-9
+          "
+        >
+          <img
+            src={profileImage}
+            alt={post.person}
+            loading="lazy"
+            className="
+              h-full
+              w-full
+              object-cover
+            "
+          />
+        </div>
+
+        <div
+          className="
+            min-w-0
+            flex-1
+          "
+        >
+          <div
+            className="
+              flex
+              items-center
+              gap-0.5
+            "
+          >
+            <span
+              className="
+                truncate
+                text-[11px]
+                font-bold
+                text-zinc-900
+                sm:text-xs
+              "
+            >
+              {post.person}
+            </span>
+
+            <BadgeCheck
+              size={12}
+              strokeWidth={2.5}
+              fill="#1d9bf0"
+              color="white"
+              className="shrink-0"
+            />
+          </div>
+
+          <div
+            className="
+              truncate
+              text-[9px]
+              text-zinc-500
+              sm:text-[10px]
+            "
+          >
+            @{post.handle}
+          </div>
+        </div>
+
+        <XCircle
+          size={21}
+          iconSize={15}
+        />
+      </div>
+
+      {/* POST */}
+
+      <div
+        className="
+          mt-1.5
+          line-clamp-2
+          break-words
+          text-[11px]
+          leading-[1.35]
+          text-zinc-800
+          sm:mt-2
+          sm:line-clamp-3
+          sm:text-[13px]
+          sm:leading-[1.4]
+        "
+      >
+        {post.title}
+
+        <span
+          className="
+            ml-1
+            font-semibold
+            text-zinc-400
+          "
+        >
+          ...
+        </span>
+      </div>
+
+      {/* IMAGE */}
+
+      {post.image && (
+        <div
+          className="
+            mt-1.5
+            overflow-hidden
+            rounded-lg
+            border
+            border-zinc-200
+            bg-zinc-100
+            sm:mt-2
+          "
+        >
+          <img
+            src={post.image}
+            alt=""
+            loading="lazy"
+            className="
+              h-[42px]
+              w-full
+              object-cover
+              transition-transform
+              duration-500
+              group-hover:scale-[1.03]
+              sm:h-[78px]
+            "
+          />
+        </div>
+      )}
+
+      {/* FOOTER */}
+
+      <div
+        className="
+          mt-auto
+          flex
+          items-center
+          justify-between
+          gap-2
+          border-t
+          border-zinc-100
+          pt-1.5
+          sm:pt-2
+        "
+      >
+        <div
+          className="
+            flex
+            items-center
+            gap-1
+          "
+        >
+          <XCircle
+            size={18}
+            iconSize={12}
+          />
+
+          <div
+            className="
+              flex
+              flex-col
+              leading-tight
+            "
+          >
+            <span
+              className="
+                text-[7px]
+                font-bold
+                uppercase
+                tracking-wide
+                text-zinc-600
+                sm:text-[8px]
+              "
+            >
+              Posted on X
+            </span>
+
+            <span
+              className="
+                text-[7px]
+                text-zinc-400
+                sm:text-[8px]
+              "
+            >
+              {formatPostDate(
+                post.pubDate
+              )}
+            </span>
+          </div>
+        </div>
+
+        <div
+          className="
+            flex
+            items-center
+            gap-0.5
+            text-[8px]
+            font-semibold
+            text-zinc-400
+            transition-colors
+            group-hover:text-[#1d9bf0]
+            sm:text-[9px]
+          "
+        >
+          View
+          <ExternalLink size={9} />
+        </div>
+      </div>
+    </a>
   );
 }
