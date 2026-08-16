@@ -55,67 +55,100 @@ import LeadersOnX from "@/components/home/leaders-on-x";
 
 
 
-export const metadata: Metadata = {
-  title:
-    "हिंदी न्यूज़, ताज़ा खबरें और ब्रेकिंग न्यूज़",
+export async function generateMetadata(): Promise<Metadata> {
+  const articles = await getPublishedArticles();
 
-  description:
-    "INFINIA BHARAT NEWS पर पढ़ें भारत और दुनिया की ताज़ा खबरें, ब्रेकिंग न्यूज़, राजनीति, उत्तर प्रदेश, खेल, बिजनेस, टेक्नोलॉजी और मनोरंजन की हर महत्वपूर्ण खबर।",
+  const latestArticles = [...articles]
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
 
-  alternates: {
-    canonical: "/",
-  },
+      return dateB - dateA;
+    })
+    .slice(0, 3);
 
-  openGraph: {
-    type: "website",
+  const latestTitles = latestArticles
+    .map((article) => article.title?.trim())
+    .filter(Boolean);
 
-    locale: siteConfig.locale,
+  const latestDescription =
+    latestTitles.length > 0
+      ? `ताज़ा खबरें: ${latestTitles.join(" | ")} | INFINIA BHARAT NEWS पर भारत और दुनिया की हर बड़ी खबर पढ़ें।`
+      : "INFINIA BHARAT NEWS पर पढ़ें भारत और दुनिया की ताज़ा खबरें, ब्रेकिंग न्यूज़, राजनीति, उत्तर प्रदेश, खेल, बिजनेस, टेक्नोलॉजी और मनोरंजन की हर महत्वपूर्ण खबर।";
 
-    url: siteConfig.url,
-
-    siteName: siteConfig.name,
-
+  return {
     title:
-      "INFINIA BHARAT NEWS | हिंदी न्यूज़, ताज़ा खबरें और ब्रेकिंग न्यूज़",
+      "हिंदी न्यूज़, ताज़ा खबरें और ब्रेकिंग न्यूज़",
 
-    description:
-      "भारत और दुनिया की ताज़ा खबरें, ब्रेकिंग न्यूज़, राजनीति, खेल, बिजनेस, टेक्नोलॉजी और मनोरंजन।",
+    description: latestDescription,
 
-    images: [
-      {
-        url: siteConfig.logo,
-        width: 1200,
-        height: 630,
-        alt: siteConfig.name,
-      },
-    ],
-  },
+    alternates: {
+      canonical: "/",
+    },
 
-  twitter: {
-    card: "summary_large_image",
+    icons: {
+      icon: [
+        {
+          url: "/favicon.ico",
+          type: "image/x-icon",
+        },
+        {
+          url: "/icon.svg",
+          type: "image/svg+xml",
+        },
+      ],
+      shortcut: "/favicon.ico",
+    },
 
-    title:
-      "INFINIA BHARAT NEWS | हिंदी न्यूज़, ताज़ा खबरें और ब्रेकिंग न्यूज़",
+    openGraph: {
+      type: "website",
 
-    description:
-      "भारत और दुनिया की ताज़ा खबरें, ब्रेकिंग न्यूज़, राजनीति, खेल, बिजनेस, टेक्नोलॉजी और मनोरंजन।",
+      locale: siteConfig.locale,
 
-    images: [siteConfig.logo],
-  },
+      url: siteConfig.url,
 
-  robots: {
-    index: true,
-    follow: true,
+      siteName: siteConfig.name,
 
-    googleBot: {
+      title:
+        "INFINIA BHARAT NEWS | हिंदी न्यूज़, ताज़ा खबरें और ब्रेकिंग न्यूज़",
+
+      description: latestDescription,
+
+      images: [
+        {
+          url: siteConfig.logo,
+          width: 1200,
+          height: 630,
+          alt: siteConfig.name,
+        },
+      ],
+    },
+
+    twitter: {
+      card: "summary_large_image",
+
+      title:
+        "INFINIA BHARAT NEWS | हिंदी न्यूज़, ताज़ा खबरें और ब्रेकिंग न्यूज़",
+
+      description: latestDescription,
+
+      images: [siteConfig.logo],
+    },
+
+    robots: {
       index: true,
       follow: true,
-      "max-image-preview": "large",
-      "max-video-preview": -1,
-      "max-snippet": -1,
+
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-video-preview": -1,
+        "max-snippet": -1,
+      },
     },
-  },
-};
+  };
+}
 
 export default async function Home() {
   // ======================================
