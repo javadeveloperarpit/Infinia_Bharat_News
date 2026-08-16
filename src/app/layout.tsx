@@ -70,26 +70,26 @@ export const metadata: Metadata = {
     },
     {
       url: "/icons/favicon-96x96.webp",
-      type: "image/png",
+      type: "image/webp",
       sizes: "96x96",
     },
     {
       url: "/icons/favicon-192x192.webp",
-      type: "image/png",
+      type: "image/webp",
       sizes: "192x192",
     },
     {
       url: "/icons/favicon-512x512.webp",
-      type: "image/png",
+      type: "image/webp",
       sizes: "512x512",
     },
   ],
 
   apple: [
     {
-      url: "/icons/favicon-192x192.webp",
+      url: "/apple-icon.webp",
       sizes: "192x192",
-      type: "image/png",
+      type: "image/webp",
     },
   ],
 },

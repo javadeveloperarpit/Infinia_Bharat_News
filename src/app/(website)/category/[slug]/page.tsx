@@ -56,8 +56,54 @@ export async function generateMetadata({
     category.name ||
     "समाचार";
 
+  // ============================================================
+  // GET CATEGORY ARTICLES
+  // ============================================================
+
+  const articles =
+    await getCategoryArticles(category.id);
+
+  // ============================================================
+  // SORT LATEST ARTICLES
+  // ============================================================
+
+  const latestArticles = [...articles]
+    .sort((a, b) => {
+      const dateA =
+        new Date(
+          a.createdAt || 0
+        ).getTime();
+
+      const dateB =
+        new Date(
+          b.createdAt || 0
+        ).getTime();
+
+      return dateB - dateA;
+    })
+    .slice(0, 5);
+
+  // ============================================================
+  // ARTICLE TITLES
+  // ============================================================
+
+  const latestTitles =
+    latestArticles
+      .map((article) =>
+        article.title?.trim()
+      )
+      .filter(Boolean);
+
+  // ============================================================
+  // DYNAMIC CATEGORY DESCRIPTION
+  // ============================================================
+
   const description =
-    `${name} से जुड़ी ताज़ा खबरें, ब्रेकिंग न्यूज़ और लेटेस्ट अपडेट ${siteConfig.name} पर पढ़ें।`;
+    latestTitles.length > 0
+      ? `${name} की ताज़ा खबरें: ${latestTitles.join(
+          " | "
+        )} | ${siteConfig.name} पर पढ़ें ${name} से जुड़ी हर बड़ी खबर और लेटेस्ट अपडेट।`
+      : `${name} से जुड़ी ताज़ा खबरें, ब्रेकिंग न्यूज़ और लेटेस्ट अपडेट ${siteConfig.name} पर पढ़ें।`;
 
   const url =
     `${siteConfig.url}/category/${category.slug}`;
@@ -82,6 +128,20 @@ export async function generateMetadata({
 
     alternates: {
       canonical: url,
+    },
+
+    icons: {
+      icon: [
+        {
+          url: "/favicon.ico",
+          type: "image/x-icon",
+        },
+        {
+          url: "/icon.svg",
+          type: "image/svg+xml",
+        },
+      ],
+      shortcut: "/favicon.ico",
     },
 
     robots: {

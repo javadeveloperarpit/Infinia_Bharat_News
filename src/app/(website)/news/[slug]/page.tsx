@@ -34,6 +34,10 @@ import {
 // METADATA
 // ==========================================================
 
+// ==========================================================
+// METADATA
+// ==========================================================
+
 export async function generateMetadata({
   params,
 }: {
@@ -44,6 +48,10 @@ export async function generateMetadata({
   const { slug } = await params;
 
   const article = await getArticleBySlug(slug);
+
+  // ========================================================
+  // ARTICLE NOT FOUND
+  // ========================================================
 
   if (!article) {
     return {
@@ -58,6 +66,10 @@ export async function generateMetadata({
       },
     };
   }
+
+  // ========================================================
+  // BASIC SEO DATA
+  // ========================================================
 
   const articleUrl =
     `${siteConfig.url}/news/${article.slug}`;
@@ -74,14 +86,39 @@ export async function generateMetadata({
     article.thumbnail ||
     `${siteConfig.url}${siteConfig.logo}`;
 
+  // ========================================================
+  // AUTHOR SEO DATA
+  // ========================================================
+
   const authorName =
     article.author?.name ||
     siteConfig.name;
 
+  const authorUrl =
+    article.author?.slug
+      ? `${siteConfig.url}/author/${article.author.slug}`
+      : undefined;
+
+  // ========================================================
+  // METADATA
+  // ========================================================
+
   return {
+    // ======================================================
+    // TITLE
+    // ======================================================
+
     title,
 
+    // ======================================================
+    // DESCRIPTION
+    // ======================================================
+
     description,
+
+    // ======================================================
+    // KEYWORDS
+    // ======================================================
 
     keywords: [
       article.category || "",
@@ -93,22 +130,50 @@ export async function generateMetadata({
       siteConfig.name,
     ].filter(Boolean),
 
+    // ======================================================
+    // AUTHOR
+    // ======================================================
+
     authors: [
       {
         name: authorName,
+
+        ...(authorUrl
+          ? {
+              url: authorUrl,
+            }
+          : {}),
       },
     ],
 
+    // ======================================================
+    // CREATOR
+    // ======================================================
+
     creator: authorName,
 
+    // ======================================================
+    // PUBLISHER
+    // ======================================================
+
     publisher: siteConfig.name,
+
+    // ======================================================
+    // CANONICAL
+    // ======================================================
 
     alternates: {
       canonical: articleUrl,
     },
 
+    // ======================================================
+    // ROBOTS
+    // ======================================================
+
     robots: {
-      index: article.status === "published",
+      index:
+        article.status === "published",
+
       follow: true,
 
       googleBot: {
@@ -125,14 +190,21 @@ export async function generateMetadata({
       },
     },
 
+    // ======================================================
+    // OPEN GRAPH
+    // ======================================================
+
     openGraph: {
       type: "article",
 
-      locale: siteConfig.locale,
+      locale:
+        siteConfig.locale,
 
-      url: articleUrl,
+      url:
+        articleUrl,
 
-      siteName: siteConfig.name,
+      siteName:
+        siteConfig.name,
 
       title,
 
@@ -145,9 +217,12 @@ export async function generateMetadata({
         article.updatedAt ||
         article.createdAt,
 
-      authors: [
-        authorName,
-      ],
+      // IMPORTANT:
+      // Author profile URL
+      authors:
+        authorUrl
+          ? [authorUrl]
+          : [authorName],
 
       section:
         article.categoryHi ||
@@ -156,15 +231,22 @@ export async function generateMetadata({
 
       images: [
         {
-          url: image,
+          url:
+            image,
 
-          alt: article.title,
+          alt:
+            article.title,
         },
       ],
     },
 
+    // ======================================================
+    // TWITTER
+    // ======================================================
+
     twitter: {
-      card: "summary_large_image",
+      card:
+        "summary_large_image",
 
       title,
 
