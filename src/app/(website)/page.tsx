@@ -15,8 +15,8 @@ import {
 
 import {
   getCategories,
+  getHomepageCategoryData,
 } from "@/services/public/category.public.service";
-
 import BreakingStrip
   from "@/components/home/breaking-strip";
 
@@ -155,10 +155,11 @@ export default async function Home() {
   // FETCH HOME DATA
   // ======================================
 
-  const [
+ const [
   articles,
   featured,
   categories,
+  categoryData,
   videos,
   shorts,
   bannerAds,
@@ -168,6 +169,7 @@ export default async function Home() {
   getPublishedArticles(),
   getFeaturedArticles(),
   getCategories(),
+  getHomepageCategoryData(),
   getPublishedVideos(),
   getPublishedShorts(),
   getAdsByType("banner"),
@@ -439,51 +441,12 @@ export default async function Home() {
 // Articles + Videos count
 // ======================================
 
-const categoryData =
-  await Promise.all(
-    categories.map(
-      async (category) => {
-        const categoryId =
-          category.id;
-
-        const [
-          articles,
-          videos,
-        ] = await Promise.all([
-          getPublishedArticlesByCategory(
-            categoryId
-          ),
-
-          getPublishedVideosByCategory(
-            categoryId
-          ),
-        ]);
-
-        return {
-          ...category,
-
-          articles,
-          videos,
-
-          // Total published content
-          totalContent:
-            articles.length +
-            videos.length,
-        };
-      }
-    )
-  );
 
 // ======================================
 // SORT CATEGORIES
 // HIGHEST CONTENT COUNT FIRST
 // ======================================
 
-categoryData.sort(
-  (a, b) =>
-    b.totalContent -
-    a.totalContent
-);
 
 
     const websiteSchema = {

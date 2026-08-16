@@ -1,0 +1,19 @@
+# INFINIA BHARAT NEWS
+
+INFINIA BHARAT NEWS is a Hindi digital news website covering India, world news, politics, Uttar Pradesh, business, technology, sports, entertainment and breaking news.
+
+## Website
+
+- Homepage: https://infiniabharatnews.vercel.app/
+- Latest News: https://infiniabharatnews.vercel.app/latest
+- Categories: https://infiniabharatnews.vercel.app/category/
+- Videos: https://infiniabharatnews.vercel.app/video
+- Reels: https://infiniabharatnews.vercel.app/reels
+
+## Content
+
+The website publishes Hindi news articles, videos, short-form news content and breaking news.
+
+## Crawling
+
+Public news content may be crawled and indexed. Administrative pages and private functionality should not be treated as public content.

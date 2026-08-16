@@ -208,6 +208,7 @@ export default function HeroSection({
                 alt={hero.title}
                 fill
                 priority
+                fetchPriority="high"
                 sizes="
                   (max-width: 1023px) 100vw,
                   70vw

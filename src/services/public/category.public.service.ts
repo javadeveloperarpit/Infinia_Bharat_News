@@ -624,3 +624,140 @@ export async function getCategoryVideos(
     })
     .slice(0, 18);
 }
+
+// ============================================================
+// HOMEPAGE CATEGORY DATA
+// Loads articles/videos only ONCE
+// ============================================================
+
+export async function getHomepageCategoryData(): Promise<
+  Array<
+    PublicCategory & {
+      articles: CategoryArticle[];
+      videos: CategoryVideo[];
+      totalContent: number;
+    }
+  >
+> {
+  const [
+    rawCategories,
+    rawArticles,
+    rawVideos,
+  ] = await Promise.all([
+    loadCategories(),
+    loadArticles(),
+    loadVideos(),
+  ]);
+
+  const categories = rawCategories
+    .filter(
+      (category) =>
+        category?.status === "active"
+    )
+    .map(
+      (category) =>
+        formatCategory(category)
+    );
+
+  const articles = rawArticles
+    .filter(
+      (article) =>
+        article?.status === "published"
+    )
+    .map(
+      (article) =>
+        formatArticle(article)
+    );
+
+  const videos = rawVideos
+    .filter(
+      (video) =>
+        video?.status === "published"
+    )
+    .map(
+      (video) =>
+        formatVideo(video)
+    );
+
+  return categories
+    .map((category) => {
+      const categoryArticles =
+        articles
+          .filter(
+            (article) =>
+              String(article.categoryId) ===
+              String(category.id)
+          )
+          .sort((a, b) => {
+            const priorityA =
+              Number(a.priority || 0);
+
+            const priorityB =
+              Number(b.priority || 0);
+
+            if (
+              priorityA !==
+              priorityB
+            ) {
+              return (
+                priorityB -
+                priorityA
+              );
+            }
+
+            const dateA =
+              new Date(
+                a.createdAt || 0
+              ).getTime();
+
+            const dateB =
+              new Date(
+                b.createdAt || 0
+              ).getTime();
+
+            return dateB - dateA;
+          })
+          .slice(0, 18);
+
+      const categoryVideos =
+        videos
+          .filter(
+            (video) =>
+              String(video.categoryId) ===
+              String(category.id)
+          )
+          .sort((a, b) => {
+            const dateA =
+              new Date(
+                a.createdAt || 0
+              ).getTime();
+
+            const dateB =
+              new Date(
+                b.createdAt || 0
+              ).getTime();
+
+            return dateB - dateA;
+          })
+          .slice(0, 18);
+
+      return {
+        ...category,
+
+        articles:
+          categoryArticles,
+
+        videos:
+          categoryVideos,
+
+        totalContent:
+          categoryArticles.length +
+          categoryVideos.length,
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.totalContent -
+        a.totalContent
+    );
+}
