@@ -4,6 +4,10 @@ interface Props {
   article: any;
 }
 
+/* =========================================================
+   HTML ESCAPE
+========================================================= */
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")
@@ -11,6 +15,10 @@ function escapeHtml(value: string) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 }
+
+/* =========================================================
+   YOUTUBE
+========================================================= */
 
 function getYouTubeId(url: URL) {
   let videoId = "";
@@ -44,6 +52,10 @@ function getYouTubeId(url: URL) {
   return videoId.split(/[?&#]/)[0];
 }
 
+/* =========================================================
+   VIMEO
+========================================================= */
+
 function getVimeoId(url: URL) {
   if (
     url.hostname === "vimeo.com" ||
@@ -53,7 +65,9 @@ function getVimeoId(url: URL) {
   }
 
   if (url.hostname === "player.vimeo.com") {
-    const parts = url.pathname.split("/").filter(Boolean);
+    const parts = url.pathname
+      .split("/")
+      .filter(Boolean);
 
     const index = parts.indexOf("video");
 
@@ -65,24 +79,28 @@ function getVimeoId(url: URL) {
   return "";
 }
 
+/* =========================================================
+   MEDIA EMBEDS
+========================================================= */
+
 function convertMediaEmbeds(html: string) {
   if (!html) return "";
 
   return html.replace(
-    /<figure[^>]*class=["']media["'][^>]*>\s*<oembed[^>]*url=["']([^"']+)["'][^>]*>\s*<\/oembed>\s*<\/figure>/gi,
+    /<figure[^>]*class=["'][^"']*\bmedia\b[^"']*["'][^>]*>\s*<oembed[^>]*url=["']([^"']+)["'][^>]*>\s*<\/oembed>\s*<\/figure>/gi,
     (_, rawUrl: string) => {
       try {
         const url = new URL(rawUrl);
 
-        const hostname = url.hostname.toLowerCase();
+        const hostname =
+          url.hostname.toLowerCase();
 
-        /*
-        ============================================================
-        YOUTUBE
-        ============================================================
-        */
+        /* =================================================
+           YOUTUBE
+        ================================================= */
 
-        const youtubeId = getYouTubeId(url);
+        const youtubeId =
+          getYouTubeId(url);
 
         if (youtubeId) {
           return `
@@ -102,13 +120,12 @@ function convertMediaEmbeds(html: string) {
           `;
         }
 
-        /*
-        ============================================================
-        VIMEO
-        ============================================================
-        */
+        /* =================================================
+           VIMEO
+        ================================================= */
 
-        const vimeoId = getVimeoId(url);
+        const vimeoId =
+          getVimeoId(url);
 
         if (vimeoId) {
           return `
@@ -128,21 +145,21 @@ function convertMediaEmbeds(html: string) {
           `;
         }
 
-        /*
-        ============================================================
-        DAILYMOTION
-        ============================================================
-        */
+        /* =================================================
+           DAILYMOTION
+        ================================================= */
 
         if (
           hostname === "dailymotion.com" ||
           hostname === "www.dailymotion.com"
         ) {
-          const match = url.pathname.match(
-            /\/video\/([^_/?]+)/
-          );
+          const match =
+            url.pathname.match(
+              /\/video\/([^_/?]+)/
+            );
 
-          const videoId = match?.[1];
+          const videoId =
+            match?.[1];
 
           if (videoId) {
             return `
@@ -163,19 +180,18 @@ function convertMediaEmbeds(html: string) {
           }
         }
 
-        /*
-        ============================================================
-        SPOTIFY
-        ============================================================
-        */
+        /* =================================================
+           SPOTIFY
+        ================================================= */
 
         if (
           hostname === "open.spotify.com" ||
           hostname === "www.open.spotify.com"
         ) {
-          const parts = url.pathname
-            .split("/")
-            .filter(Boolean);
+          const parts =
+            url.pathname
+              .split("/")
+              .filter(Boolean);
 
           if (parts.length >= 2) {
             const type = parts[0];
@@ -199,25 +215,21 @@ function convertMediaEmbeds(html: string) {
           }
         }
 
-        /*
-        ============================================================
-        SOUNDCLOUD
-        ============================================================
-        */
+        /* =================================================
+           SOUNDCLOUD
+        ================================================= */
 
         if (
           hostname === "soundcloud.com" ||
           hostname === "www.soundcloud.com"
         ) {
-          const safeUrl = escapeHtml(url.href);
-
           return `
             <figure class="article-media article-soundcloud">
               <div class="article-soundcloud-wrapper">
                 <iframe
                   src="https://w.soundcloud.com/player/?url=${encodeURIComponent(
                     url.href
-                  )}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false"
+                  )}&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false"
                   title="SoundCloud player"
                   loading="lazy"
                   allow="autoplay"
@@ -227,26 +239,26 @@ function convertMediaEmbeds(html: string) {
           `;
         }
 
-        /*
-        ============================================================
-        INSTAGRAM
-        ============================================================
-        */
+        /* =================================================
+           INSTAGRAM
+        ================================================= */
 
         if (
           hostname === "instagram.com" ||
           hostname === "www.instagram.com"
         ) {
-          const path = url.pathname;
+          const path =
+            url.pathname;
 
           if (
             path.startsWith("/p/") ||
             path.startsWith("/reel/") ||
             path.startsWith("/tv/")
           ) {
-            const cleanUrl = escapeHtml(
-              `${url.origin}${url.pathname}`
-            );
+            const cleanUrl =
+              escapeHtml(
+                `${url.origin}${url.pathname}`
+              );
 
             return `
               <figure class="article-media article-instagram">
@@ -265,11 +277,9 @@ function convertMediaEmbeds(html: string) {
           }
         }
 
-        /*
-        ============================================================
-        X / TWITTER
-        ============================================================
-        */
+        /* =================================================
+           X / TWITTER
+        ================================================= */
 
         if (
           hostname === "twitter.com" ||
@@ -280,7 +290,11 @@ function convertMediaEmbeds(html: string) {
           return `
             <figure class="article-media article-twitter">
               <blockquote class="twitter-tweet">
-                <a href="${escapeHtml(url.href)}">
+                <a
+                  href="${escapeHtml(url.href)}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   View post on X
                 </a>
               </blockquote>
@@ -288,13 +302,12 @@ function convertMediaEmbeds(html: string) {
           `;
         }
 
-        /*
-        ============================================================
-        DIRECT VIDEO FILE
-        ============================================================
-        */
+        /* =================================================
+           DIRECT VIDEO
+        ================================================= */
 
-        const pathname = url.pathname.toLowerCase();
+        const pathname =
+          url.pathname.toLowerCase();
 
         const videoExtensions = [
           ".mp4",
@@ -305,9 +318,11 @@ function convertMediaEmbeds(html: string) {
           ".m4v",
         ];
 
-        const isVideoFile = videoExtensions.some((extension) =>
-          pathname.endsWith(extension)
-        );
+        const isVideoFile =
+          videoExtensions.some(
+            (extension) =>
+              pathname.endsWith(extension)
+          );
 
         if (isVideoFile) {
           return `
@@ -317,21 +332,14 @@ function convertMediaEmbeds(html: string) {
                 playsinline
                 preload="metadata"
                 src="${escapeHtml(url.href)}"
-              >
-                Your browser does not support the video tag.
-              </video>
+              ></video>
             </figure>
           `;
         }
 
-        /*
-        ============================================================
-        UNKNOWN MEDIA
-        ============================================================
-        */
-
-        // Unknown URL ko silently delete nahi karenge.
-        // Original link preserve karenge.
+        /* =================================================
+           UNKNOWN
+        ================================================= */
 
         return `
           <figure class="article-media article-unknown-media">
@@ -351,48 +359,21 @@ function convertMediaEmbeds(html: string) {
   );
 }
 
+/* =========================================================
+   ARTICLE CONTENT
+========================================================= */
+
 export default function ArticleContent({
   article,
 }: Props) {
-  const content = convertMediaEmbeds(
-    article?.content || ""
-  );
+  const content =
+    convertMediaEmbeds(
+      article?.content || ""
+    );
 
   return (
-    <article
-      className="
-        article-content
-
-        w-full
-        min-w-0
-        max-w-full
-
-        overflow-hidden
-
-        prose
-        prose-lg
-        max-w-none
-
-        break-words
-        [overflow-wrap:anywhere]
-
-        prose-headings:max-w-full
-        prose-p:max-w-full
-        prose-li:max-w-full
-
-        prose-img:mx-auto
-        prose-img:block
-        prose-img:h-auto
-        prose-img:max-w-full
-
-        prose-video:max-w-full
-        prose-iframe:max-w-full
-
-        prose-table:w-full
-        prose-table:max-w-full
-
-        prose-pre:max-w-full
-      "
+    <div
+      className="article-content"
       dangerouslySetInnerHTML={{
         __html: content,
       }}
