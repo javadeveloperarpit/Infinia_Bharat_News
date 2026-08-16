@@ -61,7 +61,15 @@ function XCircle({
 }) {
   return (
     <span
-      className="flex shrink-0 items-center justify-center rounded-full bg-black text-white"
+      className="
+        flex
+        shrink-0
+        items-center
+        justify-center
+        rounded-full
+        bg-black
+        text-white
+      "
       style={{
         width: size,
         height: size,
@@ -127,29 +135,34 @@ export default function LeadersXCarousel({
       null
     );
 
+  /* =======================================================
+     DRAG
+  ======================================================= */
+
+  const isDraggingRef =
+    useRef(false);
+
+  const dragStartXRef =
+    useRef(0);
+
+  const dragStartPositionRef =
+    useRef(0);
+
+  const hasDraggedRef =
+    useRef(false);
+
   const [loopWidth, setLoopWidth] =
     useState(0);
 
-  /*
-   * ========================================================
-   * SPEED
-   * ========================================================
-   *
-   * 8  = very slow
-   * 12 = slow
-   * 16 = smooth
-   * 20 = normal
-   * 25 = fast
-   *
-   */
+  /* =========================================================
+     SPEED
+  ========================================================= */
 
   const SPEED = 120;
 
-  /*
-   * ========================================================
-   * MEASURE FIRST SET
-   * ========================================================
-   */
+  /* =========================================================
+     MEASURE FIRST SET
+  ========================================================= */
 
   useEffect(() => {
     const track = trackRef.current;
@@ -185,11 +198,9 @@ export default function LeadersXCarousel({
     };
   }, [posts]);
 
-  /*
-   * ========================================================
-   * CONTINUOUS MOVEMENT
-   * ========================================================
-   */
+  /* =========================================================
+     CONTINUOUS AUTO MOVEMENT
+  ========================================================= */
 
   useEffect(() => {
     if (!loopWidth) {
@@ -213,10 +224,6 @@ export default function LeadersXCarousel({
         positionRef.current +=
           (SPEED * delta) / 1000;
 
-        /*
-         * When first set is completely crossed,
-         * reset by exactly one set width.
-         */
         if (
           positionRef.current >=
           loopWidth
@@ -232,11 +239,15 @@ export default function LeadersXCarousel({
       }
 
       animationRef.current =
-        requestAnimationFrame(animate);
+        requestAnimationFrame(
+          animate
+        );
     };
 
     animationRef.current =
-      requestAnimationFrame(animate);
+      requestAnimationFrame(
+        animate
+      );
 
     return () => {
       if (
@@ -249,15 +260,13 @@ export default function LeadersXCarousel({
     };
   }, [loopWidth]);
 
-  /*
-   * ========================================================
-   * PAUSE
-   * ========================================================
-   */
+  /* =========================================================
+     RESUME AUTO SCROLL
+  ========================================================= */
 
-  function pauseTemporarily() {
-    pausedRef.current = true;
-
+  function scheduleResume(
+    delay = 1000
+  ) {
     if (resumeTimerRef.current) {
       clearTimeout(
         resumeTimerRef.current
@@ -266,17 +275,17 @@ export default function LeadersXCarousel({
 
     resumeTimerRef.current =
       setTimeout(() => {
-        pausedRef.current = false;
+        pausedRef.current =
+          false;
+
         lastTimeRef.current =
           performance.now();
-      }, 1200);
+      }, delay);
   }
 
-  /*
-   * ========================================================
-   * MANUAL MOVE
-   * ========================================================
-   */
+  /* =========================================================
+     MANUAL BUTTON MOVE
+  ========================================================= */
 
   function move(
     direction: "left" | "right"
@@ -301,10 +310,13 @@ export default function LeadersXCarousel({
     const amount =
       card.offsetWidth + gap;
 
-    if (direction === "right") {
-      positionRef.current += amount;
+    if (
+      direction === "right"
+    ) {
+      positionRef.current +=
+        amount;
 
-      if (
+      while (
         positionRef.current >=
         loopWidth
       ) {
@@ -312,9 +324,10 @@ export default function LeadersXCarousel({
           loopWidth;
       }
     } else {
-      positionRef.current -= amount;
+      positionRef.current -=
+        amount;
 
-      if (
+      while (
         positionRef.current < 0
       ) {
         positionRef.current +=
@@ -327,35 +340,201 @@ export default function LeadersXCarousel({
         `translate3d(${-positionRef.current}px, 0, 0)`;
     }
 
-    if (resumeTimerRef.current) {
-      clearTimeout(
-        resumeTimerRef.current
-      );
-    }
-
-    resumeTimerRef.current =
-      setTimeout(() => {
-        pausedRef.current = false;
-        lastTimeRef.current =
-          performance.now();
-      }, 1200);
+    scheduleResume(1200);
   }
 
-  /*
-   * ========================================================
-   * CLEANUP
-   * ========================================================
-   */
+  /* =========================================================
+     POINTER DOWN
+  ========================================================= */
+
+  function handlePointerDown(
+    event: React.PointerEvent<HTMLDivElement>
+  ) {
+    if (!loopWidth) {
+      return;
+    }
+
+    isDraggingRef.current =
+      true;
+
+    hasDraggedRef.current =
+      false;
+
+    dragStartXRef.current =
+      event.clientX;
+
+    dragStartPositionRef.current =
+      positionRef.current;
+
+    pausedRef.current =
+      true;
+
+    event.currentTarget.setPointerCapture(
+      event.pointerId
+    );
+  }
+
+  /* =========================================================
+     POINTER MOVE
+  ========================================================= */
+
+  function handlePointerMove(
+    event: React.PointerEvent<HTMLDivElement>
+  ) {
+    if (
+      !isDraggingRef.current ||
+      !loopWidth
+    ) {
+      return;
+    }
+
+    const delta =
+      event.clientX -
+      dragStartXRef.current;
+
+    if (
+      Math.abs(delta) > 5
+    ) {
+      hasDraggedRef.current =
+        true;
+    }
+
+    let nextPosition =
+      dragStartPositionRef.current -
+      delta;
+
+    while (
+      nextPosition < 0
+    ) {
+      nextPosition +=
+        loopWidth;
+    }
+
+    while (
+      nextPosition >=
+      loopWidth
+    ) {
+      nextPosition -=
+        loopWidth;
+    }
+
+    positionRef.current =
+      nextPosition;
+
+    if (trackRef.current) {
+      trackRef.current.style.transform =
+        `translate3d(${-nextPosition}px, 0, 0)`;
+    }
+  }
+
+  /* =========================================================
+     POINTER UP
+  ========================================================= */
+
+  function handlePointerUp(
+    event: React.PointerEvent<HTMLDivElement>
+  ) {
+    if (
+      !isDraggingRef.current
+    ) {
+      return;
+    }
+
+    isDraggingRef.current =
+      false;
+
+    try {
+      event.currentTarget.releasePointerCapture(
+        event.pointerId
+      );
+    } catch {}
+
+    scheduleResume(1000);
+
+    /*
+     * Reset after click handling has finished.
+     */
+    setTimeout(() => {
+      hasDraggedRef.current =
+        false;
+    }, 50);
+  }
+
+  /* =========================================================
+     HORIZONTAL WHEEL
+  ========================================================= */
+
+  function handleWheel(
+    event: React.WheelEvent<HTMLDivElement>
+  ) {
+    if (!loopWidth) {
+      return;
+    }
+
+    const delta =
+      Math.abs(event.deltaX) >
+      Math.abs(event.deltaY)
+        ? event.deltaX
+        : event.shiftKey
+          ? event.deltaY
+          : 0;
+
+    if (!delta) {
+      return;
+    }
+
+    event.preventDefault();
+
+    pausedRef.current =
+      true;
+
+    let nextPosition =
+      positionRef.current +
+      delta;
+
+    while (
+      nextPosition < 0
+    ) {
+      nextPosition +=
+        loopWidth;
+    }
+
+    while (
+      nextPosition >=
+      loopWidth
+    ) {
+      nextPosition -=
+        loopWidth;
+    }
+
+    positionRef.current =
+      nextPosition;
+
+    if (trackRef.current) {
+      trackRef.current.style.transform =
+        `translate3d(${-nextPosition}px, 0, 0)`;
+    }
+
+    scheduleResume(1000);
+  }
+
+  /* =========================================================
+     CLEANUP
+  ========================================================= */
 
   useEffect(() => {
     return () => {
-      if (resumeTimerRef.current) {
+      if (
+        resumeTimerRef.current
+      ) {
         clearTimeout(
           resumeTimerRef.current
         );
       }
 
-      if (animationRef.current) {
+      if (
+        animationRef.current
+      ) {
         cancelAnimationFrame(
           animationRef.current
         );
@@ -363,9 +542,17 @@ export default function LeadersXCarousel({
     };
   }, []);
 
+  /* =========================================================
+     EMPTY
+  ========================================================= */
+
   if (!posts.length) {
     return null;
   }
+
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
     <section
@@ -435,7 +622,13 @@ export default function LeadersXCarousel({
                 />
               </span>
 
-              <div className="flex items-center gap-1.5">
+              <div
+                className="
+                  flex
+                  items-center
+                  gap-1.5
+                "
+              >
                 <h2
                   className="
                     text-base
@@ -477,7 +670,8 @@ export default function LeadersXCarousel({
               />
 
               <span>
-                Latest posts from India's public figures
+                Latest posts from India's
+                public figures
               </span>
             </div>
           </div>
@@ -514,7 +708,9 @@ export default function LeadersXCarousel({
                 active:scale-95
               "
             >
-              <ChevronLeft size={15} />
+              <ChevronLeft
+                size={15}
+              />
             </button>
 
             <button
@@ -540,7 +736,9 @@ export default function LeadersXCarousel({
                 active:scale-95
               "
             >
-              <ChevronRight size={15} />
+              <ChevronRight
+                size={15}
+              />
             </button>
           </div>
         </div>
@@ -551,16 +749,48 @@ export default function LeadersXCarousel({
       ================================================= */}
 
       <div
-        className="relative overflow-hidden"
+        className="
+          relative
+          overflow-hidden
+          cursor-grab
+          active:cursor-grabbing
+          select-none
+          touch-pan-y
+        "
         onMouseEnter={() => {
-          pausedRef.current = true;
+          if (
+            !isDraggingRef.current
+          ) {
+            pausedRef.current =
+              true;
+          }
         }}
         onMouseLeave={() => {
-          pausedRef.current = false;
+          if (
+            isDraggingRef.current
+          ) {
+            return;
+          }
+
+          pausedRef.current =
+            false;
+
           lastTimeRef.current =
             performance.now();
         }}
-        onTouchStart={pauseTemporarily}
+        onPointerDown={
+          handlePointerDown
+        }
+        onPointerMove={
+          handlePointerMove
+        }
+        onPointerUp={
+          handlePointerUp
+        }
+        onPointerCancel={
+          handlePointerUp
+        }
+        onWheel={handleWheel}
       >
         {/* =================================================
             MOVING TRACK
@@ -574,6 +804,9 @@ export default function LeadersXCarousel({
             gap-2
             will-change-transform
           "
+          style={{
+            touchAction: "pan-y",
+          }}
         >
           {/* FIRST SET */}
 
@@ -587,13 +820,19 @@ export default function LeadersXCarousel({
             "
           >
             {posts.map(
-              (post, index) => (
+              (
+                post,
+                index
+              ) => (
                 <XCard
                   key={`first-${post.handle}-${post.pubDate}-${index}`}
                   post={post}
                   profileImage={getProfileImage(
                     post.handle
                   )}
+                  isDragging={
+                    hasDraggedRef
+                  }
                 />
               )
             )}
@@ -611,13 +850,19 @@ export default function LeadersXCarousel({
             "
           >
             {posts.map(
-              (post, index) => (
+              (
+                post,
+                index
+              ) => (
                 <XCard
                   key={`second-${post.handle}-${post.pubDate}-${index}`}
                   post={post}
                   profileImage={getProfileImage(
                     post.handle
                   )}
+                  isDragging={
+                    hasDraggedRef
+                  }
                 />
               )
             )}
@@ -652,9 +897,11 @@ export default function LeadersXCarousel({
 function XCard({
   post,
   profileImage,
+  isDragging,
 }: {
   post: XPost;
   profileImage: string;
+  isDragging: React.MutableRefObject<boolean>;
 }) {
   return (
     <a
@@ -662,6 +909,15 @@ function XCard({
       href={post.link}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={(event) => {
+        /*
+         * Prevent accidental opening when
+         * the user dragged/swiped the carousel.
+         */
+        if (isDragging.current) {
+          event.preventDefault();
+        }
+      }}
       className="
         group
         flex
@@ -907,7 +1163,9 @@ function XCard({
           "
         >
           View
-          <ExternalLink size={9} />
+          <ExternalLink
+            size={9}
+          />
         </div>
       </div>
     </a>
