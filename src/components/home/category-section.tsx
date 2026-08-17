@@ -253,7 +253,7 @@ export default function CategorySection({
   // ======================================
 
   return (
-    <section>
+    <section className="mb-8">
       {/* ==================================
           SECTION HEADER
       ================================== */}

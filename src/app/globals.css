@@ -1688,3 +1688,28 @@ iframe {
 
 }
 
+@keyframes navbarSwipe {
+  0%,
+  100% {
+    transform: translateY(-50%) translateX(0);
+    opacity: 0.55;
+  }
+
+  50% {
+    transform: translateY(-50%) translateX(-5px);
+    opacity: 1;
+  }
+}
+
+@keyframes navbarArrow {
+  0%,
+  100% {
+    transform: translateX(0);
+    opacity: 0.45;
+  }
+
+  50% {
+    transform: translateX(4px);
+    opacity: 1;
+  }
+}

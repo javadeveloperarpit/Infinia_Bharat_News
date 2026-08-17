@@ -187,6 +187,14 @@ About Us
 
 </Link>
 <Link
+href="/author"
+className="hover:text-white transition"
+>
+
+Authors Page
+
+</Link>
+<Link
 href="/privacy-policy"
 className="hover:text-white transition"
 >
