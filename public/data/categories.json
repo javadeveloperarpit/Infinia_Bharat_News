@@ -45,6 +45,15 @@
     "updatedAt": "2026-08-01T05:29:10.578Z"
   },
   {
+    "id": "Qo9NLlisa3qTS20O09RJ",
+    "name": "English World",
+    "nameHi": "English World",
+    "slug": "english-world",
+    "status": "active",
+    "createdAt": "2026-08-17T11:43:37.002Z",
+    "updatedAt": "2026-08-17T11:43:37.002Z"
+  },
+  {
     "id": "UszvBhERq8TUS9JV924Y",
     "slug": "religion",
     "name": "Religion",
