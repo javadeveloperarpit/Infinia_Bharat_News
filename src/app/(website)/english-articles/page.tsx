@@ -322,7 +322,7 @@ export default async function EnglishArticlesPage() {
                         w-[62%]
                         object-contain
                         object-right-bottom
-                        opacity-25
+                        opacity-60
                         transition-all
                         duration-300
                         group-hover:scale-105
