@@ -87,7 +87,7 @@ export default function EnglishArticlesSection({
                 text-xl
                 md:text-2xl
                 font-bold
-                text-white
+                text-black
               "
             >
               English Articles

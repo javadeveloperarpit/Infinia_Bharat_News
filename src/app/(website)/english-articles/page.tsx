@@ -178,65 +178,6 @@ export default async function EnglishArticlesPage() {
   });
 
 
-  // ==========================================================
-  // DYNAMIC CHAKRA GEOMETRY
-  // ==========================================================
-
-  const total =
-    Math.max(englishCategories.length, 1);
-
-  const angle =
-    360 / total;
-
-
-  const center = 500;
-
-  const outerRadius = 455;
-
-  const innerRadius = 105;
-
-
-  const gap =
-    Math.min(
-      angle * 0.10,
-      4
-    );
-
-
-  const halfAngle =
-    Math.max(
-      1,
-      (angle - gap) / 2
-    );
-
-
-  // ==========================================================
-  // POLAR → SVG
-  // ==========================================================
-
-  const pointOnCircle = (
-    radius: number,
-    degrees: number
-  ) => {
-
-    const radians =
-      (degrees * Math.PI) / 180;
-
-    return {
-      x:
-        center +
-        radius *
-          Math.cos(radians),
-
-      y:
-        center +
-        radius *
-          Math.sin(radians),
-    };
-
-  };
-
-
   return (
 
     <main
@@ -247,9 +188,8 @@ export default async function EnglishArticlesPage() {
       "
     >
 
-
       {/* ======================================================
-          CATEGORY WHEEL
+          HEADER
       ====================================================== */}
 
       <section
@@ -269,6 +209,7 @@ export default async function EnglishArticlesPage() {
               font-bold
               tracking-tight
               text-[#151515]
+              md:text-2xl
             "
           >
             English Categories
@@ -279,6 +220,7 @@ export default async function EnglishArticlesPage() {
               mt-1
               text-xs
               text-zinc-500
+              md:text-sm
             "
           >
             Choose a section to explore the latest stories.
@@ -288,940 +230,23 @@ export default async function EnglishArticlesPage() {
 
 
         {/* ====================================================
-            DESKTOP / LARGE WHEEL
-        ==================================================== */}
-
-        <div
-          className="
-            relative
-            mx-auto
-            hidden
-            aspect-square
-            w-full
-            max-w-[920px]
-            lg:block
-          "
-        >
-
-
-          {/* ==================================================
-              MULTI-COLOR OUTER GLOW
-          ================================================== */}
-
-          <div
-            className="
-              absolute
-              inset-[1%]
-              rounded-full
-              opacity-75
-              blur-[8px]
-            "
-            style={{
-              background:
-                "conic-gradient(from 0deg, #ff004c, #ff7a00, #ffd600, #00e5ff, #7c3cff, #ff006e, #ff004c)",
-            }}
-          />
-
-
-          {/* ==================================================
-              CLEAN RED OUTER RING
-          ================================================== */}
-
-          <div
-            className="
-              absolute
-              inset-[2%]
-              rounded-full
-              border-[4px]
-              border-[#d71920]
-              bg-white
-            "
-          />
-
-
-          {/* ==================================================
-              SUBTLE COLOR RING
-          ================================================== */}
-
-          <div
-            className="
-              absolute
-              inset-[3.1%]
-              rounded-full
-              border-[2px]
-            "
-            style={{
-              borderColor:
-                "transparent",
-
-              background:
-                "linear-gradient(white, white) padding-box, conic-gradient(#ff004c, #ff9d00, #ffe600, #00d9ff, #7c3cff, #ff004c) border-box",
-            }}
-          />
-
-
-          {/* ==================================================
-              SVG TRIANGLE SYSTEM
-          ================================================== */}
-
-          <div
-            className="
-              absolute
-              inset-[4.5%]
-            "
-          >
-
-            <svg
-              viewBox="0 0 1000 1000"
-              className="
-                h-full
-                w-full
-                overflow-visible
-              "
-              aria-label="English news categories"
-            >
-
-
-              {/* =================================================
-                  CATEGORY TRIANGLES
-              ================================================= */}
-
-              {englishCategories.map((category, index) => {
-
-                const startAngle =
-                  -90 +
-                  index * angle +
-                  gap / 2;
-
-
-                const endAngle =
-                  -90 +
-                  (index + 1) * angle -
-                  gap / 2;
-
-
-                const outerLeft =
-                  pointOnCircle(
-                    outerRadius,
-                    startAngle
-                  );
-
-
-                const outerRight =
-                  pointOnCircle(
-                    outerRadius,
-                    endAngle
-                  );
-
-
-                const points = `
-                  ${center},${center}
-                  ${outerLeft.x},${outerLeft.y}
-                  ${outerRight.x},${outerRight.y}
-                `;
-
-
-                const slug =
-                  String(category.slug || "")
-                    .trim()
-                    .toLowerCase();
-
-
-                const data =
-                  categoryData[slug];
-
-
-                const displayName =
-                  category.name.replace(
-                    /^English\s*/i,
-                    ""
-                  );
-
-
-                const count =
-                  articleCounts.get(
-                    category.id
-                  ) || 0;
-
-
-                const textAngle =
-                  -90 +
-                  index * angle +
-                  angle / 2;
-
-
-                const textPoint =
-                  pointOnCircle(
-                    outerRadius * 0.73,
-                    textAngle
-                  );
-
-
-                return (
-
-                  <Link
-                    key={category.id}
-                    href={`/category/${slug}`}
-                    className="group"
-                  >
-
-                    <g
-                      className="
-                        category-triangle
-                        cursor-pointer
-                      "
-                      style={{
-                        animationDelay:
-                          `${Math.min(
-                            index * 0.10,
-                            1.8
-                          )}s`,
-                      }}
-                    >
-
-
-                      {/* ==========================================
-                          TRIANGLE
-                      ========================================== */}
-
-                      <polygon
-                        points={points}
-                        fill="white"
-                        stroke="url(#categoryGradient)"
-                        strokeWidth="4"
-                        vectorEffect="non-scaling-stroke"
-                        className="
-                          transition-all
-                          duration-300
-                          group-hover:stroke-[#d71920]
-                        "
-                      />
-
-
-                      {/* ==========================================
-                          CATEGORY IMAGE
-                      ========================================== */}
-
-                      {data?.image && (
-
-                        <>
-
-                          <defs>
-
-                            <clipPath
-                              id={`triangleClip-${category.id}`}
-                            >
-
-                              <polygon
-                                points={points}
-                              />
-
-                            </clipPath>
-
-                          </defs>
-
-
-                          <image
-                            href={data.image}
-                            x="0"
-                            y="0"
-                            width="1000"
-                            height="1000"
-                            preserveAspectRatio="xMidYMid slice"
-                            clipPath={`url(#triangleClip-${category.id})`}
-                            opacity="0.72"
-                            className="
-                              pointer-events-none
-                              transition-all
-                              duration-500
-                              group-hover:opacity-100
-                            "
-                          />
-
-                        </>
-
-                      )}
-
-
-                      {/* ==========================================
-                          GLASS COLOR OVERLAY
-                      ========================================== */}
-
-                      <polygon
-                        points={points}
-                        fill="url(#triangleGradient)"
-                        opacity="0.12"
-                        className="
-                          pointer-events-none
-                        "
-                      />
-
-
-                      {/* ==========================================
-                          CATEGORY TEXT BASE
-                      ========================================== */}
-
-                      <polygon
-                        points={`
-                          ${outerLeft.x},${outerLeft.y}
-                          ${outerRight.x},${outerRight.y}
-
-                          ${center +
-                            (outerLeft.x - center) * 0.48},
-                          ${center +
-                            (outerLeft.y - center) * 0.48}
-
-                          ${center +
-                            (outerRight.x - center) * 0.48},
-                          ${center +
-                            (outerRight.y - center) * 0.48}
-                        `}
-                        fill="white"
-                        opacity="0.58"
-                        className="
-                          pointer-events-none
-                        "
-                      />
-
-                    </g>
-
-
-                    {/* ==========================================
-                        CATEGORY LABEL
-                    ========================================== */}
-
-                    <g
-                      className="
-                        category-label
-                        pointer-events-none
-                      "
-                      style={{
-                        animationDelay:
-                          `${Math.min(
-                            index * 0.10 + 0.15,
-                            1.9
-                          )}s`,
-                      }}
-                    >
-
-                      <foreignObject
-                        x={textPoint.x - 90}
-                        y={textPoint.y - 40}
-                        width="180"
-                        height="90"
-                      >
-
-                        <div
-                          className="
-                            flex
-                            h-full
-                            w-full
-                            flex-col
-                            items-center
-                            justify-center
-                            text-center
-                          "
-                        >
-
-                          <span
-                            className="
-                              rounded-full
-                              bg-white/90
-                              px-2
-                              py-[3px]
-                              text-[7px]
-                              font-bold
-                              uppercase
-                              tracking-[0.14em]
-                              text-[#d71920]
-                              shadow-sm
-                            "
-                          >
-                            {slug
-                              .replace(
-                                "english-",
-                                ""
-                              )
-                              .toUpperCase()}
-                          </span>
-
-
-                          <span
-                            className="
-                              mt-1
-                              text-[14px]
-                              font-black
-                              leading-tight
-                              text-[#111]
-                              drop-shadow-[0_1px_3px_rgba(255,255,255,0.95)]
-                            "
-                          >
-                            {displayName}
-                          </span>
-
-
-                          <span
-                            className="
-                              mt-1
-                              text-[7px]
-                              font-semibold
-                              text-zinc-600
-                            "
-                          >
-                            {count}{" "}
-                            {count === 1
-                              ? "Article"
-                              : "Articles"}
-                          </span>
-
-                        </div>
-
-                      </foreignObject>
-
-                    </g>
-
-                  </Link>
-
-                );
-
-              })}
-
-
-              {/* ==================================================
-                  GRADIENT DEFINITIONS
-              ================================================== */}
-
-              <defs>
-
-                <linearGradient
-                  id="triangleGradient"
-                  x1="0%"
-                  y1="0%"
-                  x2="100%"
-                  y2="100%"
-                >
-
-                  <stop
-                    offset="0%"
-                    stopColor="#ff004c"
-                  />
-
-                  <stop
-                    offset="45%"
-                    stopColor="#ff8a00"
-                  />
-
-                  <stop
-                    offset="100%"
-                    stopColor="#7c3cff"
-                  />
-
-                </linearGradient>
-
-
-                <linearGradient
-                  id="categoryGradient"
-                  x1="0%"
-                  y1="0%"
-                  x2="100%"
-                  y2="100%"
-                >
-
-                  <stop
-                    offset="0%"
-                    stopColor="#d71920"
-                  />
-
-                  <stop
-                    offset="35%"
-                    stopColor="#ff7a00"
-                  />
-
-                  <stop
-                    offset="65%"
-                    stopColor="#00d9ff"
-                  />
-
-                  <stop
-                    offset="100%"
-                    stopColor="#7c3cff"
-                  />
-
-                </linearGradient>
-
-              </defs>
-
-            </svg>
-
-          </div>
-
-
-          {/* ============================================================
-              PREMIUM ROTATING CD / VINYL HOME DISC
-
-              ONLY .cd-disc ROTATES.
-              HOME HUB BELOW IS STATIC.
-          ============================================================ */}
-
-          <Link
-            href="/"
-            aria-label="Go to Home"
-            className="
-              absolute
-              left-1/2
-              top-1/2
-              z-30
-              h-[220px]
-              w-[220px]
-              -translate-x-1/2
-              -translate-y-1/2
-              cursor-pointer
-              rounded-full
-              group
-            "
-          >
-
-            {/* ======================================================
-                PREMIUM OUTER AURA
-            ====================================================== */}
-
-            <div
-              className="
-                absolute
-                -inset-[9px]
-                rounded-full
-                opacity-75
-                blur-[10px]
-                transition-all
-                duration-500
-                group-hover:opacity-100
-                group-hover:blur-[14px]
-              "
-              style={{
-                background:
-                  "conic-gradient(from 0deg, #d71920, #ff7a00, #ffd600, #00d9ff, #7c3cff, #d71920)",
-              }}
-            />
-
-
-            {/* ======================================================
-                PREMIUM OUTER BORDER
-            ====================================================== */}
-
-            <div
-              className="
-                absolute
-                -inset-[3px]
-                rounded-full
-                border
-                border-white/70
-                bg-white/10
-                shadow-[0_15px_50px_rgba(0,0,0,0.28)]
-              "
-            />
-
-
-            {/* ======================================================
-                ROTATING DISC
-
-                ONLY THIS DIV HAS .cd-disc
-            ====================================================== */}
-
-            <div
-              className="
-                relative
-                h-full
-                w-full
-                overflow-hidden
-                rounded-full
-                border
-                border-white/30
-                shadow-[0_15px_50px_rgba(0,0,0,0.38)]
-                cd-disc
-              "
-              style={{
-                background: `
-                  radial-gradient(
-                    circle at 50% 50%,
-                    #202020 0%,
-                    #090909 10%,
-                    #181818 11%,
-                    #040404 25%,
-                    #171717 26%,
-                    #050505 40%,
-                    #151515 41%,
-                    #030303 56%,
-                    #141414 57%,
-                    #020202 72%,
-                    #111111 73%,
-                    #020202 100%
-                  )
-                `,
-              }}
-            >
-
-              {/* ==================================================
-                  RAINBOW VINYL REFLECTION
-              ================================================== */}
-
-              <div
-                className="
-                  pointer-events-none
-                  absolute
-                  inset-0
-                  rounded-full
-                  opacity-75
-                  mix-blend-screen
-                "
-                style={{
-                  background: `
-                    conic-gradient(
-                      from 10deg,
-                      transparent 0deg,
-                      rgba(255,0,70,.45) 30deg,
-                      transparent 60deg,
-                      rgba(255,160,0,.28) 90deg,
-                      transparent 125deg,
-                      rgba(0,220,255,.38) 155deg,
-                      transparent 195deg,
-                      rgba(120,50,255,.40) 235deg,
-                      transparent 275deg,
-                      rgba(255,0,110,.40) 315deg,
-                      transparent 350deg,
-                      rgba(255,0,70,.45) 360deg
-                    )
-                  `,
-                }}
-              />
-
-
-              {/* ==================================================
-                  VINYL GROOVES
-              ================================================== */}
-
-              <div className="
-                pointer-events-none
-                absolute
-                inset-[4%]
-                rounded-full
-                border
-                border-white/[0.09]
-              " />
-
-              <div className="
-                pointer-events-none
-                absolute
-                inset-[8%]
-                rounded-full
-                border
-                border-white/[0.065]
-              " />
-
-              <div className="
-                pointer-events-none
-                absolute
-                inset-[12%]
-                rounded-full
-                border
-                border-white/[0.055]
-              " />
-
-              <div className="
-                pointer-events-none
-                absolute
-                inset-[17%]
-                rounded-full
-                border
-                border-white/[0.07]
-              " />
-
-              <div className="
-                pointer-events-none
-                absolute
-                inset-[23%]
-                rounded-full
-                border
-                border-white/[0.055]
-              " />
-
-              <div className="
-                pointer-events-none
-                absolute
-                inset-[30%]
-                rounded-full
-                border
-                border-white/[0.065]
-              " />
-
-              <div className="
-                pointer-events-none
-                absolute
-                inset-[37%]
-                rounded-full
-                border
-                border-white/[0.05]
-              " />
-
-              <div className="
-                pointer-events-none
-                absolute
-                inset-[44%]
-                rounded-full
-                border
-                border-white/[0.045]
-              " />
-
-
-              {/* ==================================================
-                  PREMIUM LIGHT REFLECTION
-              ================================================== */}
-
-              <div
-                className="
-                  pointer-events-none
-                  absolute
-                  left-[8%]
-                  top-[5%]
-                  h-[36%]
-                  w-[24%]
-                  rotate-[28deg]
-                  rounded-full
-                  bg-white/[0.15]
-                  blur-[11px]
-                "
-              />
-
-              <div
-                className="
-                  pointer-events-none
-                  absolute
-                  bottom-[9%]
-                  right-[7%]
-                  h-[23%]
-                  w-[20%]
-                  rounded-full
-                  bg-cyan-300/[0.08]
-                  blur-[13px]
-                "
-              />
-
-
-              {/* ==================================================
-                  OUTER VINYL HIGHLIGHT
-              ================================================== */}
-
-              <div
-                className="
-                  pointer-events-none
-                  absolute
-                  inset-[2%]
-                  rounded-full
-                  border
-                  border-white/[0.12]
-                "
-              />
-
-            </div>
-
-
-            {/* ============================================================
-                STATIC PREMIUM HOME HUB
-
-                IMPORTANT:
-                This is OUTSIDE .cd-disc,
-                therefore it NEVER ROTATES.
-            ============================================================ */}
-
-            <div
-              className="
-                absolute
-                left-1/2
-                top-1/2
-                z-40
-                flex
-                h-[88px]
-                w-[88px]
-                -translate-x-1/2
-                -translate-y-1/2
-                items-center
-                justify-center
-                rounded-full
-                border
-                border-white/30
-                bg-gradient-to-br
-                from-[#f02a32]
-                via-[#b51219]
-                to-[#52070a]
-                shadow-[0_5px_25px_rgba(0,0,0,0.58),inset_0_1px_2px_rgba(255,255,255,0.35)]
-                transition-all
-                duration-500
-                group-hover:scale-[1.04]
-                group-hover:shadow-[0_7px_32px_rgba(215,25,32,0.48),inset_0_1px_2px_rgba(255,255,255,0.45)]
-              "
-            >
-
-              {/* ==================================================
-                  INNER PREMIUM HUB
-              ================================================== */}
-
-              <div
-                className="
-                  relative
-                  flex
-                  h-[74px]
-                  w-[74px]
-                  flex-col
-                  items-center
-                  justify-center
-                  overflow-hidden
-                  rounded-full
-                  border
-                  border-white/20
-                  bg-gradient-to-br
-                  from-[#e1262d]/95
-                  via-[#a40f15]/95
-                  to-[#390407]/95
-                  text-center
-                  shadow-[inset_0_2px_8px_rgba(255,255,255,0.16),inset_0_-5px_12px_rgba(0,0,0,0.32)]
-                "
-              >
-
-                {/* ==================================================
-                    GLASS HIGHLIGHT
-                ================================================== */}
-
-                <div
-                  className="
-                    pointer-events-none
-                    absolute
-                    left-[12%]
-                    top-[7%]
-                    h-[32%]
-                    w-[55%]
-                    rotate-[-18deg]
-                    rounded-full
-                    bg-white/[0.16]
-                    blur-[5px]
-                  "
-                />
-
-
-                {/* ==================================================
-                    INFINIA
-                ================================================== */}
-
-                <span
-                  className="
-                    relative
-                    z-10
-                    text-[6px]
-                    font-bold
-                    uppercase
-                    tracking-[0.38em]
-                    text-white/65
-                  "
-                >
-                  INFINIA
-                </span>
-
-
-                {/* ==================================================
-                    HOME
-                ================================================== */}
-
-                <span
-                  className="
-                    relative
-                    z-10
-                    mt-[2px]
-                    text-[20px]
-                    font-black
-                    uppercase
-                    leading-none
-                    tracking-[-0.06em]
-                    text-white
-                    drop-shadow-[0_2px_5px_rgba(0,0,0,0.45)]
-                  "
-                >
-                  HOME
-                </span>
-
-
-                {/* ==================================================
-                    PREMIUM DIVIDER
-                ================================================== */}
-
-                <span
-                  className="
-                    relative
-                    z-10
-                    mt-[5px]
-                    h-[2px]
-                    w-8
-                    rounded-full
-                    bg-gradient-to-r
-                    from-transparent
-                    via-white/90
-                    to-transparent
-                  "
-                />
-
-
-                {/* ==================================================
-                    NEWS HUB
-                ================================================== */}
-
-                <span
-                  className="
-                    relative
-                    z-10
-                    mt-[4px]
-                    text-[5px]
-                    font-semibold
-                    uppercase
-                    tracking-[0.28em]
-                    text-white/55
-                  "
-                >
-                  NEWS HUB
-                </span>
-
-              </div>
-
-
-              {/* ==================================================
-                  SUBTLE STATIC HUB RING
-              ================================================== */}
-
-              <div
-                className="
-                  pointer-events-none
-                  absolute
-                  inset-[3px]
-                  rounded-full
-                  border
-                  border-white/[0.10]
-                "
-              />
-
-            </div>
-
-          </Link>
-
-        </div>
-
-
-        {/* ====================================================
-            MOBILE / TABLET
+            CATEGORY CARDS
+
+            SAME DESIGN ON:
+            MOBILE
+            TABLET
+            DESKTOP
         ==================================================== */}
 
         <div
           className="
             grid
-            grid-cols-2
-            gap-3
-            lg:hidden
-            sm:grid-cols-3
+            grid-cols-1
+            gap-4
+            sm:grid-cols-2
+            md:grid-cols-3
+            lg:grid-cols-4
+            xl:grid-cols-4
           "
         >
 
@@ -1261,17 +286,25 @@ export default async function EnglishArticlesPage() {
                   className="
                     group
                     relative
-                    min-h-[130px]
+                    min-h-[150px]
                     overflow-hidden
+                    rounded-xl
                     border
                     border-zinc-200
                     bg-white
-                    p-4
-                    transition
-                    duration-200
+                    p-5
+                    shadow-sm
+                    transition-all
+                    duration-300
+                    hover:-translate-y-1
                     hover:border-[#d71920]/50
+                    hover:shadow-lg
                   "
                 >
+
+                  {/* ==================================================
+                      CATEGORY IMAGE
+                  ================================================== */}
 
                   {data?.image && (
 
@@ -1286,21 +319,29 @@ export default async function EnglishArticlesPage() {
                         bottom-0
                         right-0
                         h-full
-                        w-[58%]
+                        w-[62%]
                         object-contain
                         object-right-bottom
-                        opacity-30
-                        transition
+                        opacity-25
+                        transition-all
                         duration-300
-                        group-hover:opacity-55
+                        group-hover:scale-105
+                        group-hover:opacity-45
                       "
                     />
 
                   )}
 
 
+                  {/* ==================================================
+                      SUBTLE IMAGE FADE
+
+                      Very light so text remains readable.
+                  ================================================== */}
+
                   <div
                     className="
+                      pointer-events-none
                       absolute
                       inset-0
                       bg-gradient-to-r
@@ -1311,16 +352,24 @@ export default async function EnglishArticlesPage() {
                   />
 
 
+                  {/* ==================================================
+                      CARD CONTENT
+                  ================================================== */}
+
                   <div
                     className="
                       relative
                       z-10
+                      max-w-[75%]
                     "
                   >
 
+                    {/* CATEGORY LABEL */}
+
                     <span
                       className="
-                        text-[8px]
+                        inline-block
+                        text-[9px]
                         font-bold
                         uppercase
                         tracking-[0.15em]
@@ -1336,25 +385,54 @@ export default async function EnglishArticlesPage() {
                     </span>
 
 
+                    {/* CATEGORY NAME */}
+
                     <h3
                       className="
                         mt-1
-                        text-lg
+                        text-xl
                         font-extrabold
+                        leading-tight
                         text-[#111]
+                        transition-colors
+                        duration-200
                         group-hover:text-[#d71920]
+                        md:text-2xl
                       "
                     >
                       {displayName}
                     </h3>
 
 
+                    {/* DESCRIPTION */}
+
+                    {data?.description && (
+
+                      <p
+                        className="
+                          mt-2
+                          line-clamp-2
+                          text-xs
+                          leading-relaxed
+                          text-zinc-500
+                        "
+                      >
+                        {data.description}
+                      </p>
+
+                    )}
+
+
+                    {/* ARTICLE COUNT */}
+
                     <span
                       className="
-                        mt-1
+                        mt-3
                         block
-                        text-[9px]
-                        text-zinc-400
+                        w-fit
+                        text-[11px]
+                        font-semibold
+                        text-zinc-600
                       "
                     >
                       {count}{" "}
@@ -1366,16 +444,34 @@ export default async function EnglishArticlesPage() {
                   </div>
 
 
+                  {/* ==================================================
+                      ARROW
+                  ================================================== */}
+
                   <span
                     className="
                       absolute
                       bottom-4
                       right-4
+                      z-20
+                      flex
+                      h-8
+                      w-8
+                      items-center
+                      justify-center
+                      rounded-full
+                      border
+                      border-zinc-200
+                      bg-white/90
                       text-lg
                       text-zinc-400
-                      transition
+                      shadow-sm
+                      transition-all
+                      duration-300
                       group-hover:translate-x-1
-                      group-hover:text-[#d71920]
+                      group-hover:border-[#d71920]
+                      group-hover:bg-[#d71920]
+                      group-hover:text-white
                     "
                   >
                     →
@@ -1465,167 +561,6 @@ export default async function EnglishArticlesPage() {
         </div>
 
       </section>
-
-
-      {/* ======================================================
-          ANIMATIONS
-      ====================================================== */}
-
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-
-            @keyframes categoryFlowerOpen {
-
-              0% {
-                opacity: 0;
-                transform: scale(0.08);
-              }
-
-              35% {
-                opacity: 0.75;
-              }
-
-              75% {
-                opacity: 1;
-              }
-
-              100% {
-                opacity: 1;
-                transform: scale(1);
-              }
-
-            }
-
-
-            @keyframes categoryLabelOpen {
-
-              0% {
-                opacity: 0;
-                transform: scale(0.5);
-              }
-
-              55% {
-                opacity: 0;
-              }
-
-              100% {
-                opacity: 1;
-                transform: scale(1);
-              }
-
-            }
-
-
-            @keyframes realisticCdSpin {
-
-              from {
-                transform: rotate(0deg);
-              }
-
-              to {
-                transform: rotate(360deg);
-              }
-
-            }
-
-
-            .category-triangle {
-
-              transform-box: fill-box;
-              transform-origin: center;
-
-              animation-name:
-                categoryFlowerOpen;
-
-              animation-duration:
-                1.15s;
-
-              animation-timing-function:
-                cubic-bezier(
-                  0.16,
-                  1,
-                  0.3,
-                  1
-                );
-
-              animation-fill-mode:
-                both;
-
-              animation-iteration-count:
-                1;
-
-            }
-
-
-            .category-label {
-
-              transform-box: fill-box;
-              transform-origin: center;
-
-              animation-name:
-                categoryLabelOpen;
-
-              animation-duration:
-                1.15s;
-
-              animation-timing-function:
-                cubic-bezier(
-                  0.16,
-                  1,
-                  0.3,
-                  1
-                );
-
-              animation-fill-mode:
-                both;
-
-              animation-iteration-count:
-                1;
-
-            }
-
-
-            /* ================================================
-               ONLY THE VINYL DISC ROTATES
-               ================================================ */
-
-            .cd-disc {
-
-              animation:
-                realisticCdSpin
-                8s
-                linear
-                infinite;
-
-              transform-origin:
-                center center;
-
-            }
-
-
-            /* ================================================
-               ACCESSIBILITY
-               ================================================ */
-
-            @media (
-              prefers-reduced-motion: reduce
-            ) {
-
-              .category-triangle,
-              .category-label,
-              .cd-disc {
-
-                animation:
-                  none !important;
-
-              }
-
-            }
-
-          `,
-        }}
-      />
 
     </main>
 

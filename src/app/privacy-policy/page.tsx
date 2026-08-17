@@ -57,7 +57,7 @@ export default function PrivacyPolicyPage() {
           {/* LOGO */}
           <Link href="/" className="shrink-0">
             <Image
-              src="/logo.png"
+              src="/logo.webp"
               alt="Infinia Bharat News"
               width={220}
               height={70}
@@ -791,7 +791,7 @@ export default function PrivacyPolicyPage() {
             <div>
               <Link href="/" className="inline-block">
                 <Image
-                  src="/logo.png"
+                  src="/logo.webp"
                   alt="Infinia Bharat News"
                   width={210}
                   height={65}
