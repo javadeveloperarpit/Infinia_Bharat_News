@@ -108,6 +108,15 @@
     "updatedAt": "2026-08-01T05:29:10.675Z"
   },
   {
+    "id": "ZV7tbiMGoAEZmSDGitMV",
+    "name": "English Science",
+    "nameHi": "English Science",
+    "slug": "english-science",
+    "status": "active",
+    "createdAt": "2026-08-17T12:20:44.562Z",
+    "updatedAt": "2026-08-17T12:20:44.562Z"
+  },
+  {
     "id": "bHfyfVzGaOiwKTf27GpR",
     "status": "active",
     "slug": "state-news",
