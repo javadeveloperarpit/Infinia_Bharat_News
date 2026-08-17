@@ -27,6 +27,15 @@
     "updatedAt": "2026-08-01T05:29:09.851Z"
   },
   {
+    "id": "8EKOgWoYhN9DhwkEje7b",
+    "name": "English Technology",
+    "nameHi": "English Technology",
+    "slug": "english-technology",
+    "status": "active",
+    "createdAt": "2026-08-17T12:20:21.053Z",
+    "updatedAt": "2026-08-17T12:20:21.053Z"
+  },
+  {
     "id": "B0eNnfzv5admHbGplpNU",
     "slug": "health",
     "name": "Health",
