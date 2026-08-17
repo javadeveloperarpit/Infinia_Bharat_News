@@ -782,7 +782,7 @@ const isReelsPage =
 ====================================================== */}
 
 <Link
-  href="/videos"
+  href="/video"
   className={`
     group
     relative
@@ -795,7 +795,7 @@ const isReelsPage =
     transition-all
     duration-200
     ${
-      pathname === "/videos" || pathname.startsWith("/videos/")
+      pathname === "/video" || pathname.startsWith("/video/")
         ? "text-[#ECCA6D]"
         : "text-white/80 hover:text-[#ECCA6D]"
     }
@@ -815,7 +815,7 @@ const isReelsPage =
       transition-all
       duration-200
       ${
-        pathname === "/videos" || pathname.startsWith("/videos/")
+        pathname === "/video" || pathname.startsWith("/video/")
           ? "border-[#ECCA6D]/60 bg-[#ECCA6D]/10"
           : "border-white/20 bg-white/[0.04] group-hover:border-[#ECCA6D]/50 group-hover:bg-[#ECCA6D]/10"
       }
@@ -887,7 +887,7 @@ const isReelsPage =
         transition-all
         duration-300
         ${
-          pathname === "/videos" || pathname.startsWith("/videos/")
+          pathname === "/video" || pathname.startsWith("/video/")
             ? "w-full"
             : "w-0 group-hover:w-full"
         }
