@@ -171,6 +171,15 @@
     "updatedAt": "2026-08-01T05:29:11.707Z"
   },
   {
+    "id": "vuEBq7WUocdOXD7kV1LL",
+    "name": "English Auto",
+    "nameHi": "English Auto",
+    "slug": "english-auto",
+    "status": "active",
+    "createdAt": "2026-08-17T11:48:53.427Z",
+    "updatedAt": "2026-08-17T11:48:53.427Z"
+  },
+  {
     "id": "xSzWw4tKT8O4OuoAcGtu",
     "slug": "science",
     "name": "Science",
