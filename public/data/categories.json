@@ -9,6 +9,15 @@
     "updatedAt": "2026-08-08T04:28:08.113Z"
   },
   {
+    "id": "1u8S308swsK0r1B00RV6",
+    "name": "English Sports",
+    "nameHi": "English Sports",
+    "slug": "english-sports",
+    "status": "active",
+    "createdAt": "2026-08-17T12:19:36.162Z",
+    "updatedAt": "2026-08-17T12:19:36.162Z"
+  },
+  {
     "id": "2jQz4ltgoNG13TiIcth4",
     "status": "active",
     "slug": "world",
