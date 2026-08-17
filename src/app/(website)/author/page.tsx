@@ -609,7 +609,7 @@ export default async function AuthorsPage() {
             </div>
 
             <Link
-              href="/news"
+              href="/"
               className="inline-flex items-center justify-center gap-2 rounded-md bg-red-600 px-5 py-3 text-[10px] font-black uppercase tracking-wider text-white transition hover:bg-red-700"
             >
 
