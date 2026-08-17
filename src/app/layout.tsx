@@ -198,6 +198,14 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable}`}
     >
+      <head>
+        {/* Google AdSense Verification */}
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6155856047825271"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body className="min-h-screen antialiased">
         <ServiceWorkerRegister />
 
