@@ -54,6 +54,15 @@
     "updatedAt": "2026-08-17T12:08:31.172Z"
   },
   {
+    "id": "EpAV1WKbxrlySAARVwGQ",
+    "name": "English Education",
+    "nameHi": "English Education",
+    "slug": "english-education",
+    "status": "active",
+    "createdAt": "2026-08-17T12:21:07.777Z",
+    "updatedAt": "2026-08-17T12:21:07.777Z"
+  },
+  {
     "id": "EsGNqESLrwZVT66ftmeK",
     "name": "English Politics",
     "nameHi": "English Politics",
