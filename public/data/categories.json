@@ -27,15 +27,6 @@
     "updatedAt": "2026-08-01T05:29:10.378Z"
   },
   {
-    "id": "IQOIWV7PBidKLgPt5vg1",
-    "name": "demo",
-    "nameHi": "demo",
-    "slug": "demo",
-    "status": "inactive",
-    "createdAt": "2026-08-12T13:16:59.991Z",
-    "updatedAt": "2026-08-12T13:16:59.991Z"
-  },
-  {
     "id": "ITMUnYIjFc0XTBBPswfe",
     "status": "active",
     "slug": "viral",
@@ -79,6 +70,15 @@
     "createdAt": "2026-07-26T03:54:52.382Z",
     "nameHi": "लाइफस्टाइल",
     "updatedAt": "2026-08-01T05:29:10.863Z"
+  },
+  {
+    "id": "gZC5zMmcACctiukZQPKK",
+    "name": "English India",
+    "nameHi": "English India",
+    "slug": "english-india",
+    "status": "active",
+    "createdAt": "2026-08-17T11:42:53.544Z",
+    "updatedAt": "2026-08-17T11:42:53.544Z"
   },
   {
     "id": "gyQbObVvOcAZJIThoQ8p",
