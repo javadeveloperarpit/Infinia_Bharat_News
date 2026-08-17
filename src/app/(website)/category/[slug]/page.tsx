@@ -584,16 +584,26 @@ const breadcrumbSchema = {
 
 
   // ==========================================================
-  // LANGUAGE
-  // ==========================================================
+// LANGUAGE
+// ==========================================================
+// English categories automatically use English labels.
+// Example:
+// /category/english-entertainment
+// /category/english-sports
+//
+// No ?lang=en required.
+// ==========================================================
 
-  const t =
-    labels[
-      lang === "en"
-        ? "en"
-        : "hi"
-    ];
+const isEnglishCategory =
+  String(category.slug || "")
+    .trim()
+    .toLowerCase()
+    .startsWith("english-");
 
+const t =
+  isEnglishCategory
+    ? labels.en
+    : labels.hi;
 
   // ==========================================================
   // RENDER
@@ -649,7 +659,7 @@ const breadcrumbSchema = {
             hover:text-red-600
           "
         >
-          होम
+         {isEnglishCategory ? "Home" : "होम"}
         </a>
       </li>
 
