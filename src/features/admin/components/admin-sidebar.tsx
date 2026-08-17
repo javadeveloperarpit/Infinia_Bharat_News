@@ -28,7 +28,6 @@ const menu = [
     href: "/admin/articles",
     icon: FileText,
   },
-
   {
     name: "Videos",
     href: "/admin/videos",

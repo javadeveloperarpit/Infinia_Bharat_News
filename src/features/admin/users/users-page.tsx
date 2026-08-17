@@ -126,18 +126,18 @@ export default function UsersPage() {
       }
 
       if (
-        Array.isArray(data)
-      ) {
-        setUsers(data);
-      } else {
-        console.error(
-          "Unexpected users response:",
-          data
-        );
+  data?.success &&
+  Array.isArray(data.users)
+) {
+  setUsers(data.users);
+} else {
+  console.error(
+    "Unexpected users response:",
+    data
+  );
 
-        setUsers([]);
-      }
-
+  setUsers([]);
+}
     } catch (error: any) {
       console.error(
         "Load Users Error:",

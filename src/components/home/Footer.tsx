@@ -170,6 +170,54 @@ className="hover:text-white transition"
 Videos
 
 </Link>
+<Link
+href="/reels"
+className="hover:text-white transition"
+>
+
+Reels
+
+</Link>
+<Link
+href="/about"
+className="hover:text-white transition"
+>
+
+About Us
+
+</Link>
+<Link
+href="/privacy-policy"
+className="hover:text-white transition"
+>
+
+Privacy Policy
+
+</Link>
+<Link
+href="/terms"
+className="hover:text-white transition"
+>
+
+Terms of Condition
+
+</Link>
+<Link
+href="/contact"
+className="hover:text-white transition"
+>
+
+Contact Us
+
+</Link>
+<Link
+href="/advertise"
+className="hover:text-white transition"
+>
+
+Advertise
+
+</Link>
 
 
 

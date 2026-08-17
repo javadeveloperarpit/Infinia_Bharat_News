@@ -38,7 +38,8 @@ async function verifyUser(request: NextRequest) {
       error: NextResponse.json(
         {
           success: false,
-          message: "Authorization header missing",
+          message:
+            "Authorization header missing",
         },
         {
           status: 401,
@@ -57,7 +58,8 @@ async function verifyUser(request: NextRequest) {
       error: NextResponse.json(
         {
           success: false,
-          message: "Authentication token missing",
+          message:
+            "Authentication token missing",
         },
         {
           status: 401,
@@ -83,7 +85,8 @@ async function verifyUser(request: NextRequest) {
         error: NextResponse.json(
           {
             success: false,
-            message: "Admin user not found",
+            message:
+              "Admin user not found",
           },
           {
             status: 404,
@@ -125,19 +128,34 @@ async function verifyUser(request: NextRequest) {
 // VERIFY ADMIN
 // ==========================================
 
+// ==========================================
+// VERIFY ADMIN
+// ==========================================
+
 async function verifyAdmin(
   request: NextRequest
 ) {
-  const auth =
-    await verifyUser(request);
+  const auth = await verifyUser(request);
 
   if (auth.error) {
     return auth;
   }
 
+  const role = String(
+    auth.user?.role || ""
+  )
+    .trim()
+    .toLowerCase();
+
+  console.log("ADMIN CHECK:", {
+    uid: auth.decoded?.uid,
+    email: auth.decoded?.email,
+    role,
+  });
+
   if (
-    auth.user?.role !== "admin" &&
-    auth.user?.role !== "superAdmin"
+    role !== "admin" &&
+    role !== "superadmin"
   ) {
     return {
       error: NextResponse.json(
@@ -145,6 +163,7 @@ async function verifyAdmin(
           success: false,
           message:
             "Only admin can perform this action",
+          role,
         },
         {
           status: 403,
@@ -155,15 +174,25 @@ async function verifyAdmin(
 
   return auth;
 }
+// ==========================================
+// GET ALL USERS
+// ADMIN ONLY
+// ==========================================
 
 // ==========================================
 // GET ALL USERS
+// AUTHENTICATED USERS
 // ==========================================
 
 export async function GET(
   request: NextRequest
 ) {
   try {
+
+    // ======================================
+    // VERIFY LOGIN
+    // ======================================
+
     const auth =
       await verifyUser(request);
 
@@ -171,24 +200,9 @@ export async function GET(
       return auth.error;
     }
 
-    const role =
-      auth.user?.role;
-
-    if (
-      role !== "admin" &&
-      role !== "editor" &&
-      role !== "superAdmin"
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Permission denied",
-        },
-        {
-          status: 403,
-        }
-      );
-    }
+    // ======================================
+    // GET ALL USERS FROM FIRESTORE
+    // ======================================
 
     const snapshot =
       await adminDb
@@ -198,6 +212,7 @@ export async function GET(
     const users =
       snapshot.docs.map(
         (doc) => {
+
           const data =
             doc.data();
 
@@ -239,16 +254,14 @@ export async function GET(
               ),
 
             createdAt:
-              data.createdAt
-                ?.toDate
+              data.createdAt?.toDate
                 ? data.createdAt
                     .toDate()
                     .toISOString()
                 : null,
 
             updatedAt:
-              data.updatedAt
-                ?.toDate
+              data.updatedAt?.toDate
                 ? data.updatedAt
                     .toDate()
                     .toISOString()
@@ -257,14 +270,24 @@ export async function GET(
         }
       );
 
+    console.log(
+      "USERS LOADED:",
+      users.length
+    );
+
     return NextResponse.json(
-      users,
+      {
+        success: true,
+        count: users.length,
+        users,
+      },
       {
         status: 200,
       }
     );
 
   } catch (error: any) {
+
     console.error(
       "GET USERS ERROR:",
       error
@@ -273,6 +296,7 @@ export async function GET(
     return NextResponse.json(
       {
         success: false,
+
         message:
           error?.message ||
           "Failed to fetch users",
@@ -291,6 +315,14 @@ export async function GET(
 export async function POST(
   request: NextRequest
 ) {
+  let firebaseUser:
+    | Awaited<
+        ReturnType<
+          typeof adminAuth.createUser
+        >
+      >
+    | null = null;
+
   try {
 
     // ======================================
@@ -512,7 +544,7 @@ export async function POST(
     // 8. CREATE FIREBASE AUTH ACCOUNT
     // ======================================
 
-    const firebaseUser =
+    firebaseUser =
       await adminAuth.createUser({
         email,
         password,
@@ -551,13 +583,40 @@ export async function POST(
         FieldValue.serverTimestamp(),
     };
 
-    await adminDb
-      .collection("users")
-      .doc(firebaseUser.uid)
-      .set(authorData);
+    try {
+
+      await adminDb
+        .collection("users")
+        .doc(firebaseUser.uid)
+        .set(authorData);
+
+    } catch (firestoreError) {
+
+      // ====================================
+      // ROLLBACK FIREBASE AUTH
+      // ====================================
+
+      console.error(
+        "FIRESTORE CREATE FAILED. ROLLING BACK AUTH USER:",
+        firestoreError
+      );
+
+      try {
+        await adminAuth.deleteUser(
+          firebaseUser.uid
+        );
+      } catch (rollbackError) {
+        console.error(
+          "AUTH ROLLBACK FAILED:",
+          rollbackError
+        );
+      }
+
+      throw firestoreError;
+    }
 
     // ======================================
-    // 10. RESPONSE
+    // 10. SUCCESS LOG
     // ======================================
 
     console.log(
@@ -583,6 +642,10 @@ export async function POST(
         slug,
       }
     );
+
+    // ======================================
+    // 11. RESPONSE
+    // ======================================
 
     return NextResponse.json(
       {
@@ -624,9 +687,51 @@ export async function POST(
       error
     );
 
+    // ======================================
+    // EXTRA AUTH ROLLBACK
+    // ======================================
+
+    if (
+      firebaseUser?.uid
+    ) {
+
+      try {
+
+        const firestoreDoc =
+          await adminDb
+            .collection("users")
+            .doc(firebaseUser.uid)
+            .get();
+
+        if (
+          !firestoreDoc.exists
+        ) {
+
+          await adminAuth
+            .deleteUser(
+              firebaseUser.uid
+            );
+
+        }
+
+      } catch (rollbackError) {
+
+        console.error(
+          "FINAL AUTH ROLLBACK ERROR:",
+          rollbackError
+        );
+
+      }
+    }
+
+    // ======================================
+    // RESPONSE
+    // ======================================
+
     return NextResponse.json(
       {
         success: false,
+
         message:
           error?.message ||
           "Failed to create editor",
@@ -647,12 +752,20 @@ export async function DELETE(
 ) {
   try {
 
+    // ======================================
+    // 1. VERIFY ADMIN
+    // ======================================
+
     const auth =
       await verifyAdmin(request);
 
     if (auth.error) {
       return auth.error;
     }
+
+    // ======================================
+    // 2. READ BODY
+    // ======================================
 
     const body =
       await request.json();
@@ -661,6 +774,10 @@ export async function DELETE(
       String(
         body.uid || ""
       ).trim();
+
+    // ======================================
+    // 3. VALIDATE UID
+    // ======================================
 
     if (!uid) {
       return NextResponse.json(
@@ -674,6 +791,10 @@ export async function DELETE(
         }
       );
     }
+
+    // ======================================
+    // 4. PREVENT SELF DELETE
+    // ======================================
 
     if (
       uid ===
@@ -690,6 +811,10 @@ export async function DELETE(
         }
       );
     }
+
+    // ======================================
+    // 5. GET USER DOCUMENT
+    // ======================================
 
     const userRef =
       adminDb
@@ -712,6 +837,10 @@ export async function DELETE(
       );
     }
 
+    // ======================================
+    // 6. CHECK TARGET ROLE
+    // ======================================
+
     const targetUser =
       userDoc.data();
 
@@ -731,14 +860,75 @@ export async function DELETE(
       );
     }
 
-    await adminAuth
-      .deleteUser(uid);
+    // ======================================
+    // 7. DELETE FIREBASE AUTH
+    // ======================================
 
-    await userRef.delete();
+    try {
+
+      await adminAuth
+        .deleteUser(uid);
+
+    } catch (authError: any) {
+
+      console.error(
+        "FIREBASE AUTH DELETE ERROR:",
+        authError
+      );
+
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            authError?.message ||
+            "Failed to delete Firebase Authentication user",
+        },
+        {
+          status: 500,
+        }
+      );
+    }
+
+    // ======================================
+    // 8. DELETE FIRESTORE DOCUMENT
+    // ======================================
+
+    try {
+
+      await userRef.delete();
+
+    } catch (firestoreError: any) {
+
+      console.error(
+        "FIRESTORE DELETE ERROR:",
+        firestoreError
+      );
+
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Firebase Authentication user was deleted, but Firestore profile could not be deleted.",
+        },
+        {
+          status: 500,
+        }
+      );
+    }
+
+    // ======================================
+    // 9. SUCCESS
+    // ======================================
+
+    console.log(
+      "EDITOR DELETED:",
+      uid
+    );
 
     return NextResponse.json(
       {
         success: true,
+
         message:
           "Editor deleted successfully",
       },
@@ -757,6 +947,7 @@ export async function DELETE(
     return NextResponse.json(
       {
         success: false,
+
         message:
           error?.message ||
           "Failed to delete editor",

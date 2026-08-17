@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import {
   getCategories,
 } from "@/services/public/category.public.service";
@@ -22,9 +20,53 @@ export default async function Navbar() {
     await getCategories();
 
 
+  const englishCategories =
+    categories.filter((category) => {
+
+      const slug =
+        String(category.slug || "")
+          .trim()
+          .toLowerCase();
+
+      const name =
+        String(category.name || "")
+          .trim()
+          .toLowerCase();
+
+      return (
+        slug.startsWith("english-") ||
+        name.startsWith("english ")
+      );
+
+    });
+
+
+  const normalCategories =
+    categories.filter((category) => {
+
+      const slug =
+        String(category.slug || "")
+          .trim()
+          .toLowerCase();
+
+      const name =
+        String(category.name || "")
+          .trim()
+          .toLowerCase();
+
+      return (
+        !slug.startsWith("english-") &&
+        !name.startsWith("english ")
+      );
+
+    });
+
+
   return (
     <nav
       className="
+        relative
+        z-40
         w-full
         bg-[#090909]
         border-b
@@ -36,6 +78,7 @@ export default async function Navbar() {
         className="
           container-news
           overflow-x-auto
+          overflow-y-visible
         "
         style={{
           scrollbarWidth: "none",
@@ -44,7 +87,8 @@ export default async function Navbar() {
       >
 
         <NavbarLanguage
-          categories={categories}
+          categories={normalCategories}
+          englishCategories={englishCategories}
         />
 
       </div>

@@ -36,6 +36,9 @@ export default function AdminHeader({
   const [loadingReports, setLoadingReports] =
     useState(false);
 
+    const [advertisingCount, setAdvertisingCount] =
+  useState(0);
+
   // ==========================================
   // GET CURRENT ADMIN TOKEN
   // ==========================================
@@ -110,13 +113,48 @@ export default function AdminHeader({
 
     }
   }
+async function loadAdvertisingCount() {
+  try {
+    const token = await getAdminToken();
 
+    if (!token) {
+      return;
+    }
+
+    const response = await fetch(
+      "/api/admin/advertising-inquiries",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      return;
+    }
+
+    const data = await response.json();
+
+    if (data.success) {
+      setAdvertisingCount(
+        Number(data.count || 0)
+      );
+    }
+  } catch (error) {
+    console.error(
+      "ADVERTISING COUNT ERROR:",
+      error
+    );
+  }
+}
   // ==========================================
   // INITIAL LOAD
   // ==========================================
 
   useEffect(() => {
   loadReportCount();
+  loadAdvertisingCount();
 }, []);
   // ==========================================
   // BELL CLICK
@@ -239,7 +277,7 @@ export default function AdminHeader({
 
           {/* REPORT BADGE */}
 
-          {reportCount > 0 && (
+          {reportCount + advertisingCount > 0 && (
 
             <span
               className="
@@ -261,9 +299,9 @@ export default function AdminHeader({
                 ring-white
               "
             >
-              {reportCount > 99
-                ? "99+"
-                : reportCount}
+              {reportCount + advertisingCount > 99
+  ? "99+"
+  : reportCount + advertisingCount}
             </span>
 
           )}
@@ -273,211 +311,237 @@ export default function AdminHeader({
 
         {/* REPORT DROPDOWN */}
 
-        {showReports && (
+      
+{showReports && (
+  <div
+    className="
+      absolute
+      right-0
+      top-12
+      w-[340px]
+      overflow-hidden
+      rounded-2xl
+      border
+      border-zinc-200
+      bg-white
+      shadow-xl
+    "
+  >
+    {/* HEADER */}
 
-          <div
-            className="
-              absolute
-              right-0
-              top-12
-              w-[340px]
-              overflow-hidden
-              rounded-2xl
-              border
-              border-zinc-200
-              bg-white
-              shadow-xl
-            "
-          >
+    <div
+      className="
+        flex
+        items-center
+        justify-between
+        border-b
+        border-zinc-100
+        px-4
+        py-3
+      "
+    >
+      <div
+        className="
+          flex
+          items-center
+          gap-2
+        "
+      >
+        <MessageSquareWarning
+          size={18}
+          className="text-red-600"
+        />
 
-            {/* HEADER */}
+        <span
+          className="
+            font-semibold
+            text-zinc-900
+          "
+        >
+          Notifications
+        </span>
+      </div>
 
-            <div
-              className="
-                flex
-                items-center
-                justify-between
-                border-b
-                border-zinc-100
-                px-4
-                py-3
-              "
-            >
+      {(reportCount + advertisingCount) > 0 && (
+        <span
+          className="
+            rounded-full
+            bg-red-50
+            px-2
+            py-1
+            text-xs
+            font-bold
+            text-red-600
+          "
+        >
+          {reportCount + advertisingCount} pending
+        </span>
+      )}
+    </div>
 
-              <div
-                className="
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
+    {/* COMMENT REPORTS */}
 
-                <MessageSquareWarning
-                  size={18}
-                  className="
-                    text-red-600
-                  "
-                />
+    {reportCount > 0 && (
+      <div className="border-b border-zinc-100 px-4 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-zinc-900">
+              Comment Reports
+            </p>
 
-                <span
-                  className="
-                    font-semibold
-                    text-zinc-900
-                  "
-                >
-                  Comment Reports
-                </span>
-
-              </div>
-
-              {reportCount > 0 && (
-
-                <span
-                  className="
-                    rounded-full
-                    bg-red-50
-                    px-2
-                    py-1
-                    text-xs
-                    font-bold
-                    text-red-600
-                  "
-                >
-                  {reportCount}
-                  {" "}
-                  pending
-                </span>
-
-              )}
-
-            </div>
-
-
-            {/* CONTENT */}
-
-            <div
-              className="
-                px-4
-                py-5
-              "
-            >
-
-              {loadingReports ? (
-
-                <div
-                  className="
-                    text-center
-                    text-sm
-                    text-zinc-500
-                  "
-                >
-                  Loading reports...
-                </div>
-
-              ) : reportCount > 0 ? (
-
-                <div>
-
-                  <p
-                    className="
-                      text-sm
-                      text-zinc-600
-                    "
-                  >
-                    You have{" "}
-                    <strong>
-                      {reportCount}
-                    </strong>{" "}
-                    pending comment{" "}
-                    {reportCount === 1
-                      ? "report"
-                      : "reports"}
-                    .
-                  </p>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowReports(
-                        false
-                      );
-
-                      window.location.href =
-                        "/admin/comment-reports";
-                    }}
-                    className="
-                      mt-4
-                      w-full
-                      rounded-xl
-                      bg-zinc-900
-                      py-2.5
-                      text-sm
-                      font-semibold
-                      text-white
-                      hover:bg-zinc-800
-                      transition
-                    "
-                  >
-                    View all reports
-                  </button>
-
-                </div>
-
-              ) : (
-
-                <div
-                  className="
-                    py-3
-                    text-center
-                  "
-                >
-
-                  <div
-                    className="
-                      mx-auto
-                      flex
-                      h-10
-                      w-10
-                      items-center
-                      justify-center
-                      rounded-full
-                      bg-green-50
-                      text-green-600
-                    "
-                  >
-                    ✓
-                  </div>
-
-                  <p
-                    className="
-                      mt-3
-                      text-sm
-                      font-semibold
-                      text-zinc-800
-                    "
-                  >
-                    No pending reports
-                  </p>
-
-                  <p
-                    className="
-                      mt-1
-                      text-xs
-                      text-zinc-500
-                    "
-                  >
-                    Everything looks good.
-                  </p>
-
-                </div>
-
-              )}
-
-            </div>
-
+            <p className="mt-1 text-xs text-zinc-500">
+              {reportCount} pending{" "}
+              {reportCount === 1
+                ? "report"
+                : "reports"}
+            </p>
           </div>
 
-        )}
+          <span
+            className="
+              rounded-full
+              bg-red-50
+              px-2
+              py-1
+              text-xs
+              font-bold
+              text-red-600
+            "
+          >
+            {reportCount}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setShowReports(false);
+
+            window.location.href =
+              "/admin/comment-reports";
+          }}
+          className="
+            mt-3
+            w-full
+            rounded-xl
+            bg-zinc-900
+            py-2.5
+            text-sm
+            font-semibold
+            text-white
+            transition
+            hover:bg-zinc-800
+          "
+        >
+          View all reports
+        </button>
+      </div>
+    )}
+
+    {/* ADVERTISING INQUIRIES */}
+
+    {advertisingCount > 0 && (
+      <div className="px-4 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-zinc-900">
+              Advertising Inquiry
+            </p>
+
+            <p className="mt-1 text-xs text-zinc-500">
+              {advertisingCount} new advertising{" "}
+              {advertisingCount === 1
+                ? "inquiry"
+                : "inquiries"}
+            </p>
+          </div>
+
+          <span
+            className="
+              rounded-full
+              bg-amber-50
+              px-2
+              py-1
+              text-xs
+              font-bold
+              text-amber-700
+            "
+          >
+            {advertisingCount}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setShowReports(false);
+
+            window.location.href =
+              "/admin/advertising-inquiries";
+          }}
+          className="
+            mt-3
+            w-full
+            rounded-xl
+            bg-[#111]
+            py-2.5
+            text-sm
+            font-semibold
+            text-white
+            transition
+            hover:bg-zinc-800
+          "
+        >
+          View advertising inquiries
+        </button>
+      </div>
+    )}
+
+    {/* NOTHING PENDING */}
+
+    {reportCount === 0 &&
+      advertisingCount === 0 && (
+        <div className="px-4 py-7 text-center">
+          <div
+            className="
+              mx-auto
+              flex
+              h-10
+              w-10
+              items-center
+              justify-center
+              rounded-full
+              bg-green-50
+              text-green-600
+            "
+          >
+            ✓
+          </div>
+
+          <p
+            className="
+              mt-3
+              text-sm
+              font-semibold
+              text-zinc-800
+            "
+          >
+            No new notifications
+          </p>
+
+          <p
+            className="
+              mt-1
+              text-xs
+              text-zinc-500
+            "
+          >
+            Everything looks good.
+          </p>
+        </div>
+      )}
+  </div>
+)}
 
       </div>
 

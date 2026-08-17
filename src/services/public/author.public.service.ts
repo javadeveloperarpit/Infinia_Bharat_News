@@ -1,22 +1,11 @@
-import "server-only";
+import fs from "fs/promises";
+import path from "path";
 
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore";
+import type { PublicArticle } from "./article.public.service";
 
-import { db } from "@/lib/firebase/firebase";
-import { adminDb } from "@/lib/firebase/firebase-admin";
-
-import type {
-  PublicArticle,
-} from "./article.public.service";
-
-// ==========================================
+// ======================================================
 // PUBLIC AUTHOR
-// ==========================================
+// ======================================================
 
 export interface PublicAuthor {
   uid: string;
@@ -29,29 +18,37 @@ export interface PublicAuthor {
   bio?: string;
 }
 
-// ==========================================
-// FORMAT TIMESTAMP
-// ==========================================
+// ======================================================
+// PATHS
+// ======================================================
+
+const DATA_PATH = path.join(process.cwd(), "public", "data");
+
+const AUTHORS_PATH = path.join(
+  DATA_PATH,
+  "authors.json"
+);
+
+const ARTICLES_PATH = path.join(
+  DATA_PATH,
+  "articles.json"
+);
+
+// ======================================================
+// TIMESTAMP
+// ======================================================
 
 function formatTimestamp(
   value: any
 ): string | undefined {
+  if (!value) return undefined;
 
-  if (!value) {
-    return undefined;
+  if (typeof value?.toDate === "function") {
+    return value.toDate().toISOString();
   }
 
-  // Firebase Admin Timestamp
   if (
-    typeof value?.toDate === "function"
-  ) {
-    return value
-      .toDate()
-      .toISOString();
-  }
-
-  // Firebase Timestamp-like object
-  if (
+    typeof value === "object" &&
     typeof value?.seconds === "number"
   ) {
     return new Date(
@@ -59,331 +56,274 @@ function formatTimestamp(
     ).toISOString();
   }
 
-  // Normal date/string
-  const date =
-    new Date(value);
+  const date = new Date(value);
 
-  if (
-    isNaN(
-      date.getTime()
-    )
-  ) {
+  if (Number.isNaN(date.getTime())) {
     return undefined;
   }
 
   return date.toISOString();
 }
 
-// ==========================================
-// FORMAT ARTICLE
-// ==========================================
+// ======================================================
+// SLUG
+// ======================================================
 
-function formatArticle(
-  doc: any
-): PublicArticle {
+function createAuthorSlug(name: string) {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\p{L}\p{N}\s-]/gu, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
 
-  const data =
-    doc.data();
+// ======================================================
+// LOAD AUTHORS
+// ======================================================
+
+async function loadAuthors(): Promise<any[]> {
+  try {
+    const file = await fs.readFile(
+      AUTHORS_PATH,
+      "utf-8"
+    );
+
+    const data = JSON.parse(file);
+
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error(
+      "LOAD AUTHORS JSON ERROR:",
+      error
+    );
+
+    return [];
+  }
+}
+
+// ======================================================
+// LOAD ARTICLES
+// ======================================================
+
+async function loadArticles(): Promise<any[]> {
+  try {
+    const file = await fs.readFile(
+      ARTICLES_PATH,
+      "utf-8"
+    );
+
+    const data = JSON.parse(file);
+
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error(
+      "LOAD ARTICLES JSON ERROR:",
+      error
+    );
+
+    return [];
+  }
+}
+
+// ======================================================
+// FORMAT AUTHOR
+// ======================================================
+
+function formatAuthor(
+  data: any
+): PublicAuthor {
+  const name = data?.name || "";
 
   return {
-    id: doc.id,
+    uid: String(
+      data?.uid ||
+      data?.id ||
+      ""
+    ),
 
-    title:
-      data.title || "",
+    name,
+
+    email: data?.email || "",
+
+    role: data?.role || "editor",
+
+    photo: data?.photo || "",
 
     slug:
-      data.slug || "",
+      data?.slug ||
+      createAuthorSlug(name),
 
-    thumbnail:
-      data.thumbnail || "",
+    status: data?.status || "active",
 
-    shortDescription:
-      data.shortDescription || "",
-
-    content:
-      data.content || "",
-
-    seoTitle:
-      data.seoTitle || "",
-
-    seoDescription:
-      data.seoDescription || "",
-
-    categoryId:
-      data.categoryId || "",
-
-    category:
-      data.category || "",
-
-    categoryHi:
-      data.categoryHi || "",
-
-    featured:
-      data.featured || false,
-
-    breaking:
-      data.breaking || false,
-
-    priority:
-      data.priority || 0,
-
-    status:
-      data.status || "published",
-
-    author:
-      data.author || {
-        name: "INFINIA BHARAT NEWS",
-        role: "admin",
-      },
-
-    createdAt:
-      formatTimestamp(
-        data.createdAt
-      ),
-
-    updatedAt:
-      formatTimestamp(
-        data.updatedAt
-      ),
+    bio: data?.bio || "",
   };
 }
 
-// ==========================================
+// ======================================================
 // GET AUTHOR BY SLUG
-// ==========================================
-//
-// SERVER SIDE ONLY
-//
-// Firestore:
-// users/{uid}
-//
-// Example:
-//
-// {
-//   uid: "...",
-//   name: "Arpit Mishra",
-//   email: "arpit@example.com",
-//   role: "editor",
-//   status: "active",
-//   photo: "...",
-//   bio: "Professional bio",
-//   slug: "arpit-mishra"
-// }
-//
-// Public page:
-//
-// /author/arpit-mishra
-//
-// ==========================================
+// ======================================================
 
 export async function getAuthorBySlug(
   slug: string
 ): Promise<PublicAuthor | null> {
+  if (!slug) return null;
 
-  if (!slug) {
-    return null;
-  }
+  const cleanSlug = slug
+    .trim()
+    .toLowerCase();
 
-  try {
+  const rawAuthors = await loadAuthors();
 
-    const cleanSlug =
-      slug
+  const author = rawAuthors.find(
+    (item) =>
+      String(item?.slug || "")
         .trim()
-        .toLowerCase();
+        .toLowerCase() === cleanSlug
+  );
 
-    // ======================================
-    // FIND AUTHOR
-    // ======================================
+  if (!author) return null;
 
-    const snapshot =
-      await adminDb
-        .collection("users")
-        .where(
-          "slug",
-          "==",
-          cleanSlug
-        )
-        .limit(1)
-        .get();
+  const formatted = formatAuthor(author);
 
-    // ======================================
-    // AUTHOR NOT FOUND
-    // ======================================
-
-    if (
-      snapshot.empty
-    ) {
-      return null;
-    }
-
-    // ======================================
-    // GET DOCUMENT
-    // ======================================
-
-    const doc =
-      snapshot.docs[0];
-
-    const data =
-      doc.data();
-
-    // ======================================
-    // RETURN AUTHOR
-    // ======================================
-
-    return {
-
-      uid:
-        data.uid ||
-        doc.id,
-
-      name:
-        data.name ||
-        "INFINIA BHARAT NEWS",
-
-      // IMPORTANT:
-      // Email was missing here earlier.
-      email:
-        data.email ||
-        "",
-
-      role:
-        data.role ||
-        "editor",
-
-      photo:
-        data.photo ||
-        "",
-
-      slug:
-        data.slug ||
-        cleanSlug,
-
-      status:
-        data.status ||
-        "active",
-
-      bio:
-        data.bio ||
-        "",
-    };
-
-  } catch (error) {
-
-    console.error(
-      "GET AUTHOR BY SLUG ERROR:",
-      error
-    );
-
+  if (formatted.status !== "active") {
     return null;
   }
+
+  return formatted;
 }
 
-// ==========================================
+// ======================================================
+// ALL PUBLIC AUTHORS
+// ======================================================
+
+export async function getPublicAuthors(): Promise<
+  PublicAuthor[]
+> {
+  const rawAuthors = await loadAuthors();
+
+  return rawAuthors
+    .map(formatAuthor)
+    .filter(
+      (author) =>
+        author.status === "active"
+    )
+    .sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+}
+
+// ======================================================
+// FORMAT PUBLIC ARTICLE
+// ======================================================
+
+function formatPublicArticle(
+  article: any
+): PublicArticle {
+  return {
+    id: String(article?.id || ""),
+
+    title: article?.title || "",
+
+    slug: article?.slug || "",
+
+    thumbnail: article?.thumbnail || "",
+
+    shortDescription:
+      article?.shortDescription || "",
+
+    content: article?.content || "",
+
+    seoTitle: article?.seoTitle || "",
+
+    seoDescription:
+      article?.seoDescription || "",
+
+    categoryId:
+      article?.categoryId || "",
+
+    category:
+      article?.category || "",
+
+    categoryHi:
+      article?.categoryHi || "",
+
+    featured:
+      article?.featured || false,
+
+    breaking:
+      article?.breaking || false,
+
+    priority:
+      article?.priority || 0,
+
+    status:
+      article?.status || "published",
+
+    author:
+      article?.author || {
+        name: "INFINIA BHARAT NEWS",
+        role: "admin",
+      },
+
+    createdAt: formatTimestamp(
+      article?.createdAt
+    ),
+
+    updatedAt: formatTimestamp(
+      article?.updatedAt
+    ),
+  } satisfies PublicArticle;
+}
+
+// ======================================================
 // GET AUTHOR ARTICLES
-// ==========================================
-//
-// IMPORTANT:
-//
-// We query ONLY:
-//
-// author.uid == authorUid
-//
-// We DO NOT add:
-//
-// where("status", "==", "published")
-//
-// because that may require a composite index.
-//
-// Instead:
-//
-// 1. Get author's articles
-// 2. Convert them
-// 3. Filter published articles in JS
-// 4. Sort newest first
-//
-// ==========================================
+// ======================================================
 
 export async function getAuthorArticles(
   authorUid: string
 ): Promise<PublicArticle[]> {
-
-  if (!authorUid) {
-    return [];
-  }
+  if (!authorUid) return [];
 
   try {
+    const rawArticles = await loadArticles();
 
-    // ======================================
-    // QUERY ARTICLES BY AUTHOR UID
-    // ======================================
-
-    const articlesQuery =
-      query(
-        collection(
-          db,
-          "articles"
-        ),
-
-        where(
-          "author.uid",
-          "==",
-          authorUid
-        )
-      );
-
-    const snapshot =
-      await getDocs(
-        articlesQuery
-      );
-
-    // ======================================
-    // FORMAT + FILTER
-    // ======================================
-
-    const articles =
-      snapshot.docs
-        .map(
-          (doc) =>
-            formatArticle(doc)
-        )
-        .filter(
-          (article) =>
-            article.status ===
-            "published"
-        );
-
-    // ======================================
-    // LATEST FIRST
-    // ======================================
-
-    articles.sort(
-      (a, b) => {
-
-        const dateA =
-          a.createdAt
-            ? new Date(
-                a.createdAt
-              ).getTime()
-            : 0;
-
-        const dateB =
-          b.createdAt
-            ? new Date(
-                b.createdAt
-              ).getTime()
-            : 0;
+    const articles = rawArticles
+      .filter((article: any) => {
+        if (
+          article?.status !==
+          "published"
+        ) {
+          return false;
+        }
 
         return (
-          dateB -
-          dateA
+          String(
+            article?.author?.uid || ""
+          ) === String(authorUid)
         );
-      }
-    );
+      })
+      .map(formatPublicArticle);
+
+    articles.sort((a, b) => {
+      const dateA = a.createdAt
+        ? new Date(
+            a.createdAt
+          ).getTime()
+        : 0;
+
+      const dateB = b.createdAt
+        ? new Date(
+            b.createdAt
+          ).getTime()
+        : 0;
+
+      return dateB - dateA;
+    });
 
     return articles;
-
   } catch (error) {
-
     console.error(
       "GET AUTHOR ARTICLES ERROR:",
       error
@@ -393,3 +333,106 @@ export async function getAuthorArticles(
   }
 }
 
+// ======================================================
+// GET ALL AUTHORS + ARTICLES
+// ======================================================
+
+export async function getAuthorsDirectory() {
+  const [
+    rawAuthors,
+    rawArticles,
+  ] = await Promise.all([
+    loadAuthors(),
+    loadArticles(),
+  ]);
+
+  const authors = rawAuthors
+    .map(formatAuthor)
+    .filter(
+      (author) =>
+        author.status === "active"
+    );
+
+  const articles =
+    rawArticles
+      .filter(
+        (article: any) =>
+          article?.status ===
+          "published"
+      )
+      .map(formatPublicArticle);
+
+  const grouped =
+    new Map<
+      string,
+      PublicArticle[]
+    >();
+
+  for (const article of articles) {
+    const uid = String(
+      article?.author?.uid || ""
+    );
+
+    if (!uid) continue;
+
+    const existing =
+      grouped.get(uid) || [];
+
+    existing.push(article);
+
+    grouped.set(
+      uid,
+      existing
+    );
+  }
+
+  return authors
+    .map((author) => {
+      const authorArticles =
+        grouped.get(
+          String(author.uid)
+        ) || [];
+
+      authorArticles.sort(
+        (a, b) => {
+          const dateA =
+            a.createdAt
+              ? new Date(
+                  a.createdAt
+                ).getTime()
+              : 0;
+
+          const dateB =
+            b.createdAt
+              ? new Date(
+                  b.createdAt
+                ).getTime()
+              : 0;
+
+          return dateB - dateA;
+        }
+      );
+
+      return {
+        author,
+        articles:
+          authorArticles,
+        latestArticle:
+          authorArticles[0] ||
+          null,
+      };
+    })
+    .sort((a, b) => {
+      const count =
+        b.articles.length -
+        a.articles.length;
+
+      if (count !== 0) {
+        return count;
+      }
+
+      return a.author.name.localeCompare(
+        b.author.name
+      );
+    });
+}

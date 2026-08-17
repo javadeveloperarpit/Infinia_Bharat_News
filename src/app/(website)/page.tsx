@@ -53,6 +53,12 @@ import {
 
 import LeadersOnX from "@/components/home/leaders-on-x";
 
+import {
+  getEnglishArticles,
+} from "@/services/public/category.public.service";
+
+import EnglishArticlesSection from "@/components/EnglishArticlesSection"
+
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -165,6 +171,7 @@ export default async function Home() {
   bannerAds,
   nativeAds,
   breakingNews,
+  englishArticles,
 ] = await Promise.all([
   getPublishedArticles(),
   getFeaturedArticles(),
@@ -175,8 +182,8 @@ export default async function Home() {
   getAdsByType("banner"),
   getAdsByType("native"),
   getActiveBreakingNews(),
+  getEnglishArticles(6),
 ]);
-
   // ======================================
   // CONVERT BANNER ADS TO PLAIN OBJECTS
   // ======================================
@@ -350,90 +357,87 @@ export default async function Home() {
       }
     );
 
-  // ======================================
-  // LATEST ITEMS
-  // Articles + Videos
-  // ======================================
+const latestItems = [
+  // ==================================
+  // NON-ENGLISH ARTICLES ONLY
+  // ==================================
 
-  const latestItems = [
-    // ----------------------------------
-    // ARTICLES
-    // ----------------------------------
+  ...articles
+    .filter((article) => {
+      const category =
+        categoryMap.get(article.categoryId);
 
-    ...articles.map(
-      (article) => {
-        const category =
-          categoryMap.get(
-            article.categoryId
-          );
+      const slug =
+        String(category?.slug || "")
+          .trim()
+          .toLowerCase();
 
-        return {
-          ...article,
+      return !slug.startsWith("english-");
+    })
+    .map((article) => {
+      const category =
+        categoryMap.get(article.categoryId);
 
-          category:
-            category?.name ||
-            "News",
+      return {
+        ...article,
 
-          categoryHi:
-            category?.nameHi ||
-            "समाचार",
+        category:
+          category?.name ||
+          "News",
 
-          type:
-            "article" as const,
-        };
-      }
-    ),
+        categoryHi:
+          category?.nameHi ||
+          "समाचार",
 
-    // ----------------------------------
-    // VIDEOS
-    // ----------------------------------
+        type:
+          "article" as const,
+      };
+    }),
 
-    ...videos.map(
-      (video) => {
-        const category =
-          categoryMap.get(
-            video.categoryId
-          );
+  // ==================================
+  // VIDEOS
+  // ==================================
 
-        return {
-          ...video,
+  ...videos.map((video) => {
+    const category =
+      categoryMap.get(video.categoryId);
 
-          category:
-            category?.name ||
-            "Video",
+    return {
+      ...video,
 
-          categoryHi:
-            category?.nameHi ||
-            "वीडियो",
+      category:
+        category?.name ||
+        "Video",
 
-          type:
-            "video" as const,
-        };
-      }
-    ),
-  ]
+      categoryHi:
+        category?.nameHi ||
+        "वीडियो",
 
-    // ==================================
-    // SORT LATEST
-    // ==================================
+      type:
+        "video" as const,
+    };
+  }),
+]
 
-    .sort(
-      (a, b) => {
-        const dateA =
-          new Date(
-            a.createdAt || 0
-          ).getTime();
+  // ==================================
+  // SORT LATEST
+  // ==================================
 
-        const dateB =
-          new Date(
-            b.createdAt || 0
-          ).getTime();
+  .sort((a, b) => {
+    const dateA =
+      new Date(
+        a.createdAt || 0
+      ).getTime();
 
-        return dateB - dateA;
-      }
-    )
+    const dateB =
+      new Date(
+        b.createdAt || 0
+      ).getTime();
 
-    .slice(0, 3);
+    return dateB - dateA;
+  })
+
+  .slice(0, 3);
 
   // ======================================
 // CATEGORY DATA
@@ -601,6 +605,11 @@ const organizationSchema = {
           shorts={shorts}
         />
       </section>
+
+
+      <EnglishArticlesSection
+  articles={englishArticles}
+/>
 
       {/* ================================
           CATEGORY SECTIONS

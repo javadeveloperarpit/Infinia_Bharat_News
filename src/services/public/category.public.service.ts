@@ -650,15 +650,19 @@ export async function getHomepageCategoryData(): Promise<
   ]);
 
   const categories = rawCategories
-    .filter(
-      (category) =>
-        category?.status === "active"
-    )
-    .map(
-      (category) =>
-        formatCategory(category)
-    );
-
+  .filter(
+    (category) =>
+      category?.status === "active" &&
+      !String(
+        category?.slug || ""
+      )
+        .toLowerCase()
+        .startsWith("english-")
+  )
+  .map(
+    (category) =>
+      formatCategory(category)
+  );
   const articles = rawArticles
     .filter(
       (article) =>
@@ -760,4 +764,136 @@ export async function getHomepageCategoryData(): Promise<
         b.totalContent -
         a.totalContent
     );
+}
+
+// ============================================================
+// GET ENGLISH ARTICLES
+// Combines articles from ALL English categories
+// ============================================================
+
+export async function getEnglishArticles(
+  limit: number = 18
+): Promise<
+  Array<
+    CategoryArticle & {
+      categoryName: string;
+      categorySlug: string;
+    }
+  >
+> {
+
+  const [
+    rawCategories,
+    rawArticles,
+  ] = await Promise.all([
+    loadCategories(),
+    loadArticles(),
+  ]);
+
+
+  // English categories only
+
+  const englishCategories =
+    rawCategories
+      .filter(
+        (category) =>
+          category?.status === "active" &&
+          String(
+            category?.slug || ""
+          )
+            .toLowerCase()
+            .startsWith("english-")
+      );
+
+
+  const englishCategoryMap =
+    new Map(
+      englishCategories.map(
+        (category) => [
+          String(category.id),
+          {
+            name:
+              category?.name ||
+              "",
+            slug:
+              category?.slug ||
+              "",
+          },
+        ]
+      )
+    );
+
+
+  // English articles only
+
+  const articles =
+    rawArticles
+      .filter(
+        (article) =>
+          article?.status === "published" &&
+          englishCategoryMap.has(
+            String(
+              article?.categoryId || ""
+            )
+          )
+      )
+      .map(
+        (article) => {
+
+          const formatted =
+            formatArticle(article);
+
+          const category =
+            englishCategoryMap.get(
+              String(
+                article?.categoryId || ""
+              )
+            );
+
+
+          return {
+
+            ...formatted,
+
+            categoryName:
+              String(
+                category?.name || ""
+              ).replace(
+                /^English\s*/i,
+                ""
+              ),
+
+            categorySlug:
+              String(
+                category?.slug || ""
+              ),
+
+          };
+
+        }
+      );
+
+
+  // Latest first
+
+  return articles
+    .sort(
+      (a, b) => {
+
+        const dateA =
+          new Date(
+            a.createdAt || 0
+          ).getTime();
+
+        const dateB =
+          new Date(
+            b.createdAt || 0
+          ).getTime();
+
+        return dateB - dateA;
+
+      }
+    )
+    .slice(0, limit);
+
 }
