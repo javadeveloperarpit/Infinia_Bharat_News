@@ -10,7 +10,6 @@
     "seoDescription": "Tamil Nadu Politics में Vijay और Trisha को लेकर विवाद बढ़ गया है। BJP नेता Nainar Nagendran की “ask your mother” टिप्पणी के बाद TVK ने माफी की मांग की। जानिए पूरा मामला।",
     "breaking": false,
     "status": "published",
-    "slug": "tamil-nadu-politics-vijay-trisha-personal-attack-bjp-tvk-row-20260815-174616560",
     "author": {
       "uid": "ot1ROJzof6MARUixgKpPubUnnoX2",
       "name": "Arpit Mishra",
@@ -20,9 +19,14 @@
       "slug": "arpit-mishra",
       "bio": "Arpit Mishra\n\nEditor-in-Chief, Infinia Bharat News | Computer Science Engineering Student | Technology & Digital Media Enthusiast**\n\nArpit Mishra is a Computer Science Engineering student, technology enthusiast, and the Editor-in-Chief of Infinia Bharat News, with a keen interest in digital journalism, technology, current affairs, and emerging media platforms.\n\nAlongside his academic journey in Computer Science Engineering, he is actively involved in building and developing a modern digital news platform, focusing on news content, editorial presentation, digital media, technology, and audience engagement.\n\nAs Editor-in-Chief of Infinia Bharat News, Arpit is involved in shaping the publication's editorial direction, content strategy, digital presence, and overall newsroom vision. He believes in presenting news in a clear, engaging, and responsible manner while adapting journalism to the rapidly evolving digital landscape.\n\nHis technical interests include software development, web technologies, artificial intelligence, cybersecurity, databases, and cloud-based applications. He combines his technical background with his interest in journalism to explore how technology can transform the way news is created, distributed, and consumed.\n\nArpit's long-term vision is to build expertise at the intersection of technology, entrepreneurship, and digital media, while creating meaningful and impactful technology-driven platforms.\n"
     },
-    "createdAt": "2026-08-15T17:46:16.767Z",
     "featured": false,
-    "updatedAt": "2026-08-16T13:07:41.456Z"
+    "createdAt": {
+      "type": "firestore/timestamp/1.0",
+      "seconds": 1786815976,
+      "nanoseconds": 767000000
+    },
+    "slug": "tamil-nadu-politics-vijay-trisha-personal-attack-bjp-tvk-row-20260817-165109143",
+    "updatedAt": "2026-08-17T16:51:09.409Z"
   },
   {
     "id": "1C1b5svt7Jiz19GgqGws",
