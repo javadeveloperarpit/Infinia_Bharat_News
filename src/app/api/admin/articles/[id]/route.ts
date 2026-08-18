@@ -251,14 +251,15 @@ export async function PUT(
 
 
     // ==================================================
-    // SLUG
-    // ==================================================
+// SLUG
+// EXISTING ARTICLE URL MUST NEVER CHANGE
+// ==================================================
 
-    const slug =
-      body.seoTitle
-        ? createSlug(body.seoTitle)
-        : oldData.slug || "";
-
+const slug =
+  oldData.slug ||
+  (body.seoTitle
+    ? createSlug(body.seoTitle)
+    : "");
 
     // ==================================================
     // AUTHOR
