@@ -218,7 +218,6 @@ async function getCollectionActivity(
         "desc"
       ),
 
-      limit(5)
 
     );
 
@@ -416,7 +415,7 @@ export async function getRecentActivities()
 
     })
 
-    .slice(0, 10);
+
 
 }
 

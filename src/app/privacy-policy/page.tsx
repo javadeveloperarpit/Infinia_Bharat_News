@@ -20,7 +20,7 @@ const quickLinks = [
   { title: "Politics", href: "/category/politics" },
   { title: "Business", href: "/category/business" },
   { title: "Sports", href: "/category/sports" },
-  { title: "Videos", href: "/videos" },
+  { title: "Videos", href: "/video" },
   { title: "Reels", href: "/reels" },
 ];
 
@@ -846,7 +846,7 @@ export default function PrivacyPolicyPage() {
 
               <div className="space-y-3 text-sm">
                 {[
-                  ["Videos", "/videos"],
+                  ["Videos", "/video"],
                   ["Reels", "/reels"],
                   ["Live TV", "/live-tv"],
                   ["Authors", "/author"],

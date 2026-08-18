@@ -226,9 +226,15 @@ export default function CategorySection({
     if (item.type === "article") {
       return (
         <NewsCard
-          key={item.data.id}
-          article={item.data}
-        />
+      key={item.data.id}
+      article={{
+        ...item.data,
+        category:
+          language === "hi"
+            ? nameHi
+            : name,
+      }}
+    />
       );
     }
 
@@ -239,9 +245,14 @@ export default function CategorySection({
     if (item.type === "video") {
       return (
         <VideoCard
-          key={item.data.id}
-          {...item.data}
-        />
+      key={item.data.id}
+      {...item.data}
+      category={
+        language === "hi"
+          ? nameHi
+          : name
+      }
+    />
       );
     }
 

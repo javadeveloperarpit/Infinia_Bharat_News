@@ -20,25 +20,25 @@ export async function GET() {
       const publishedTime =
         new Date(article.createdAt).getTime();
 
-      if (isNaN(publishedTime)) {
+      if (Number.isNaN(publishedTime)) {
         return false;
       }
 
-      // Keep articles published within the last 4 days
       return (
+        publishedTime <= now &&
         now - publishedTime <=
-        NEWS_SITEMAP_DAYS * 24 * 60 * 60 * 1000
+          NEWS_SITEMAP_DAYS *
+            24 *
+            60 *
+            60 *
+            1000
       );
     })
-
-    // Newest articles first
     .sort(
       (a, b) =>
         new Date(b.createdAt!).getTime() -
         new Date(a.createdAt!).getTime()
     )
-
-    // Google News sitemap maximum
     .slice(0, MAX_NEWS_URLS);
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -52,17 +52,15 @@ ${recentArticles
       article.createdAt!
     ).toISOString();
 
-    const title = escapeXml(article.title);
-
     return `  <url>
-    <loc>${siteConfig.url}/news/${encodeURIComponent(article.slug)}</loc>
+    <loc>${siteConfig.url}/news/${escapeXml(article.slug)}</loc>
     <news:news>
       <news:publication>
         <news:name>${escapeXml(siteConfig.name)}</news:name>
         <news:language>hi</news:language>
       </news:publication>
       <news:publication_date>${publishedAt}</news:publication_date>
-      <news:title>${title}</news:title>
+      <news:title>${escapeXml(article.title)}</news:title>
     </news:news>
   </url>`;
   })
@@ -71,7 +69,8 @@ ${recentArticles
 
   return new Response(xml, {
     headers: {
-      "Content-Type": "application/xml; charset=utf-8",
+      "Content-Type":
+        "application/xml; charset=utf-8",
 
       "Cache-Control":
         "public, s-maxage=300, stale-while-revalidate=600",
@@ -80,7 +79,7 @@ ${recentArticles
 }
 
 function escapeXml(value: string) {
-  return value
+  return String(value)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")

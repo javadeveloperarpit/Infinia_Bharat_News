@@ -1,5 +1,11 @@
 "use client";
 
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 interface Props {
   article: any;
 }
@@ -29,24 +35,38 @@ function getYouTubeId(url: URL) {
     url.hostname === "m.youtube.com"
   ) {
     if (url.pathname === "/watch") {
-      videoId = url.searchParams.get("v") || "";
+      videoId =
+        url.searchParams.get("v") || "";
     }
 
-    if (url.pathname.startsWith("/embed/")) {
-      videoId = url.pathname.split("/embed/")[1] || "";
+    if (
+      url.pathname.startsWith("/embed/")
+    ) {
+      videoId =
+        url.pathname.split("/embed/")[1] ||
+        "";
     }
 
-    if (url.pathname.startsWith("/shorts/")) {
-      videoId = url.pathname.split("/shorts/")[1] || "";
+    if (
+      url.pathname.startsWith("/shorts/")
+    ) {
+      videoId =
+        url.pathname.split("/shorts/")[1] ||
+        "";
     }
 
-    if (url.pathname.startsWith("/live/")) {
-      videoId = url.pathname.split("/live/")[1] || "";
+    if (
+      url.pathname.startsWith("/live/")
+    ) {
+      videoId =
+        url.pathname.split("/live/")[1] ||
+        "";
     }
   }
 
   if (url.hostname === "youtu.be") {
-    videoId = url.pathname.slice(1);
+    videoId =
+      url.pathname.slice(1);
   }
 
   return videoId.split(/[?&#]/)[0];
@@ -61,15 +81,24 @@ function getVimeoId(url: URL) {
     url.hostname === "vimeo.com" ||
     url.hostname === "www.vimeo.com"
   ) {
-    return url.pathname.split("/").filter(Boolean)[0] || "";
+    return (
+      url.pathname
+        .split("/")
+        .filter(Boolean)[0] || ""
+    );
   }
 
-  if (url.hostname === "player.vimeo.com") {
-    const parts = url.pathname
-      .split("/")
-      .filter(Boolean);
+  if (
+    url.hostname ===
+    "player.vimeo.com"
+  ) {
+    const parts =
+      url.pathname
+        .split("/")
+        .filter(Boolean);
 
-    const index = parts.indexOf("video");
+    const index =
+      parts.indexOf("video");
 
     if (index !== -1) {
       return parts[index + 1] || "";
@@ -83,14 +112,17 @@ function getVimeoId(url: URL) {
    MEDIA EMBEDS
 ========================================================= */
 
-function convertMediaEmbeds(html: string) {
+function convertMediaEmbeds(
+  html: string
+) {
   if (!html) return "";
 
   return html.replace(
     /<figure[^>]*class=["'][^"']*\bmedia\b[^"']*["'][^>]*>\s*<oembed[^>]*url=["']([^"']+)["'][^>]*>\s*<\/oembed>\s*<\/figure>/gi,
     (_, rawUrl: string) => {
       try {
-        const url = new URL(rawUrl);
+        const url =
+          new URL(rawUrl);
 
         const hostname =
           url.hostname.toLowerCase();
@@ -150,8 +182,10 @@ function convertMediaEmbeds(html: string) {
         ================================================= */
 
         if (
-          hostname === "dailymotion.com" ||
-          hostname === "www.dailymotion.com"
+          hostname ===
+            "dailymotion.com" ||
+          hostname ===
+            "www.dailymotion.com"
         ) {
           const match =
             url.pathname.match(
@@ -185,8 +219,10 @@ function convertMediaEmbeds(html: string) {
         ================================================= */
 
         if (
-          hostname === "open.spotify.com" ||
-          hostname === "www.open.spotify.com"
+          hostname ===
+            "open.spotify.com" ||
+          hostname ===
+            "www.open.spotify.com"
         ) {
           const parts =
             url.pathname
@@ -194,8 +230,11 @@ function convertMediaEmbeds(html: string) {
               .filter(Boolean);
 
           if (parts.length >= 2) {
-            const type = parts[0];
-            const id = parts[1];
+            const type =
+              parts[0];
+
+            const id =
+              parts[1];
 
             return `
               <figure class="article-media article-spotify">
@@ -203,7 +242,9 @@ function convertMediaEmbeds(html: string) {
                   <iframe
                     src="https://open.spotify.com/embed/${encodeURIComponent(
                       type
-                    )}/${encodeURIComponent(id)}"
+                    )}/${encodeURIComponent(
+                      id
+                    )}"
                     title="Spotify player"
                     loading="lazy"
                     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
@@ -220,8 +261,10 @@ function convertMediaEmbeds(html: string) {
         ================================================= */
 
         if (
-          hostname === "soundcloud.com" ||
-          hostname === "www.soundcloud.com"
+          hostname ===
+            "soundcloud.com" ||
+          hostname ===
+            "www.soundcloud.com"
         ) {
           return `
             <figure class="article-media article-soundcloud">
@@ -244,8 +287,10 @@ function convertMediaEmbeds(html: string) {
         ================================================= */
 
         if (
-          hostname === "instagram.com" ||
-          hostname === "www.instagram.com"
+          hostname ===
+            "instagram.com" ||
+          hostname ===
+            "www.instagram.com"
         ) {
           const path =
             url.pathname;
@@ -282,8 +327,10 @@ function convertMediaEmbeds(html: string) {
         ================================================= */
 
         if (
-          hostname === "twitter.com" ||
-          hostname === "www.twitter.com" ||
+          hostname ===
+            "twitter.com" ||
+          hostname ===
+            "www.twitter.com" ||
           hostname === "x.com" ||
           hostname === "www.x.com"
         ) {
@@ -291,7 +338,9 @@ function convertMediaEmbeds(html: string) {
             <figure class="article-media article-twitter">
               <blockquote class="twitter-tweet">
                 <a
-                  href="${escapeHtml(url.href)}"
+                  href="${escapeHtml(
+                    url.href
+                  )}"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -321,7 +370,9 @@ function convertMediaEmbeds(html: string) {
         const isVideoFile =
           videoExtensions.some(
             (extension) =>
-              pathname.endsWith(extension)
+              pathname.endsWith(
+                extension
+              )
           );
 
         if (isVideoFile) {
@@ -331,7 +382,9 @@ function convertMediaEmbeds(html: string) {
                 controls
                 playsinline
                 preload="metadata"
-                src="${escapeHtml(url.href)}"
+                src="${escapeHtml(
+                  url.href
+                )}"
               ></video>
             </figure>
           `;
@@ -344,7 +397,9 @@ function convertMediaEmbeds(html: string) {
         return `
           <figure class="article-media article-unknown-media">
             <a
-              href="${escapeHtml(url.href)}"
+              href="${escapeHtml(
+                url.href
+              )}"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -360,23 +415,289 @@ function convertMediaEmbeds(html: string) {
 }
 
 /* =========================================================
+   ADD AUDIO TARGETS
+========================================================= */
+
+function prepareAudioContent(
+  html: string
+) {
+  if (!html) return "";
+
+  const parser =
+    new DOMParser();
+
+  const doc =
+    parser.parseFromString(
+      html,
+      "text/html"
+    );
+
+  /*
+   * Only actual readable article
+   * elements get audio targets.
+   *
+   * Images, videos, embeds etc.
+   * are intentionally ignored.
+   */
+
+  const readableSelectors = [
+    "p",
+    "h2",
+    "h3",
+    "h4",
+    "blockquote",
+    "li",
+  ];
+
+  let index = 0;
+
+  doc
+    .querySelectorAll(
+      readableSelectors.join(",")
+    )
+    .forEach((element) => {
+      const text =
+        element.textContent
+          ?.replace(/\s+/g, " ")
+          .trim();
+
+      if (!text) return;
+
+      /*
+       * Don't attach audio highlighting
+       * to media-related text.
+       */
+
+      if (
+        element.closest(
+          "figure, iframe, video"
+        )
+      ) {
+        return;
+      }
+
+      element.setAttribute(
+        "data-audio-index",
+        String(index)
+      );
+
+      index++;
+    });
+
+  return doc.body.innerHTML;
+}
+
+/* =========================================================
    ARTICLE CONTENT
 ========================================================= */
 
 export default function ArticleContent({
   article,
 }: Props) {
-  const content =
-    convertMediaEmbeds(
-      article?.content || ""
+  const [activeIndex, setActiveIndex] =
+    useState<number | null>(null);
+
+  const content = useMemo(() => {
+    const converted =
+      convertMediaEmbeds(
+        article?.content || ""
+      );
+
+    return prepareAudioContent(
+      converted
+    );
+  }, [article?.content]);
+
+  /* =======================================================
+     AUDIO EVENT LISTENER
+  ======================================================= */
+
+  useEffect(() => {
+    const handleAudioProgress = (
+      event: Event
+    ) => {
+      const customEvent =
+        event as CustomEvent<{
+          index?: number;
+        }>;
+
+      const index =
+        customEvent.detail?.index;
+
+      if (
+        typeof index !== "number"
+      ) {
+        return;
+      }
+
+      setActiveIndex(index);
+
+      /*
+       * Find the corresponding
+       * article element.
+       */
+
+      requestAnimationFrame(() => {
+        const target =
+          document.querySelector(
+            `[data-audio-index="${index}"]`
+          );
+
+        if (!target) return;
+
+        target.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      });
+    };
+
+    window.addEventListener(
+      "article-audio-progress",
+      handleAudioProgress
     );
 
+    return () => {
+      window.removeEventListener(
+        "article-audio-progress",
+        handleAudioProgress
+      );
+    };
+  }, []);
+
+  /* =======================================================
+     UPDATE HIGHLIGHT
+  ======================================================= */
+
+  useEffect(() => {
+    const elements =
+      document.querySelectorAll(
+        "[data-audio-index]"
+      );
+
+    elements.forEach(
+      (element) => {
+        const elementIndex =
+          Number(
+            element.getAttribute(
+              "data-audio-index"
+            )
+          );
+
+        if (
+          elementIndex ===
+          activeIndex
+        ) {
+          element.classList.add(
+            "article-audio-active"
+          );
+        } else {
+          element.classList.remove(
+            "article-audio-active"
+          );
+        }
+      }
+    );
+  }, [activeIndex, content]);
+
   return (
-    <div
-      className="article-content"
-      dangerouslySetInnerHTML={{
-        __html: content,
-      }}
-    />
+    <>
+      <style jsx global>{`
+        .article-content
+          [data-audio-index] {
+          transition:
+            background-color 220ms
+              ease,
+            box-shadow 220ms ease,
+            color 220ms ease;
+          }
+
+        .article-content
+          .article-audio-active {
+          background:
+            linear-gradient(
+              90deg,
+              rgba(255, 235, 59, 0.28),
+              rgba(255, 235, 59, 0.48),
+              rgba(255, 235, 59, 0.28)
+            );
+
+          box-shadow:
+            0 0 0 4px
+              rgba(255, 235, 59, 0.12);
+
+          border-radius: 7px;
+
+          /*
+           * Small horizontal breathing
+           * room so the highlight doesn't
+           * touch the text.
+           */
+
+          padding-left: 5px;
+          padding-right: 5px;
+
+          margin-left: -5px;
+          margin-right: -5px;
+        }
+
+        /*
+         * Don't highlight media content.
+         */
+
+        .article-content
+          figure.article-media
+          .article-audio-active {
+          background: transparent;
+          box-shadow: none;
+        }
+
+        /*
+         * Mobile: softer highlight.
+         */
+
+        @media (max-width: 640px) {
+          .article-content
+            .article-audio-active {
+            background:
+              rgba(
+                255,
+                235,
+                59,
+                0.34
+              );
+
+            box-shadow:
+              0 0 0 3px
+                rgba(
+                  255,
+                  235,
+                  59,
+                  0.1
+                );
+          }
+        }
+
+        /*
+         * Respect reduced motion.
+         */
+
+        @media (
+          prefers-reduced-motion: reduce
+        ) {
+          .article-content
+            [data-audio-index] {
+            transition: none;
+          }
+        }
+      `}</style>
+
+      <div
+        className="article-content"
+        dangerouslySetInnerHTML={{
+          __html: content,
+        }}
+      />
+    </>
   );
 }

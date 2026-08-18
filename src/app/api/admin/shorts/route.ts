@@ -8,6 +8,10 @@ import {
 } from "firebase-admin/firestore";
 
 import {
+  syncShortsFromFirebase,
+} from "@/lib/github/shorts-sync";
+
+import {
   commentsAdminAuth,
   commentsAdminDb,
 } from "@/lib/firebase/firebase-comments-admin";
@@ -365,18 +369,44 @@ cleanedShorts.sort((a, b) => {
           merge: true,
         }
       );
+      
+
+      // ==========================================
+// SYNC TO GITHUB
+// ==========================================
+
+let githubSynced = false;
+
+try {
+  await syncShortsFromFirebase();
+
+  githubSynced = true;
+
+  console.log(
+    "SHORTS GITHUB SYNC SUCCESS"
+  );
+} catch (githubError) {
+  console.error(
+    "SHORTS GITHUB SYNC FAILED:",
+    githubError
+  );
+}
 
     // ======================================
     // RESPONSE
     // ======================================
 
     return NextResponse.json({
-      success: true,
-      message:
-        "Shorts saved successfully.",
-      count:
-        cleanedShorts.length,
-    });
+  success: true,
+
+  message:
+    "Shorts saved successfully.",
+
+  count:
+    cleanedShorts.length,
+
+  githubSynced,
+});
   } catch (error) {
     console.error(
       "UPDATE SHORTS CONFIG ERROR:",

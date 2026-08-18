@@ -177,14 +177,18 @@ export default function EnglishArticlesSection({
     }
 
     // ARTICLE
-    if (item.type === "article") {
-      return (
-        <NewsCard
-          key={`english-article-${item.data.id}`}
-          article={item.data}
-        />
-      );
-    }
+    // ARTICLE
+if (item.type === "article") {
+  return (
+    <NewsCard
+      key={`english-article-${item.data.id}`}
+      article={{
+        ...item.data,
+        category: item.data.categoryName || "ENGLISH NEWS",
+      }}
+    />
+  );
+}
 
     // VIDEO
     if (item.type === "video") {

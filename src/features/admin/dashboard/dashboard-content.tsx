@@ -248,6 +248,10 @@ export default function DashboardContent() {
     loading,
     setLoading,
   ] = useState(true);
+  const [
+  visibleActivities,
+  setVisibleActivities,
+] = useState(10);
 
 
   // ========================================
@@ -445,23 +449,27 @@ export default function DashboardContent() {
 
           </div>
 
-          <div
-            className="
-              hidden
-              sm:flex
-              items-center
-              gap-2
-              text-xs
-              font-medium
-              text-zinc-500
-            "
-          >
+          <div className="flex items-center gap-3">
 
-            <Clock size={14} />
+  <div
+    className="
+      hidden
+      sm:flex
+      items-center
+      gap-2
+      text-xs
+      font-medium
+      text-zinc-500
+    "
+  >
+    <Clock size={14} />
 
-            Live updates
+    Live updates
+  </div>
 
-          </div>
+
+
+</div>
 
         </div>
 
@@ -547,9 +555,10 @@ export default function DashboardContent() {
 
 
           {!loading &&
-            activities.map(
-              (activity) => (
-
+  activities
+    .slice(0, visibleActivities)
+    .map(
+      (activity) => (
                 <Link
                   key={`${activity.type}-${activity.id}`}
                   href={getActivityRoute(activity)}
@@ -708,6 +717,54 @@ export default function DashboardContent() {
                 </Link>
 
               )
+            )}
+
+                      {!loading &&
+            activities.length > visibleActivities && (
+
+              <div
+                className="
+                  px-6
+                  py-4
+                  flex
+                  justify-center
+                  border-t
+                  border-zinc-100
+                "
+              >
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setVisibleActivities(
+                      (previous) =>
+                        previous + 10
+                    )
+                  }
+                  className="
+                    inline-flex
+                    items-center
+                    justify-center
+                    rounded-full
+                    border
+                    border-blue-200
+                    bg-blue-50
+                    px-5
+                    py-2
+                    text-xs
+                    font-bold
+                    text-blue-600
+                    transition-all
+                    hover:bg-blue-100
+                    hover:border-blue-300
+                    active:scale-95
+                  "
+                >
+                  See More
+                </button>
+
+              </div>
+
             )}
 
         </div>

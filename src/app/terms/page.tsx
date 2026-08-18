@@ -1,16 +1,10 @@
-import type { Metadata } from "next";
+
+"use client";
 import Image from "next/image";
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
+import { useEffect, useMemo, useState } from "react";
 
-export const metadata: Metadata = {
-  title: `Terms & Conditions | ${siteConfig.name}`,
-  description:
-    "INFINIA BHARAT NEWS की Terms and Conditions पढ़ें और वेबसाइट के उपयोग, content, comments, external links और disclaimer से संबंधित नियमों को समझें।",
-  alternates: {
-    canonical: `${siteConfig.url}/terms`,
-  },
-};
 
 const quickLinks = [
   { title: "Home", href: "/" },
@@ -20,7 +14,7 @@ const quickLinks = [
   { title: "Politics", href: "/category/politics" },
   { title: "Business", href: "/category/business" },
   { title: "Sports", href: "/category/sports" },
-  { title: "Videos", href: "/videos" },
+  { title: "Videos", href: "/video" },
   { title: "Reels", href: "/reels" },
 ];
 
@@ -38,7 +32,10 @@ const sections = [
 ];
 
 export default function TermsPage() {
+  
+const [menuOpen, setMenuOpen] = useState(false);
   return (
+    
     <main className="min-h-screen bg-white text-[#111]">
       {/* TOP STRIP */}
       <div className="border-b border-zinc-200 bg-[#f7f7f7]">
@@ -51,82 +48,144 @@ export default function TermsPage() {
         </div>
       </div>
 
-      {/* HEADER */}
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#111111]">
-        <div className="mx-auto flex h-[72px] max-w-[1400px] items-center justify-between px-4 sm:px-6 lg:px-8">
-          {/* LOGO */}
-          <Link href="/" className="shrink-0">
-            <Image
-              src="/logo.webp"
-              alt="Infinia Bharat News"
-              width={220}
-              height={70}
-              priority
-              className="h-auto w-[155px] object-contain sm:w-[185px]"
-            />
+  <div className="mx-auto flex h-[72px] max-w-[1400px] items-center justify-between px-4 sm:px-6 lg:px-8">
+
+    {/* LOGO */}
+    <Link href="/" className="shrink-0">
+      <Image
+        src="/logo.webp"
+        alt="Infinia Bharat News"
+        width={220}
+        height={70}
+        priority
+        className="h-auto w-[155px] object-contain sm:w-[185px]"
+      />
+    </Link>
+
+    {/* DESKTOP NAV */}
+    <nav className="hidden items-center gap-6 lg:flex">
+      <Link href="/" className="text-sm font-semibold text-zinc-200 transition hover:text-red-500">
+        Home
+      </Link>
+
+      <Link href="/latest" className="text-sm font-semibold text-zinc-200 transition hover:text-red-500">
+        Latest
+      </Link>
+
+      <Link href="/category/india" className="text-sm font-semibold text-zinc-200 transition hover:text-red-500">
+        India
+      </Link>
+
+      <Link href="/category/world" className="text-sm font-semibold text-zinc-200 transition hover:text-red-500">
+        World
+      </Link>
+
+      <Link href="/category/politics" className="text-sm font-semibold text-zinc-200 transition hover:text-red-500">
+        Politics
+      </Link>
+
+      <Link href="/category/business" className="text-sm font-semibold text-zinc-200 transition hover:text-red-500">
+        Business
+      </Link>
+
+      <Link href="/category/sports" className="text-sm font-semibold text-zinc-200 transition hover:text-red-500">
+        Sports
+      </Link>
+
+      <Link href="/video" className="text-sm font-semibold text-zinc-200 transition hover:text-red-500">
+        Videos
+      </Link>
+      <Link href="/reels" className="text-sm font-semibold text-zinc-200 transition hover:text-red-500">
+        Reels
+      </Link>
+    </nav>
+
+    {/* RIGHT */}
+    <div className="flex items-center gap-2">
+
+      {/* SEARCH */}
+      <Link
+        href="/search"
+        aria-label="Search"
+        className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-zinc-200 transition hover:border-red-500 hover:text-red-500"
+      >
+        <svg
+          width="17"
+          height="17"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" />
+        </svg>
+      </Link>
+
+      {/* LIVE TV */}
+      <Link
+        href="/live-tv"
+        className="hidden rounded-md bg-red-600 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-red-700 sm:block"
+      >
+        Live TV
+      </Link>
+
+      {/* MOBILE MENU */}
+      <button
+        type="button"
+        onClick={() => setMenuOpen((v) => !v)}
+        aria-label="Toggle menu"
+        className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-white transition hover:border-red-500 hover:text-red-500 lg:hidden"
+      >
+        {menuOpen ? (
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        ) : (
+          <svg
+            width="19"
+            height="19"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M4 6h16" />
+            <path d="M4 12h16" />
+            <path d="M4 18h16" />
+          </svg>
+        )}
+      </button>
+    </div>
+  </div>
+
+  {/* MOBILE MENU */}
+  {menuOpen && (
+    <div className="border-t border-white/10 bg-[#111111] lg:hidden">
+      <nav className="mx-auto grid max-w-[1400px] grid-cols-2 px-4 py-5 sm:px-6">
+        {quickLinks.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            onClick={() => setMenuOpen(false)}
+            className="border-b border-white/10 px-2 py-3 text-sm font-semibold text-zinc-300 transition hover:text-red-500"
+          >
+            {link.title}
           </Link>
-
-          {/* DESKTOP NAV */}
-          <nav className="hidden items-center gap-6 lg:flex">
-            {quickLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-sm font-semibold text-zinc-200 transition hover:text-red-500"
-              >
-                {link.title}
-              </Link>
-            ))}
-          </nav>
-
-          {/* RIGHT */}
-          <div className="flex items-center gap-2">
-            <Link
-              href="/search"
-              aria-label="Search"
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-zinc-200 transition hover:border-red-500 hover:text-red-500"
-            >
-              <svg
-                width="17"
-                height="17"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <circle cx="11" cy="11" r="7" />
-                <path d="m20 20-3.5-3.5" />
-              </svg>
-            </Link>
-
-            <Link
-              href="/live-tv"
-              className="hidden rounded-md bg-red-600 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-red-700 sm:block"
-            >
-              Live TV
-            </Link>
-
-            <Link
-              href="/menu"
-              aria-label="Menu"
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-white transition hover:border-red-500 hover:text-red-500 lg:hidden"
-            >
-              <svg
-                width="19"
-                height="19"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M4 6h16" />
-                <path d="M4 12h16" />
-                <path d="M4 18h16" />
-              </svg>
-            </Link>
-          </div>
-        </div>
-      </header>
+        ))}
+      </nav>
+    </div>
+  )}
+</header>
 
       {/* RED BAR */}
       <div className="border-b border-red-700 bg-red-600">
@@ -820,7 +879,7 @@ export default function TermsPage() {
 
               <div className="space-y-3 text-sm">
                 {[
-                  ["Videos", "/videos"],
+                  ["Videos", "/video"],
                   ["Reels", "/reels"],
                   ["Live TV", "/live-tv"],
                   ["Authors", "/author"],

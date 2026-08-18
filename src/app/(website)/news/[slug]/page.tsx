@@ -7,6 +7,7 @@ import {
   getPublishedArticles,
 } from "@/services/public/article.public.service";
 
+
 import ArticleHeader from "@/components/article/article-header";
 import ArticleContent from "@/components/article/article-content";
 import ArticleBreadcrumb from "@/components/article/article-breadcrumb";
@@ -15,6 +16,7 @@ import AuthorBox from "@/components/article/author-box";
 import RelatedNews from "@/components/article/related-news";
 import ArticleSidebar from "@/components/article/article-sidebar";
 import CommentsList from "@/components/comments/comments-list";
+import ArticleAudioPlayer from "@/components/article/article-audio-player";
 
 import {
   getAdsByType,
@@ -85,6 +87,21 @@ export async function generateMetadata({
   const image =
     article.thumbnail ||
     `${siteConfig.url}${siteConfig.logo}`;
+
+  const contentImages = Array.from(
+  article.content?.matchAll(
+    /<img[^>]+src=["']([^"']+)["'][^>]*>/gi
+  ) || []
+).map((match) => match[1]);
+
+const allImages = [
+  image,
+  ...contentImages,
+].filter(
+  (value, index, self) =>
+    Boolean(value) &&
+    self.indexOf(value) === index
+);
 
   // ========================================================
   // AUTHOR SEO DATA
@@ -229,15 +246,12 @@ export async function generateMetadata({
         article.category ||
         "समाचार",
 
-      images: [
-        {
-          url:
-            image,
-
-          alt:
-            article.title,
-        },
-      ],
+      images: allImages.map(
+  (imageUrl) => ({
+    url: imageUrl,
+    alt: article.title,
+  })
+),
     },
 
     // ======================================================
@@ -252,9 +266,7 @@ export async function generateMetadata({
 
       description,
 
-      images: [
-        image,
-      ],
+      images: allImages,
     },
   };
 }
@@ -376,6 +388,70 @@ export default async function NewsPage({
   const articleUrl =
     `${siteConfig.url}/news/${article.slug}`;
 
+
+    // ==========================================================
+// ARTICLE CONTENT IMAGES
+// ==========================================================
+
+function extractArticleImages(
+  html: string
+) {
+  if (!html) {
+    return [];
+  }
+
+  const imageRegex =
+    /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+
+  const images: {
+    url: string;
+    alt?: string;
+  }[] = [];
+
+  let match;
+
+  while (
+    (match =
+      imageRegex.exec(html)) !== null
+  ) {
+    const fullTag =
+      match[0];
+
+    const imageUrl =
+      match[1];
+
+    const altMatch =
+      fullTag.match(
+        /alt=["']([^"']*)["']/i
+      );
+
+    if (
+      imageUrl &&
+      !images.some(
+        (image) =>
+          image.url === imageUrl
+      )
+    ) {
+      images.push({
+        url: imageUrl,
+
+       alt:
+  altMatch?.[1] ||
+  article?.title ||
+  "Article image",
+      });
+    }
+  }
+
+  return images;
+}
+
+
+const contentImages =
+  extractArticleImages(
+    article.content || ""
+  );
+
   // ========================================================
   // CATEGORY
   //
@@ -449,113 +525,192 @@ export default async function NewsPage({
     ],
   };
 
+  function extractYouTubeVideos(html: string) {
+  if (!html) return [];
+
+  const videos: {
+    id: string;
+    embedUrl: string;
+    thumbnailUrl: string;
+  }[] = [];
+
+  const regex =
+    /https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/gi;
+
+  let match;
+
+  while ((match = regex.exec(html)) !== null) {
+    const id = match[1];
+
+    if (!id) continue;
+
+    if (
+      videos.some(
+        (video) => video.id === id
+      )
+    ) {
+      continue;
+    }
+
+    videos.push({
+      id,
+
+      embedUrl:
+        `https://www.youtube.com/embed/${id}`,
+
+      thumbnailUrl:
+        `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+    });
+  }
+
+  return videos;
+}
+
+
+const youtubeVideos =
+  extractYouTubeVideos(
+    article.content || ""
+  );
   // ========================================================
   // NEWS ARTICLE SCHEMA
   // ========================================================
 
   const articleSchema = {
-    "@context": "https://schema.org",
+  "@context": "https://schema.org",
 
-    "@type": "NewsArticle",
+  "@type": "NewsArticle",
 
-    "@id":
-      `${articleUrl}#newsarticle`,
+  "@id":
+    `${articleUrl}#newsarticle`,
 
-    mainEntityOfPage: {
-      "@type": "WebPage",
+  mainEntityOfPage: {
+    "@type": "WebPage",
+    "@id": articleUrl,
+  },
 
-      "@id": articleUrl,
+  headline:
+    article.title,
+
+  description:
+    article.seoDescription?.trim() ||
+    article.shortDescription?.trim() ||
+    "",
+
+  image: [
+    {
+      "@type": "ImageObject",
+
+      url: articleImage,
+
+      width: 1200,
+
+      height: 630,
+
+      caption: article.title,
     },
 
-    headline:
-      article.title,
-
-    description:
-      article.seoDescription?.trim() ||
-      article.shortDescription?.trim() ||
-      "",
-
-    image: [
-      {
+    ...contentImages.map(
+      (image) => ({
         "@type": "ImageObject",
 
-        url: articleImage,
+        url: image.url,
 
-        width: 1200,
+        caption:
+          image.alt ||
+          article.title,
+      })
+    ),
+  ],
 
-        height: 630,
+  datePublished:
+    article.createdAt,
 
-        caption: article.title,
-      },
-    ],
+  dateModified:
+    article.updatedAt ||
+    article.createdAt,
 
-    datePublished:
-      article.createdAt,
+  author: {
+    "@type": "Person",
 
-    dateModified:
-      article.updatedAt ||
-      article.createdAt,
+    name:
+      article.author?.name ||
+      siteConfig.name,
 
-    author: {
-      "@type": "Person",
-
-      name:
-        article.author?.name ||
-        siteConfig.name,
-
-      ...(article.author?.slug
-        ? {
-            url:
-              `${siteConfig.url}/author/${article.author.slug}`,
-          }
-        : {}),
-    },
-
-    publisher: {
-      "@type":
-        "NewsMediaOrganization",
-
-      "@id":
-        `${siteConfig.url}/#organization`,
-
-      name:
-        siteConfig.name,
-
-      url:
-        siteConfig.url,
-
-      logo: {
-        "@type":
-          "ImageObject",
-
-        url:
-          `${siteConfig.url}/logos/logo-light.webp`,
-
-        width: 1200,
-
-        height: 630,
-      },
-    },
-
-    articleSection:
-      categoryName,
-
-    ...(article.categoryId
+    ...(article.author?.slug
       ? {
-          about: {
-            "@type": "Thing",
-
-            name: categoryName,
-          },
+          url:
+            `${siteConfig.url}/author/${article.author.slug}`,
         }
       : {}),
+  },
 
-    inLanguage:
-      siteConfig.language,
+  publisher: {
+    "@type":
+      "NewsMediaOrganization",
 
-    isAccessibleForFree:
-      true,
-  };
+    "@id":
+      `${siteConfig.url}/#organization`,
+
+    name:
+      siteConfig.name,
+
+    url:
+      siteConfig.url,
+
+    logo: {
+      "@type":
+        "ImageObject",
+
+      url:
+        `${siteConfig.url}/logos/logo-light.webp`,
+
+      width: 1200,
+
+      height: 630,
+    },
+  },
+
+  articleSection:
+    categoryName,
+
+  inLanguage:
+    siteConfig.language,
+
+  isAccessibleForFree:
+    true,
+
+  ...(youtubeVideos.length > 0
+    ? {
+        video:
+          youtubeVideos.map(
+            (video) => ({
+              "@type":
+                "VideoObject",
+
+              "@id":
+                `${articleUrl}#video-${video.id}`,
+
+              name:
+                article.title,
+
+              description:
+                article.seoDescription?.trim() ||
+                article.shortDescription?.trim() ||
+                article.title,
+
+              thumbnailUrl:
+                video.thumbnailUrl,
+
+              embedUrl:
+                video.embedUrl,
+
+              uploadDate:
+                article.createdAt,
+            })
+          ),
+      }
+    : {}),
+};
 
   // ========================================================
   // PAGE
@@ -648,6 +803,8 @@ export default async function NewsPage({
             article={article}
           />
 
+
+            
           {/* ==================================================
               MOBILE SHARE
           ================================================== */}
@@ -696,7 +853,15 @@ export default async function NewsPage({
               articleSlug={article.slug}
             />
           </section>
-
+           <ArticleAudioPlayer
+  title={article.title}
+  content={article.content}
+  language={
+    article.category === "English"
+      ? "en-IN"
+      : "hi-IN"
+  }
+/>
           {/* ==================================================
               ARTICLE CONTENT
           ================================================== */}

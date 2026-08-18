@@ -1,11 +1,8 @@
 import {
-  doc,
-  getDoc,
-} from "firebase/firestore";
+  promises as fs,
+} from "fs";
 
-import {
-  commentsDb,
-} from "@/lib/firebase/firebase-comments";
+import path from "path";
 
 // ==========================================
 // SHORT ITEM
@@ -27,35 +24,31 @@ export async function getPublishedShorts(): Promise<
   PublicShort[]
 > {
   try {
-    const ref =
-      doc(
-        commentsDb,
-        "shorts",
-        "config"
+    const filePath =
+      path.join(
+        process.cwd(),
+        "public",
+        "data",
+        "shorts.json"
       );
 
-    const snapshot =
-      await getDoc(ref);
-
-    if (
-      !snapshot.exists()
-    ) {
-      return [];
-    }
+    const file =
+      await fs.readFile(
+        filePath,
+        "utf-8"
+      );
 
     const data =
-      snapshot.data();
+      JSON.parse(file);
 
     const shorts =
-      Array.isArray(
-        data.videos
-      )
-        ? data.videos
-        : Array.isArray(
-            data.shorts
-          )
+      Array.isArray(data)
+        ? data
+        : Array.isArray(data?.shorts)
           ? data.shorts
-          : [];
+          : Array.isArray(data?.videos)
+            ? data.videos
+            : [];
 
     return shorts
       .filter(
@@ -77,14 +70,14 @@ export async function getPublishedShorts(): Promise<
 
           url:
             typeof item.url ===
-            "string" &&
+              "string" &&
             item.url.trim()
               ? item.url.trim()
               : `https://www.youtube.com/shorts/${item.id}`,
 
           thumbnail:
             typeof item.thumbnail ===
-            "string" &&
+              "string" &&
             item.thumbnail.trim()
               ? item.thumbnail.trim()
               : `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`,
@@ -96,7 +89,9 @@ export async function getPublishedShorts(): Promise<
               : undefined,
         })
       );
+
   } catch (error) {
+
     console.error(
       "GET PUBLIC SHORTS ERROR:",
       error

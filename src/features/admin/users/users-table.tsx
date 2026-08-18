@@ -4,6 +4,8 @@ import { useState } from "react";
 
 import type { UserType } from "./users-page";
 import { auth } from "@/lib/firebase/firebase";
+import EditUserModal from "./edit-user-modal";
+import { Pencil } from "lucide-react";
 
 interface Props {
   users: UserType[];
@@ -18,6 +20,14 @@ export default function UsersTable({
 }: Props) {
   const [search, setSearch] = useState("");
   const [deleting, setDeleting] = useState("");
+
+  const [editingUser, setEditingUser] =
+  useState<UserType | null>(
+    null
+  );
+
+const [editOpen, setEditOpen] =
+  useState(false);
 
   // ==========================================
   // DELETE USER
@@ -413,6 +423,23 @@ export default function UsersTable({
                     ========================== */}
 
                     <td>
+                      <button
+  type="button"
+  onClick={() => {
+    setEditingUser(user);
+    setEditOpen(true);
+  }}
+  className="
+    rounded-lg
+    p-2
+    text-blue-600
+    transition
+    hover:bg-blue-50
+  "
+  title="Edit user"
+>
+  <Pencil size={18} />
+</button>
 
                       <button
                         onClick={() =>
@@ -444,6 +471,8 @@ export default function UsersTable({
                           : "Delete"}
                       </button>
 
+                      
+
                     </td>
 
                   </tr>
@@ -458,6 +487,12 @@ export default function UsersTable({
         </div>
 
       )}
+      <EditUserModal
+  open={editOpen}
+  setOpen={setEditOpen}
+  user={editingUser}
+  reload={reload}
+/>
 
     </div>
   );

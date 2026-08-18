@@ -24,6 +24,7 @@ export interface UserType {
   role: string;
   status: string;
   photo?: string;
+  bio?: string;
   slug?: string;
 }
 
@@ -44,14 +45,9 @@ export default function UsersPage() {
       setLoading(true);
 
       if (!currentUser) {
-        console.error(
-          "No authenticated Firebase user"
-        );
-
-        setUsers([]);
-
-        return;
-      }
+  setLoading(false);
+  return;
+}
 
       /*
        * Force fresh Firebase ID token
@@ -152,25 +148,31 @@ export default function UsersPage() {
   }
 
   useEffect(() => {
-    /*
-     * Wait until Firebase Auth
-     * restores the logged-in user.
-     */
-    const unsubscribe =
-      onAuthStateChanged(
-        auth,
-        (currentUser) => {
-          loadUsers(
-            currentUser
-          );
+  let mounted = true;
+
+  const unsubscribe =
+    onAuthStateChanged(
+      auth,
+      async (currentUser) => {
+        if (!mounted) return;
+
+        /*
+         * Firebase auth restore hone ka wait
+         */
+        if (!currentUser) {
+          setLoading(false);
+          return;
         }
-      );
 
-    return () => {
-      unsubscribe();
-    };
-  }, []);
+        await loadUsers(currentUser);
+      }
+    );
 
+  return () => {
+    mounted = false;
+    unsubscribe();
+  };
+}, []);
   return (
     <div className="space-y-6">
 

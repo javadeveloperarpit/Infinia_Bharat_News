@@ -88,7 +88,7 @@ const sections: Section[] = [
       {
         title: "Videos",
         description: "News videos and important visual stories.",
-        href: "/videos",
+        href: "/video",
       },
       {
         title: "Reels",
@@ -219,7 +219,7 @@ const quickLinks: PageLink[] = [
   {
     title: "Videos",
     description: "Infinia Bharat News video section.",
-    href: "/videos",
+    href: "/video",
   },
   {
     title: "Reels",
@@ -339,7 +339,7 @@ export default function AboutPage() {
         Sports
       </Link>
 
-      <Link href="/videos" className="text-sm font-semibold text-zinc-200 transition hover:text-red-500">
+      <Link href="/video" className="text-sm font-semibold text-zinc-200 transition hover:text-red-500">
         Videos
       </Link>
       <Link href="/reels" className="text-sm font-semibold text-zinc-200 transition hover:text-red-500">
@@ -939,7 +939,7 @@ export default function AboutPage() {
         <div className="space-y-3 text-sm">
           <Link
             className="block text-zinc-400 transition hover:text-white"
-            href="/videos"
+            href="/video"
           >
             Videos
           </Link>

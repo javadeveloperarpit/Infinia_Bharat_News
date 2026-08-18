@@ -38,7 +38,7 @@ const quickLinks = [
   { title: "Politics", href: "/category/politics" },
   { title: "Business", href: "/category/business" },
   { title: "Sports", href: "/category/sports" },
-  { title: "Videos", href: "/videos" },
+  { title: "Videos", href: "/video" },
   { title: "Reels", href: "/reels" },
   { title: "Live TV", href: "/live-tv" },
 ];
@@ -163,7 +163,7 @@ export default function ContactPage() {
             </Link>
 
             <Link
-              href="/videos"
+              href="/video"
               className="text-sm font-semibold text-zinc-200 transition hover:text-red-500"
             >
               Videos
@@ -676,7 +676,7 @@ export default function ContactPage() {
               <div className="space-y-3 text-sm">
                 <Link
                   className="block text-zinc-400 transition hover:text-white"
-                  href="/videos"
+                  href="/video"
                 >
                   Videos
                 </Link>

@@ -751,21 +751,25 @@ export async function DELETE(
   request: NextRequest
 ) {
   try {
-
     // ======================================
-    // 1. VERIFY ADMIN
+    // VERIFY LOGIN
+    // Admin aur Editor dono delete request
+    // kar sakte hain
     // ======================================
 
     const auth =
-      await verifyAdmin(request);
+      await verifyUser(request);
 
     if (auth.error) {
       return auth.error;
     }
 
-    // ======================================
-    // 2. READ BODY
-    // ======================================
+    const currentRole =
+      String(
+        auth.user?.role || ""
+      )
+        .trim()
+        .toLowerCase();
 
     const body =
       await request.json();
@@ -774,10 +778,6 @@ export async function DELETE(
       String(
         body.uid || ""
       ).trim();
-
-    // ======================================
-    // 3. VALIDATE UID
-    // ======================================
 
     if (!uid) {
       return NextResponse.json(
@@ -793,28 +793,23 @@ export async function DELETE(
     }
 
     // ======================================
-    // 4. PREVENT SELF DELETE
+    // USER CANNOT DELETE SELF
     // ======================================
 
     if (
-      uid ===
-      auth.decoded.uid
+      uid === auth.decoded.uid
     ) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "You cannot delete your own admin account",
+            "You cannot delete your own account",
         },
         {
           status: 403,
         }
       );
     }
-
-    // ======================================
-    // 5. GET USER DOCUMENT
-    // ======================================
 
     const userRef =
       adminDb
@@ -838,21 +833,48 @@ export async function DELETE(
     }
 
     // ======================================
-    // 6. CHECK TARGET ROLE
+    // FIX TYPESCRIPT ERROR
     // ======================================
 
     const targetUser =
       userDoc.data();
 
+    if (!targetUser) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "User data not found",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    const targetRole =
+      String(
+        targetUser.role || ""
+      )
+        .trim()
+        .toLowerCase();
+
+    // ======================================
+    // EDITOR CANNOT DELETE ADMIN
+    // ======================================
+
     if (
-      targetUser?.role !==
-      "editor"
+      currentRole === "editor" &&
+      (
+        targetRole === "admin" ||
+        targetRole === "superadmin"
+      )
     ) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Only editor accounts can be deleted",
+            "Editors cannot delete admin accounts",
         },
         {
           status: 403,
@@ -861,19 +883,41 @@ export async function DELETE(
     }
 
     // ======================================
-    // 7. DELETE FIREBASE AUTH
+    // BACKUP FOR ROLLBACK
     // ======================================
+
+    const backupData =
+      targetUser;
+
+    // ======================================
+    // DELETE FIRESTORE
+    // ======================================
+
+    await userRef.delete();
 
     try {
 
-      await adminAuth
-        .deleteUser(uid);
+      // ====================================
+      // DELETE FIREBASE AUTH USER
+      // ====================================
+
+      await adminAuth.deleteUser(
+        uid
+      );
 
     } catch (authError: any) {
 
       console.error(
-        "FIREBASE AUTH DELETE ERROR:",
+        "AUTH DELETE FAILED:",
         authError
+      );
+
+      // ====================================
+      // RESTORE FIRESTORE DATA
+      // ====================================
+
+      await userRef.set(
+        backupData
       );
 
       return NextResponse.json(
@@ -881,56 +925,29 @@ export async function DELETE(
           success: false,
           message:
             authError?.message ||
-            "Failed to delete Firebase Authentication user",
+            "Failed to delete user account",
         },
         {
           status: 500,
         }
       );
     }
-
-    // ======================================
-    // 8. DELETE FIRESTORE DOCUMENT
-    // ======================================
-
-    try {
-
-      await userRef.delete();
-
-    } catch (firestoreError: any) {
-
-      console.error(
-        "FIRESTORE DELETE ERROR:",
-        firestoreError
-      );
-
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Firebase Authentication user was deleted, but Firestore profile could not be deleted.",
-        },
-        {
-          status: 500,
-        }
-      );
-    }
-
-    // ======================================
-    // 9. SUCCESS
-    // ======================================
 
     console.log(
-      "EDITOR DELETED:",
-      uid
+      "USER DELETED SUCCESSFULLY:",
+      {
+        deletedUid: uid,
+        deletedRole: targetRole,
+        deletedBy: auth.decoded.uid,
+        deletedByRole: currentRole,
+      }
     );
 
     return NextResponse.json(
       {
         success: true,
-
         message:
-          "Editor deleted successfully",
+          "User deleted successfully",
       },
       {
         status: 200,
@@ -947,10 +964,214 @@ export async function DELETE(
     return NextResponse.json(
       {
         success: false,
+        message:
+          error?.message ||
+          "Failed to delete user",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+}
+// ==========================================
+// UPDATE USER
+// AUTHENTICATED USERS
+// ==========================================
+
+export async function PATCH(
+  request: NextRequest
+) {
+  try {
+    const auth =
+      await verifyUser(request);
+
+    if (auth.error) {
+      return auth.error;
+    }
+
+    const body =
+      await request.json();
+
+    const uid =
+      String(
+        body.uid || ""
+      ).trim();
+
+    if (!uid) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "User UID is required",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const userRef =
+      adminDb
+        .collection("users")
+        .doc(uid);
+
+    const userDoc =
+      await userRef.get();
+
+    if (!userDoc.exists) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "User not found",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    const name =
+      String(
+        body.name || ""
+      ).trim();
+
+    const photo =
+      String(
+        body.photo || ""
+      ).trim();
+
+    const bio =
+      String(
+        body.bio || ""
+      ).trim();
+
+    const status =
+      String(
+        body.status || "active"
+      )
+        .trim()
+        .toLowerCase();
+
+    if (!name) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Name is required",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (!photo) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Profile photo is required",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (!bio) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Author bio is required",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const slug =
+      createAuthorSlug(name);
+
+    if (!slug) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Unable to create author slug",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const updateData = {
+      name,
+      photo,
+      bio,
+      slug,
+      status,
+      updatedAt:
+        FieldValue.serverTimestamp(),
+    };
+
+    await userRef.update(
+      updateData
+    );
+
+    // Firebase Auth profile bhi update
+    try {
+      await adminAuth.updateUser(
+        uid,
+        {
+          displayName: name,
+          photoURL: photo,
+          disabled:
+            status === "inactive",
+        }
+      );
+    } catch (authError) {
+      console.error(
+        "AUTH PROFILE UPDATE ERROR:",
+        authError
+      );
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+
+        message:
+          "User updated successfully",
+
+        user: {
+          uid,
+          ...updateData,
+        },
+      },
+      {
+        status: 200,
+      }
+    );
+
+  } catch (error: any) {
+
+    console.error(
+      "UPDATE USER ERROR:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        success: false,
 
         message:
           error?.message ||
-          "Failed to delete editor",
+          "Failed to update user",
       },
       {
         status: 500,
