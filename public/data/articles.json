@@ -959,7 +959,6 @@
     "seoDescription": "कोलकाता में एक होटल में लगी भीषण आग में 9 लोगों की मौत हो गई है। दमकल विभाग की टीम मौके पर राहत और बचाव कार्य में जुटी है।",
     "featured": true,
     "breaking": true,
-    "priority": 0,
     "status": "published",
     "slug": "kolkata-hotel-fire-tragedy-20260819-112025560",
     "author": {
@@ -972,7 +971,8 @@
       "bio": "Shubhi Mishra\n\nEditor, Infinia Bharat News | Video Editor | Graphic Designer | Digital Media Creative\n\nShubhi Mishra is an Editor at Infinia Bharat News, a skilled video editor, and a creative graphic designer with a strong interest in digital journalism, visual storytelling, and modern media.\n\nAt Infinia Bharat News, she contributes to the editorial and creative workflow, working across news content, video editing, graphic design, digital creatives, and visual presentation. Her ability to combine editorial understanding with creative skills helps transform news stories into engaging and visually compelling digital content.\n\nAs a video editing professional, Shubhi specializes in creating impactful news videos, short-form content, reels, and digital media productions. Her graphic design expertise includes creating news graphics, social media creatives, thumbnails, promotional visuals, and branded content.\n\nShe is passionate about the evolving world of digital media and believes that strong storytelling, thoughtful design, and responsible journalism can work together to create meaningful content for today's audience.\n\nThrough her work at Infinia Bharat News, Shubhi contributes to building a modern, creative, and audience-focused digital news platform where journalism meets technology and visual storytelling."
     },
     "createdAt": "2026-08-19T11:20:25.752Z",
-    "updatedAt": "2026-08-19T11:20:25.752Z"
+    "priority": 2,
+    "updatedAt": "2026-08-19T17:59:49.552Z"
   },
   {
     "id": "r3aU3UXywslAMynJ60q8",
