@@ -33,8 +33,15 @@ interface SpeechBlock {
 const WORDS_PER_MINUTE = 150;
 const MIN_BLOCK_SECONDS = 1.5;
 
+/* =========================================================
+   ESTIMATE DURATION
+========================================================= */
+
 function estimateDuration(text: string) {
-  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  const words = text
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
 
   return Math.max(
     MIN_BLOCK_SECONDS,
@@ -43,22 +50,294 @@ function estimateDuration(text: string) {
 }
 
 /* =========================================================
-   EXTRACT READABLE ARTICLE BLOCKS
+   DETECT PRIMARY ARTICLE LANGUAGE
+
+   Important:
+   We detect the overall article language once.
+
+   We DO NOT switch voice for every paragraph.
+   This prevents bad Hindi-English voice switching.
+========================================================= */
+
+function detectPrimaryLanguage(
+  title: string,
+  blocks: SpeechBlock[],
+  fallback = "hi-IN"
+) {
+  const text = [
+    title,
+    ...blocks.map((block) => block.text),
+  ]
+    .join(" ")
+    .trim();
+
+  if (!text) {
+    return fallback;
+  }
+
+  const devanagariCount =
+    (
+      text.match(
+        /[\u0900-\u097F]/g
+      ) || []
+    ).length;
+
+  const latinCount =
+    (
+      text.match(
+        /[A-Za-z]/g
+      ) || []
+    ).length;
+
+  /*
+   * Hindi article.
+   *
+   * Even if English brand names are present,
+   * Hindi remains the primary language.
+   */
+  if (
+    devanagariCount > 0 &&
+    devanagariCount >= latinCount * 0.15
+  ) {
+    return "hi-IN";
+  }
+
+  return "en-IN";
+}
+
+/* =========================================================
+   NORMALIZE TEXT FOR HINDI SPEECH
+
+   Browser Hindi voices sometimes read:
+
+   Ferrari
+   Electric
+   Record
+   Million
+
+   in a very unnatural way.
+
+   We add natural speech boundaries but DO NOT
+   change the actual article content.
+========================================================= */
+
+function normalizeForSpeech(
+  text: string,
+  language: string
+) {
+  if (!text) {
+    return "";
+  }
+
+  let normalized = text
+    .replace(/\s+/g, " ")
+    .trim();
+
+  /*
+   * Improve punctuation pauses.
+   */
+  normalized = normalized
+    .replace(/([.!?।])([A-Za-z\u0900-\u097F])/g, "$1 $2")
+    .replace(/([,;:])([A-Za-z\u0900-\u097F])/g, "$1 $2");
+
+  /*
+   * For Hindi articles:
+   * Keep English words intact.
+   *
+   * The same Hindi voice reads the entire sentence,
+   * which avoids voice jumping between hi-IN/en-IN.
+   */
+  if (language.startsWith("hi")) {
+    normalized = normalized
+      .replace(/\bAI\b/g, "ए आई")
+      .replace(/\bEV\b/g, "ई वी")
+      .replace(/\bSUV\b/g, "एस यू वी")
+      .replace(/\bCEO\b/g, "सी ई ओ")
+      .replace(/\bPM\b/g, "पी एम")
+      .replace(/\bCM\b/g, "सी एम")
+      .replace(/\bUP\b/g, "यू पी")
+      .replace(/\bUS\b/g, "यू एस")
+      .replace(/\bUK\b/g, "यू के")
+      .replace(/\bNASA\b/g, "नासा")
+      .replace(/\bISRO\b/g, "इसरो");
+  }
+
+  return normalized;
+}
+
+/* =========================================================
+   GET BEST VOICE
+
+   One voice is selected for the WHOLE article.
+
+   Priority:
+   1. Exact language
+   2. Natural
+   3. Neural
+   4. Online
+   5. Microsoft
+   6. Google
+   7. India
+   8. Enhanced / Premium
+========================================================= */
+
+function getBestVoice(
+  voices: SpeechSynthesisVoice[],
+  language: string
+) {
+  if (!voices.length) {
+    return undefined;
+  }
+
+  const requested =
+    language.toLowerCase();
+
+  const base =
+    requested.split("-")[0];
+
+  const matching =
+    voices.filter((voice) =>
+      voice.lang
+        .toLowerCase()
+        .startsWith(base)
+    );
+
+  if (!matching.length) {
+    return undefined;
+  }
+
+  const getScore = (
+    voice: SpeechSynthesisVoice
+  ) => {
+    const name =
+      voice.name.toLowerCase();
+
+    const voiceLanguage =
+      voice.lang.toLowerCase();
+
+    let score = 0;
+
+    /*
+     * Exact language.
+     */
+    if (
+      voiceLanguage === requested
+    ) {
+      score += 100;
+    }
+
+    /*
+     * High-quality voice names.
+     */
+    if (
+      name.includes("natural")
+    ) {
+      score += 100;
+    }
+
+    if (
+      name.includes("neural")
+    ) {
+      score += 90;
+    }
+
+    if (
+      name.includes("online")
+    ) {
+      score += 80;
+    }
+
+    if (
+      name.includes("enhanced")
+    ) {
+      score += 70;
+    }
+
+    if (
+      name.includes("premium")
+    ) {
+      score += 65;
+    }
+
+    /*
+     * Providers.
+     */
+    if (
+      name.includes("microsoft")
+    ) {
+      score += 60;
+    }
+
+    if (
+      name.includes("google")
+    ) {
+      score += 55;
+    }
+
+    /*
+     * Indian voices.
+     */
+    if (
+      name.includes("india")
+    ) {
+      score += 50;
+    }
+
+    if (
+      voice.localService === false
+    ) {
+      score += 25;
+    }
+
+    return score;
+  };
+
+  return [...matching].sort(
+    (a, b) =>
+      getScore(b) -
+      getScore(a)
+  )[0];
+}
+
+/* =========================================================
+   EXTRACT ARTICLE BLOCKS
 ========================================================= */
 
 function extractSpeechBlocks(
   html: string
 ): SpeechBlock[] {
-  if (!html) return [];
+  if (!html) {
+    return [];
+  }
 
-  if (typeof window === "undefined") {
+  if (
+    typeof window === "undefined"
+  ) {
     const text = html
-      .replace(/<script[\s\S]*?<\/script>/gi, "")
-      .replace(/<style[\s\S]*?<\/style>/gi, "")
-      .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
-      .replace(/<figure[\s\S]*?<\/figure>/gi, "")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
+      .replace(
+        /<script[\s\S]*?<\/script>/gi,
+        ""
+      )
+      .replace(
+        /<style[\s\S]*?<\/style>/gi,
+        ""
+      )
+      .replace(
+        /<iframe[\s\S]*?<\/iframe>/gi,
+        ""
+      )
+      .replace(
+        /<figure[\s\S]*?<\/figure>/gi,
+        ""
+      )
+      .replace(
+        /<[^>]+>/g,
+        " "
+      )
+      .replace(
+        /\s+/g,
+        " "
+      )
       .trim();
 
     return text
@@ -66,24 +345,37 @@ function extractSpeechBlocks(
           {
             index: 0,
             text,
-            estimatedSeconds: estimateDuration(text),
+            estimatedSeconds:
+              estimateDuration(text),
           },
         ]
       : [];
   }
 
-  const parser = new DOMParser();
+  const parser =
+    new DOMParser();
 
-  const doc = parser.parseFromString(
-    html,
-    "text/html"
-  );
+  const doc =
+    parser.parseFromString(
+      html,
+      "text/html"
+    );
 
   doc
     .querySelectorAll(
-      "script, style, noscript, iframe, video, figure"
+      [
+        "script",
+        "style",
+        "noscript",
+        "iframe",
+        "video",
+        "audio",
+        "figure",
+      ].join(",")
     )
-    .forEach((element) => element.remove());
+    .forEach((element) =>
+      element.remove()
+    );
 
   const selectors = [
     "p",
@@ -97,35 +389,26 @@ function extractSpeechBlocks(
   const blocks: SpeechBlock[] = [];
 
   doc
-    .querySelectorAll(selectors.join(","))
+    .querySelectorAll(
+      selectors.join(",")
+    )
     .forEach((element) => {
       const text =
         element.textContent
           ?.replace(/\s+/g, " ")
           .trim() || "";
 
-      if (!text) return;
-
-      if (
-        element.closest(
-          "figure, iframe, video, script, style"
-        )
-      ) {
+      if (!text) {
         return;
       }
 
       blocks.push({
         index: blocks.length,
         text,
-        estimatedSeconds: estimateDuration(text),
+        estimatedSeconds:
+          estimateDuration(text),
       });
     });
-
-  /*
-   * Fallback:
-   * If article has no normal readable HTML blocks,
-   * extract plain text.
-   */
 
   if (!blocks.length) {
     const text =
@@ -137,7 +420,8 @@ function extractSpeechBlocks(
       blocks.push({
         index: 0,
         text,
-        estimatedSeconds: estimateDuration(text),
+        estimatedSeconds:
+          estimateDuration(text),
       });
     }
   }
@@ -145,17 +429,32 @@ function extractSpeechBlocks(
   return blocks;
 }
 
-function formatTime(seconds: number) {
-  const safe = Math.max(0, Math.round(seconds));
+/* =========================================================
+   FORMAT TIME
+========================================================= */
 
-  const minutes = Math.floor(safe / 60);
+function formatTime(
+  seconds: number
+) {
+  const safe = Math.max(
+    0,
+    Math.round(seconds)
+  );
 
-  const remaining = safe % 60;
+  const minutes =
+    Math.floor(safe / 60);
+
+  const remaining =
+    safe % 60;
 
   return `${minutes}:${remaining
     .toString()
     .padStart(2, "0")}`;
 }
+
+/* =========================================================
+   COMPONENT
+========================================================= */
 
 export default function ArticleAudioPlayer({
   title,
@@ -163,7 +462,9 @@ export default function ArticleAudioPlayer({
   language = "hi-IN",
 }: ArticleAudioPlayerProps) {
   const [voices, setVoices] =
-    useState<SpeechSynthesisVoice[]>([]);
+    useState<
+      SpeechSynthesisVoice[]
+    >([]);
 
   const [isPlaying, setIsPlaying] =
     useState(false);
@@ -171,23 +472,24 @@ export default function ArticleAudioPlayer({
   const [isPaused, setIsPaused] =
     useState(false);
 
-  const [currentBlock, setCurrentBlock] =
-    useState(-1);
+  const [
+    currentBlock,
+    setCurrentBlock,
+  ] = useState(-1);
 
   const [speed, setSpeed] =
     useState(1);
 
-  const [showSettings, setShowSettings] =
-    useState(false);
+  const [
+    showSettings,
+    setShowSettings,
+  ] = useState(false);
 
   const [supported, setSupported] =
     useState(true);
 
   const [isSeeking, setIsSeeking] =
     useState(false);
-
-  const blocksRef =
-    useRef<SpeechBlock[]>([]);
 
   const currentIndexRef =
     useRef(0);
@@ -199,12 +501,9 @@ export default function ArticleAudioPlayer({
     useRef(false);
 
   const progressRef =
-    useRef<HTMLDivElement | null>(null);
-
-  const activeUtteranceRef =
-    useRef<SpeechSynthesisUtterance | null>(
-      null
-    );
+    useRef<
+      HTMLDivElement | null
+    >(null);
 
   /* =======================================================
      BLOCKS
@@ -222,12 +521,47 @@ export default function ArticleAudioPlayer({
     Boolean(title?.trim()) ||
     blocks.length > 0;
 
-  /*
-   * Audio starts with title, then article blocks.
-   *
-   * Title gets index -1 so it DOES NOT highlight
-   * an article paragraph.
-   */
+  /* =======================================================
+     PRIMARY LANGUAGE
+
+     Detect ONCE for the entire article.
+  ======================================================= */
+
+  const primaryLanguage =
+    useMemo(
+      () =>
+        detectPrimaryLanguage(
+          title || "",
+          blocks,
+          language
+        ),
+      [
+        title,
+        blocks,
+        language,
+      ]
+    );
+
+  /* =======================================================
+     SELECT ONE VOICE FOR WHOLE ARTICLE
+  ======================================================= */
+
+  const selectedVoice =
+    useMemo(
+      () =>
+        getBestVoice(
+          voices,
+          primaryLanguage
+        ),
+      [
+        voices,
+        primaryLanguage,
+      ]
+    );
+
+  /* =======================================================
+     SPEECH QUEUE
+  ======================================================= */
 
   const speechQueue = useMemo(() => {
     const queue: SpeechBlock[] = [];
@@ -236,9 +570,10 @@ export default function ArticleAudioPlayer({
       queue.push({
         index: -1,
         text: title.trim(),
-        estimatedSeconds: estimateDuration(
-          title.trim()
-        ),
+        estimatedSeconds:
+          estimateDuration(
+            title.trim()
+          ),
       });
     }
 
@@ -256,34 +591,44 @@ export default function ArticleAudioPlayer({
     () =>
       speechQueue.reduce(
         (total, item) =>
-          total + item.estimatedSeconds,
+          total +
+          item.estimatedSeconds,
         0
       ),
     [speechQueue]
   );
 
   const elapsedSeconds = useMemo(() => {
-    const currentQueueIndex =
-      currentIndexRef.current;
-
     return speechQueue
-      .slice(0, currentQueueIndex)
+      .slice(
+        0,
+        currentIndexRef.current
+      )
       .reduce(
         (total, item) =>
-          total + item.estimatedSeconds,
+          total +
+          item.estimatedSeconds,
         0
       );
-  }, [speechQueue, currentBlock]);
+  }, [
+    speechQueue,
+    currentBlock,
+  ]);
 
   const progress = useMemo(() => {
-    if (!speechQueue.length) return 0;
-
-    if (currentBlock === -1) {
+    if (!speechQueue.length) {
       return 0;
     }
 
     const queueIndex =
       currentIndexRef.current;
+
+    if (
+      queueIndex >=
+      speechQueue.length
+    ) {
+      return 100;
+    }
 
     return Math.min(
       100,
@@ -303,7 +648,7 @@ export default function ArticleAudioPlayer({
   ]);
 
   /* =======================================================
-     SPEED REF
+     SPEED
   ======================================================= */
 
   useEffect(() => {
@@ -316,8 +661,12 @@ export default function ArticleAudioPlayer({
 
   useEffect(() => {
     if (
-      typeof window === "undefined" ||
-      !("speechSynthesis" in window) ||
+      typeof window ===
+        "undefined" ||
+      !(
+        "speechSynthesis" in
+        window
+      ) ||
       !(
         "SpeechSynthesisUtterance" in
         window
@@ -328,17 +677,19 @@ export default function ArticleAudioPlayer({
   }, []);
 
   /* =======================================================
-     VOICES
+     LOAD VOICES
   ======================================================= */
 
   useEffect(() => {
-    if (!supported) return;
+    if (!supported) {
+      return;
+    }
 
     const loadVoices = () => {
-      const available =
-        window.speechSynthesis.getVoices();
-
-      setVoices(available);
+      setVoices(
+        window.speechSynthesis
+          .getVoices()
+      );
     };
 
     loadVoices();
@@ -359,8 +710,10 @@ export default function ArticleAudioPlayer({
   useEffect(() => {
     return () => {
       if (
-        typeof window !== "undefined" &&
-        "speechSynthesis" in window
+        typeof window !==
+          "undefined" &&
+        "speechSynthesis" in
+          window
       ) {
         stoppedRef.current = true;
 
@@ -370,357 +723,264 @@ export default function ArticleAudioPlayer({
   }, []);
 
   /* =======================================================
-     SELECT BEST VOICE
-  ======================================================= */
-
-  const selectedVoice = useMemo(() => {
-    if (!voices.length) {
-      return undefined;
-    }
-
-    const requested =
-      language.toLowerCase();
-
-    const base =
-      requested.split("-")[0];
-
-    /*
-     * Exact language first.
-     */
-
-    const exact =
-      voices.find(
-        (voice) =>
-          voice.lang.toLowerCase() ===
-          requested
-      );
-
-    if (exact) return exact;
-
-    /*
-     * Prefer natural / online voices.
-     */
-
-    const preferred =
-      voices.find((voice) => {
-        const lang =
-          voice.lang.toLowerCase();
-
-        const name =
-          voice.name.toLowerCase();
-
-        return (
-          lang.startsWith(`${base}-`) &&
-          (
-            name.includes("natural") ||
-            name.includes("online") ||
-            name.includes("neural") ||
-            name.includes("google")
-          )
-        );
-      });
-
-    if (preferred) return preferred;
-
-    /*
-     * Any matching language family.
-     */
-
-    const family =
-      voices.find((voice) =>
-        voice.lang
-          .toLowerCase()
-          .startsWith(`${base}-`)
-      );
-
-    if (family) return family;
-
-    /*
-     * Final language-specific fallback.
-     */
-
-    if (base === "en") {
-      return (
-        voices.find((voice) =>
-          voice.lang
-            .toLowerCase()
-            .startsWith("en")
-        ) || voices[0]
-      );
-    }
-
-    if (base === "hi") {
-      return (
-        voices.find((voice) =>
-          voice.lang
-            .toLowerCase()
-            .startsWith("hi")
-        ) || voices[0]
-      );
-    }
-
-    return voices[0];
-  }, [voices, language]);
-
-  /* =======================================================
      HIGHLIGHT
   ======================================================= */
 
   const updateHighlight =
-    useCallback((index: number) => {
-      if (
-        typeof window === "undefined"
-      ) {
-        return;
-      }
+    useCallback(
+      (index: number) => {
+        if (
+          typeof window ===
+          "undefined"
+        ) {
+          return;
+        }
 
-      setCurrentBlock(index);
+        setCurrentBlock(index);
 
-      window.dispatchEvent(
-        new CustomEvent(
-          "article-audio-progress",
-          {
-            detail: {
-              index,
-            },
-          }
-        )
-      );
-    }, []);
+        window.dispatchEvent(
+          new CustomEvent(
+            "article-audio-progress",
+            {
+              detail: {
+                index,
+              },
+            }
+          )
+        );
+      },
+      []
+    );
 
   /* =======================================================
      SPEAK
   ======================================================= */
 
-  const speakQueueItem = useCallback(
-    (queueIndex: number) => {
-      if (!supported) return;
-
-      if (
-        !speechQueue.length
-      ) {
-        return;
-      }
-
-      if (
-        queueIndex >=
-        speechQueue.length
-      ) {
-        setIsPlaying(false);
-        setIsPaused(false);
-
-        currentIndexRef.current =
-          speechQueue.length;
-
-        setCurrentBlock(
-          blocks.length
-        );
-
-        updateHighlight(-1);
-
-        return;
-      }
-
-      const item =
-        speechQueue[queueIndex];
-
-      currentIndexRef.current =
-        queueIndex;
-
-      updateHighlight(
-        item.index
-      );
-
-      const utterance =
-        new SpeechSynthesisUtterance(
-          item.text
-        );
-
-      activeUtteranceRef.current =
-        utterance;
-
-      utterance.rate =
-        speedRef.current;
-
-      utterance.pitch = 1;
-
-      utterance.volume = 1;
-
-      if (selectedVoice) {
-        utterance.voice =
-          selectedVoice;
-
-        utterance.lang =
-          selectedVoice.lang;
-      } else {
-        utterance.lang =
-          language;
-      }
-
-      utterance.onstart = () => {
-        if (stoppedRef.current) {
+  const speakQueueItem =
+    useCallback(
+      (queueIndex: number) => {
+        if (
+          !supported ||
+          !speechQueue.length
+        ) {
           return;
         }
-
-        setIsPlaying(true);
-        setIsPaused(false);
-
-        updateHighlight(
-          item.index
-        );
-      };
-
-      utterance.onend = () => {
-        if (stoppedRef.current) {
-          return;
-        }
-
-        const next =
-          queueIndex + 1;
 
         if (
-          next <
+          queueIndex >=
           speechQueue.length
         ) {
-          speakQueueItem(next);
-        } else {
           setIsPlaying(false);
           setIsPaused(false);
 
           currentIndexRef.current =
             speechQueue.length;
 
-          setCurrentBlock(
-            blocks.length
-          );
-
           updateHighlight(-1);
-        }
-      };
 
-      utterance.onerror = (
-        event
-      ) => {
-        /*
-         * cancel/interrupted should not
-         * permanently break the player.
-         */
-
-        if (
-          stoppedRef.current ||
-          event.error === "canceled" ||
-          event.error === "interrupted"
-        ) {
           return;
         }
 
-        setIsPlaying(false);
-        setIsPaused(false);
-      };
+        const item =
+          speechQueue[queueIndex];
 
-      window.speechSynthesis.speak(
-        utterance
-      );
-    },
-    [
-      blocks.length,
-      language,
-      selectedVoice,
-      speechQueue,
-      supported,
-      updateHighlight,
-    ]
-  );
+        currentIndexRef.current =
+          queueIndex;
+
+        updateHighlight(
+          item.index
+        );
+
+        const textForSpeech =
+          normalizeForSpeech(
+            item.text,
+            primaryLanguage
+          );
+
+        const utterance =
+          new SpeechSynthesisUtterance(
+            textForSpeech
+          );
+
+        utterance.rate =
+          speedRef.current;
+
+        utterance.pitch = 1;
+
+        utterance.volume = 1;
+
+        /*
+         * IMPORTANT:
+         *
+         * Same language + same voice
+         * for the ENTIRE article.
+         *
+         * No paragraph-by-paragraph
+         * Hindi/English switching.
+         */
+        if (selectedVoice) {
+          utterance.voice =
+            selectedVoice;
+
+          utterance.lang =
+            selectedVoice.lang;
+        } else {
+          utterance.lang =
+            primaryLanguage;
+        }
+
+        utterance.onstart = () => {
+          if (
+            stoppedRef.current
+          ) {
+            return;
+          }
+
+          setIsPlaying(true);
+          setIsPaused(false);
+
+          updateHighlight(
+            item.index
+          );
+        };
+
+        utterance.onend = () => {
+          if (
+            stoppedRef.current
+          ) {
+            return;
+          }
+
+          const next =
+            queueIndex + 1;
+
+          if (
+            next <
+            speechQueue.length
+          ) {
+            speakQueueItem(next);
+          } else {
+            setIsPlaying(false);
+            setIsPaused(false);
+
+            currentIndexRef.current =
+              speechQueue.length;
+
+            updateHighlight(-1);
+          }
+        };
+
+        utterance.onerror = (
+          event
+        ) => {
+          if (
+            stoppedRef.current ||
+            event.error ===
+              "canceled" ||
+            event.error ===
+              "interrupted"
+          ) {
+            return;
+          }
+
+          setIsPlaying(false);
+          setIsPaused(false);
+        };
+
+        if (
+          window.speechSynthesis
+            .speaking
+        ) {
+          window.speechSynthesis.cancel();
+        }
+
+        window.speechSynthesis.speak(
+          utterance
+        );
+      },
+      [
+        primaryLanguage,
+        selectedVoice,
+        speechQueue,
+        supported,
+        updateHighlight,
+      ]
+    );
 
   /* =======================================================
      PLAY
   ======================================================= */
 
-  const handlePlay = useCallback(() => {
-    if (
-      !supported ||
-      !speechQueue.length
-    ) {
-      return;
-    }
+  const handlePlay =
+    useCallback(() => {
+      if (
+        !supported ||
+        !speechQueue.length
+      ) {
+        return;
+      }
 
-    stoppedRef.current = false;
+      stoppedRef.current = false;
 
-    if (
-      isPaused &&
-      window.speechSynthesis.paused
-    ) {
-      window.speechSynthesis.resume();
+      if (
+        isPaused &&
+        window.speechSynthesis
+          .paused
+      ) {
+        window.speechSynthesis.resume();
 
-      setIsPaused(false);
-      setIsPlaying(true);
+        setIsPaused(false);
+        setIsPlaying(true);
 
-      return;
-    }
+        return;
+      }
 
-    if (
-      window.speechSynthesis.speaking
-    ) {
-      return;
-    }
+      if (
+        window.speechSynthesis
+          .speaking
+      ) {
+        return;
+      }
 
-    let queueIndex =
-      currentIndexRef.current;
+      let queueIndex =
+        currentIndexRef.current;
 
-    if (
-      queueIndex >=
-      speechQueue.length
-    ) {
-      queueIndex = 0;
+      if (
+        queueIndex >=
+        speechQueue.length
+      ) {
+        queueIndex = 0;
 
-      currentIndexRef.current = 0;
-    }
+        currentIndexRef.current = 0;
+      }
 
-    speakQueueItem(queueIndex);
-  }, [
-    isPaused,
-    speakQueueItem,
-    speechQueue.length,
-    supported,
-  ]);
+      speakQueueItem(
+        queueIndex
+      );
+    }, [
+      isPaused,
+      speakQueueItem,
+      speechQueue.length,
+      supported,
+    ]);
 
   /* =======================================================
      PAUSE
   ======================================================= */
 
   const handlePause = () => {
-    if (!supported) return;
-
     if (
-      window.speechSynthesis.speaking
+      !supported ||
+      !window.speechSynthesis
+        .speaking
     ) {
-      window.speechSynthesis.pause();
-
-      setIsPaused(true);
-      setIsPlaying(false);
+      return;
     }
-  };
 
-  /* =======================================================
-     RESTART
-  ======================================================= */
+    window.speechSynthesis.pause();
 
-  const handleRestart = () => {
-    if (!supported) return;
-
-    stoppedRef.current = true;
-
-    window.speechSynthesis.cancel();
-
-    currentIndexRef.current = 0;
-
-    setCurrentBlock(-1);
-
-    stoppedRef.current = false;
-
-    setTimeout(() => {
-      speakQueueItem(0);
-    }, 80);
+    setIsPaused(true);
+    setIsPlaying(false);
   };
 
   /* =======================================================
@@ -733,7 +993,9 @@ export default function ArticleAudioPlayer({
         queueIndex: number,
         shouldPlay = isPlaying
       ) => {
-        if (!speechQueue.length) return;
+        if (!speechQueue.length) {
+          return;
+        }
 
         const safeIndex =
           Math.max(
@@ -780,13 +1042,15 @@ export default function ArticleAudioPlayer({
     );
 
   /* =======================================================
-     +/- 10 SEC
+     +/- 10 SECONDS
   ======================================================= */
 
   const seekBySeconds = (
     seconds: number
   ) => {
-    if (!speechQueue.length) return;
+    if (!speechQueue.length) {
+      return;
+    }
 
     const currentTime =
       speechQueue
@@ -811,7 +1075,6 @@ export default function ArticleAudioPlayer({
       );
 
     let accumulated = 0;
-
     let targetIndex = 0;
 
     for (
@@ -824,7 +1087,8 @@ export default function ArticleAudioPlayer({
           .estimatedSeconds;
 
       if (
-        accumulated >= targetTime
+        accumulated >=
+        targetTime
       ) {
         targetIndex = i;
         break;
@@ -893,7 +1157,9 @@ export default function ArticleAudioPlayer({
   const handlePointerMove = (
     event: React.PointerEvent<HTMLDivElement>
   ) => {
-    if (!isSeeking) return;
+    if (!isSeeking) {
+      return;
+    }
 
     seekFromPointer(
       event.clientX
@@ -927,7 +1193,8 @@ export default function ArticleAudioPlayer({
 
     if (
       isPlaying ||
-      window.speechSynthesis.speaking
+      window.speechSynthesis
+        .speaking
     ) {
       const index =
         currentIndexRef.current;
@@ -953,10 +1220,10 @@ export default function ArticleAudioPlayer({
     speechQueue.length
       ? "लेख पूरा हो गया"
       : isPlaying
-        ? "अभी पढ़ा जा रहा है"
-        : isPaused
-          ? "ऑडियो रुका हुआ है"
-          : "खबर सुनने के लिए चलाएं";
+      ? "अभी पढ़ा जा रहा है"
+      : isPaused
+      ? "ऑडियो रुका हुआ है"
+      : "खबर सुनने के लिए चलाएं";
 
   if (
     !supported ||
@@ -1016,23 +1283,11 @@ export default function ArticleAudioPlayer({
           "
         >
           <div
-            className={`
-              relative
-              flex
-              h-11
-              w-11
-              shrink-0
-              items-center
-              justify-center
-              rounded-[14px]
-              transition-all
-              duration-300
-              ${
-                isPlaying
-                  ? "bg-red-600 text-white shadow-[0_5px_18px_rgba(200,16,46,0.25)]"
-                  : "bg-red-50 text-red-600"
-              }
-            `}
+            className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] transition-all duration-300 ${
+              isPlaying
+                ? "bg-red-600 text-white shadow-[0_5px_18px_rgba(200,16,46,0.25)]"
+                : "bg-red-50 text-red-600"
+            }`}
           >
             <Volume2
               size={20}
@@ -1058,46 +1313,16 @@ export default function ArticleAudioPlayer({
 
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h3
-                className="
-                  text-sm
-                  font-extrabold
-                  tracking-tight
-                  text-zinc-900
-                  sm:text-[15px]
-                "
-              >
+              <h3 className="text-sm font-extrabold tracking-tight text-zinc-900 sm:text-[15px]">
                 खबर सुनें
               </h3>
 
-              <span
-                className="
-                  hidden
-                  rounded-full
-                  bg-zinc-100
-                  px-2
-                  py-0.5
-                  text-[9px]
-                  font-bold
-                  tracking-wider
-                  text-zinc-500
-                  sm:inline-flex
-                "
-              >
+              <span className="hidden rounded-full bg-zinc-100 px-2 py-0.5 text-[9px] font-bold tracking-wider text-zinc-500 sm:inline-flex">
                 AUDIO
               </span>
             </div>
 
-            <p
-              className="
-                mt-0.5
-                truncate
-                text-[11px]
-                font-medium
-                text-zinc-500
-                sm:text-xs
-              "
-            >
+            <p className="mt-0.5 truncate text-[11px] font-medium text-zinc-500 sm:text-xs">
               {statusText}
             </p>
           </div>
@@ -1136,14 +1361,11 @@ export default function ArticleAudioPlayer({
 
           <ChevronDown
             size={13}
-            className={`
-              transition-transform
-              ${
-                showSettings
-                  ? "rotate-180"
-                  : ""
-              }
-            `}
+            className={`transition-transform ${
+              showSettings
+                ? "rotate-180"
+                : ""
+            }`}
           />
         </button>
       </div>
@@ -1151,18 +1373,10 @@ export default function ArticleAudioPlayer({
       <div className="px-4 sm:px-6">
         <div
           ref={progressRef}
-          onPointerDown={
-            handlePointerDown
-          }
-          onPointerMove={
-            handlePointerMove
-          }
-          onPointerUp={
-            handlePointerUp
-          }
-          onPointerCancel={
-            handlePointerUp
-          }
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
           className="
             group
             relative
@@ -1179,16 +1393,7 @@ export default function ArticleAudioPlayer({
           aria-valuemax={100}
           aria-valuenow={Math.round(progress)}
         >
-          <div
-            className="
-              relative
-              h-1.5
-              w-full
-              overflow-visible
-              rounded-full
-              bg-zinc-100
-            "
-          >
+          <div className="relative h-1.5 w-full overflow-visible rounded-full bg-zinc-100">
             <div
               className="
                 absolute
@@ -1217,8 +1422,6 @@ export default function ArticleAudioPlayer({
                 border-white
                 bg-yellow-400
                 shadow-[0_2px_8px_rgba(0,0,0,0.2)]
-                transition-[left]
-                duration-200
               "
               style={{
                 left: `calc(${progress}% - 7px)`,
@@ -1227,28 +1430,13 @@ export default function ArticleAudioPlayer({
           </div>
         </div>
 
-        <div
-          className="
-            -mt-1
-            flex
-            items-center
-            justify-between
-            text-[10px]
-            font-semibold
-            tabular-nums
-            text-zinc-400
-          "
-        >
+        <div className="-mt-1 flex items-center justify-between text-[10px] font-semibold tabular-nums text-zinc-400">
           <span>
-            {formatTime(
-              elapsedSeconds
-            )}
+            {formatTime(elapsedSeconds)}
           </span>
 
           <span>
-            {formatTime(
-              totalSeconds
-            )}
+            {formatTime(totalSeconds)}
           </span>
         </div>
       </div>
@@ -1285,12 +1473,8 @@ export default function ArticleAudioPlayer({
             hover:text-zinc-900
             active:scale-90
           "
-          aria-label="Back 10 seconds"
         >
-          <RotateCcw
-            size={18}
-            strokeWidth={2}
-          />
+          <RotateCcw size={18} />
 
           <span className="-mt-1 text-[8px] font-bold">
             10
@@ -1321,25 +1505,7 @@ export default function ArticleAudioPlayer({
             hover:bg-red-700
             active:scale-95
           "
-          aria-label={
-            isPlaying
-              ? "Pause article"
-              : "Play article"
-          }
         >
-          {isPlaying && (
-            <span
-              className="
-                absolute
-                inset-[-5px]
-                rounded-full
-                border
-                border-red-200
-                opacity-70
-              "
-            />
-          )}
-
           {isPlaying ? (
             <Pause
               size={23}
@@ -1373,12 +1539,8 @@ export default function ArticleAudioPlayer({
             hover:text-zinc-900
             active:scale-90
           "
-          aria-label="Forward 10 seconds"
         >
-          <RotateCw
-            size={18}
-            strokeWidth={2}
-          />
+          <RotateCw size={18} />
 
           <span className="-mt-1 text-[8px] font-bold">
             10
@@ -1397,22 +1559,15 @@ export default function ArticleAudioPlayer({
           sm:px-6
         "
       >
-        <p
-          className="
-            text-[10px]
-            font-semibold
-            text-zinc-500
-            sm:text-[11px]
-          "
-        >
+        <p className="text-[10px] font-semibold text-zinc-500 sm:text-[11px]">
           {currentBlock >= 0
             ? `पढ़ा जा रहा है · ${Math.round(
                 progress
               )}%`
             : currentIndexRef.current >=
               speechQueue.length
-              ? "लेख पूरा हो गया"
-              : "खबर सुनने के लिए चलाएं"}
+            ? "लेख पूरा हो गया"
+            : "खबर सुनने के लिए चलाएं"}
         </p>
       </div>
 
@@ -1436,16 +1591,7 @@ export default function ArticleAudioPlayer({
               gap-2
             "
           >
-            <span
-              className="
-                mr-1
-                text-[10px]
-                font-bold
-                uppercase
-                tracking-wider
-                text-zinc-400
-              "
-            >
+            <span className="mr-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
               Speed
             </span>
 
@@ -1457,19 +1603,11 @@ export default function ArticleAudioPlayer({
                   onClick={() =>
                     changeSpeed(value)
                   }
-                  className={`
-                    rounded-full
-                    px-3
-                    py-1.5
-                    text-[11px]
-                    font-bold
-                    transition
-                    ${
-                      speed === value
-                        ? "bg-red-600 text-white shadow-sm"
-                        : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
-                    }
-                  `}
+                  className={`rounded-full px-3 py-1.5 text-[11px] font-bold transition ${
+                    speed === value
+                      ? "bg-red-600 text-white shadow-sm"
+                      : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+                  }`}
                 >
                   {value}x
                 </button>

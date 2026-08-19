@@ -29,44 +29,35 @@ function escapeHtml(value: string) {
 function getYouTubeId(url: URL) {
   let videoId = "";
 
+  const hostname = url.hostname.toLowerCase();
+
   if (
-    url.hostname === "youtube.com" ||
-    url.hostname === "www.youtube.com" ||
-    url.hostname === "m.youtube.com"
+    hostname === "youtube.com" ||
+    hostname === "www.youtube.com" ||
+    hostname === "m.youtube.com"
   ) {
     if (url.pathname === "/watch") {
-      videoId =
-        url.searchParams.get("v") || "";
+      videoId = url.searchParams.get("v") || "";
     }
 
-    if (
-      url.pathname.startsWith("/embed/")
-    ) {
+    if (url.pathname.startsWith("/embed/")) {
       videoId =
-        url.pathname.split("/embed/")[1] ||
-        "";
+        url.pathname.split("/embed/")[1] || "";
     }
 
-    if (
-      url.pathname.startsWith("/shorts/")
-    ) {
+    if (url.pathname.startsWith("/shorts/")) {
       videoId =
-        url.pathname.split("/shorts/")[1] ||
-        "";
+        url.pathname.split("/shorts/")[1] || "";
     }
 
-    if (
-      url.pathname.startsWith("/live/")
-    ) {
+    if (url.pathname.startsWith("/live/")) {
       videoId =
-        url.pathname.split("/live/")[1] ||
-        "";
+        url.pathname.split("/live/")[1] || "";
     }
   }
 
-  if (url.hostname === "youtu.be") {
-    videoId =
-      url.pathname.slice(1);
+  if (hostname === "youtu.be") {
+    videoId = url.pathname.slice(1);
   }
 
   return videoId.split(/[?&#]/)[0];
@@ -77,9 +68,11 @@ function getYouTubeId(url: URL) {
 ========================================================= */
 
 function getVimeoId(url: URL) {
+  const hostname = url.hostname.toLowerCase();
+
   if (
-    url.hostname === "vimeo.com" ||
-    url.hostname === "www.vimeo.com"
+    hostname === "vimeo.com" ||
+    hostname === "www.vimeo.com"
   ) {
     return (
       url.pathname
@@ -88,14 +81,10 @@ function getVimeoId(url: URL) {
     );
   }
 
-  if (
-    url.hostname ===
-    "player.vimeo.com"
-  ) {
-    const parts =
-      url.pathname
-        .split("/")
-        .filter(Boolean);
+  if (hostname === "player.vimeo.com") {
+    const parts = url.pathname
+      .split("/")
+      .filter(Boolean);
 
     const index =
       parts.indexOf("video");
@@ -112,24 +101,20 @@ function getVimeoId(url: URL) {
    MEDIA EMBEDS
 ========================================================= */
 
-function convertMediaEmbeds(
-  html: string
-) {
+function convertMediaEmbeds(html: string) {
   if (!html) return "";
 
   return html.replace(
     /<figure[^>]*class=["'][^"']*\bmedia\b[^"']*["'][^>]*>\s*<oembed[^>]*url=["']([^"']+)["'][^>]*>\s*<\/oembed>\s*<\/figure>/gi,
     (_, rawUrl: string) => {
       try {
-        const url =
-          new URL(rawUrl);
-
+        const url = new URL(rawUrl);
         const hostname =
           url.hostname.toLowerCase();
 
-        /* =================================================
+        /* ================================
            YOUTUBE
-        ================================================= */
+        ================================= */
 
         const youtubeId =
           getYouTubeId(url);
@@ -152,9 +137,9 @@ function convertMediaEmbeds(
           `;
         }
 
-        /* =================================================
+        /* ================================
            VIMEO
-        ================================================= */
+        ================================= */
 
         const vimeoId =
           getVimeoId(url);
@@ -177,23 +162,20 @@ function convertMediaEmbeds(
           `;
         }
 
-        /* =================================================
+        /* ================================
            DAILYMOTION
-        ================================================= */
+        ================================= */
 
         if (
-          hostname ===
-            "dailymotion.com" ||
-          hostname ===
-            "www.dailymotion.com"
+          hostname === "dailymotion.com" ||
+          hostname === "www.dailymotion.com"
         ) {
           const match =
             url.pathname.match(
               /\/video\/([^_/?]+)/
             );
 
-          const videoId =
-            match?.[1];
+          const videoId = match?.[1];
 
           if (videoId) {
             return `
@@ -214,15 +196,13 @@ function convertMediaEmbeds(
           }
         }
 
-        /* =================================================
+        /* ================================
            SPOTIFY
-        ================================================= */
+        ================================= */
 
         if (
-          hostname ===
-            "open.spotify.com" ||
-          hostname ===
-            "www.open.spotify.com"
+          hostname === "open.spotify.com" ||
+          hostname === "www.open.spotify.com"
         ) {
           const parts =
             url.pathname
@@ -230,11 +210,8 @@ function convertMediaEmbeds(
               .filter(Boolean);
 
           if (parts.length >= 2) {
-            const type =
-              parts[0];
-
-            const id =
-              parts[1];
+            const type = parts[0];
+            const id = parts[1];
 
             return `
               <figure class="article-media article-spotify">
@@ -242,9 +219,7 @@ function convertMediaEmbeds(
                   <iframe
                     src="https://open.spotify.com/embed/${encodeURIComponent(
                       type
-                    )}/${encodeURIComponent(
-                      id
-                    )}"
+                    )}/${encodeURIComponent(id)}"
                     title="Spotify player"
                     loading="lazy"
                     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
@@ -256,15 +231,13 @@ function convertMediaEmbeds(
           }
         }
 
-        /* =================================================
+        /* ================================
            SOUNDCLOUD
-        ================================================= */
+        ================================= */
 
         if (
-          hostname ===
-            "soundcloud.com" ||
-          hostname ===
-            "www.soundcloud.com"
+          hostname === "soundcloud.com" ||
+          hostname === "www.soundcloud.com"
         ) {
           return `
             <figure class="article-media article-soundcloud">
@@ -282,15 +255,13 @@ function convertMediaEmbeds(
           `;
         }
 
-        /* =================================================
+        /* ================================
            INSTAGRAM
-        ================================================= */
+        ================================= */
 
         if (
-          hostname ===
-            "instagram.com" ||
-          hostname ===
-            "www.instagram.com"
+          hostname === "instagram.com" ||
+          hostname === "www.instagram.com"
         ) {
           const path =
             url.pathname;
@@ -322,15 +293,13 @@ function convertMediaEmbeds(
           }
         }
 
-        /* =================================================
+        /* ================================
            X / TWITTER
-        ================================================= */
+        ================================= */
 
         if (
-          hostname ===
-            "twitter.com" ||
-          hostname ===
-            "www.twitter.com" ||
+          hostname === "twitter.com" ||
+          hostname === "www.twitter.com" ||
           hostname === "x.com" ||
           hostname === "www.x.com"
         ) {
@@ -338,9 +307,7 @@ function convertMediaEmbeds(
             <figure class="article-media article-twitter">
               <blockquote class="twitter-tweet">
                 <a
-                  href="${escapeHtml(
-                    url.href
-                  )}"
+                  href="${escapeHtml(url.href)}"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -351,9 +318,9 @@ function convertMediaEmbeds(
           `;
         }
 
-        /* =================================================
+        /* ================================
            DIRECT VIDEO
-        ================================================= */
+        ================================= */
 
         const pathname =
           url.pathname.toLowerCase();
@@ -370,9 +337,7 @@ function convertMediaEmbeds(
         const isVideoFile =
           videoExtensions.some(
             (extension) =>
-              pathname.endsWith(
-                extension
-              )
+              pathname.endsWith(extension)
           );
 
         if (isVideoFile) {
@@ -382,24 +347,20 @@ function convertMediaEmbeds(
                 controls
                 playsinline
                 preload="metadata"
-                src="${escapeHtml(
-                  url.href
-                )}"
+                src="${escapeHtml(url.href)}"
               ></video>
             </figure>
           `;
         }
 
-        /* =================================================
+        /* ================================
            UNKNOWN
-        ================================================= */
+        ================================= */
 
         return `
           <figure class="article-media article-unknown-media">
             <a
-              href="${escapeHtml(
-                url.href
-              )}"
+              href="${escapeHtml(url.href)}"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -416,75 +377,74 @@ function convertMediaEmbeds(
 
 /* =========================================================
    ADD AUDIO TARGETS
+   NO DOMParser — SSR SAFE
 ========================================================= */
 
-function prepareAudioContent(
-  html: string
-) {
+function prepareAudioContent(html: string) {
   if (!html) return "";
 
-  const parser =
-    new DOMParser();
+  const readableTags =
+    "(?:p|h2|h3|h4|blockquote|li)";
 
-  const doc =
-    parser.parseFromString(
-      html,
-      "text/html"
+  const readableElementRegex =
+    new RegExp(
+      `<(${readableTags})([^>]*)>([\\s\\S]*?)<\\/\\1>`,
+      "gi"
     );
-
-  /*
-   * Only actual readable article
-   * elements get audio targets.
-   *
-   * Images, videos, embeds etc.
-   * are intentionally ignored.
-   */
-
-  const readableSelectors = [
-    "p",
-    "h2",
-    "h3",
-    "h4",
-    "blockquote",
-    "li",
-  ];
 
   let index = 0;
 
-  doc
-    .querySelectorAll(
-      readableSelectors.join(",")
-    )
-    .forEach((element) => {
-      const text =
-        element.textContent
-          ?.replace(/\s+/g, " ")
-          .trim();
-
-      if (!text) return;
-
-      /*
-       * Don't attach audio highlighting
-       * to media-related text.
-       */
+  return html.replace(
+    readableElementRegex,
+    (
+      fullMatch,
+      tagName: string,
+      attributes: string,
+      innerHtml: string
+    ) => {
+      /* =============================================
+         Ignore elements inside media containers.
+      ============================================== */
 
       if (
-        element.closest(
-          "figure, iframe, video"
-        )
+        /\barticle-media\b/i.test(attributes)
       ) {
-        return;
+        return fullMatch;
       }
 
-      element.setAttribute(
-        "data-audio-index",
-        String(index)
-      );
+      /* =============================================
+         Get readable text without HTML tags.
+      ============================================== */
 
+      const text = innerHtml
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&nbsp;/gi, " ")
+        .replace(/&amp;/gi, "&")
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;/gi, "'")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      if (!text) {
+        return fullMatch;
+      }
+
+      /* =============================================
+         Prevent duplicate attributes.
+      ============================================== */
+
+      const cleanAttributes =
+        attributes.replace(
+          /\sdata-audio-index=["'][^"']*["']/gi,
+          ""
+        );
+
+      const currentIndex = index;
       index++;
-    });
 
-  return doc.body.innerHTML;
+      return `<${tagName}${cleanAttributes} data-audio-index="${currentIndex}">${innerHtml}</${tagName}>`;
+    }
+  );
 }
 
 /* =========================================================
@@ -532,11 +492,6 @@ export default function ArticleContent({
 
       setActiveIndex(index);
 
-      /*
-       * Find the corresponding
-       * article element.
-       */
-
       requestAnimationFrame(() => {
         const target =
           document.querySelector(
@@ -566,54 +521,53 @@ export default function ArticleContent({
   }, []);
 
   /* =======================================================
-     UPDATE HIGHLIGHT
+     UPDATE AUDIO HIGHLIGHT
   ======================================================= */
 
   useEffect(() => {
     const elements =
       document.querySelectorAll(
-        "[data-audio-index]"
+        ".article-content [data-audio-index]"
       );
 
-    elements.forEach(
-      (element) => {
-        const elementIndex =
-          Number(
-            element.getAttribute(
-              "data-audio-index"
-            )
-          );
+    elements.forEach((element) => {
+      const elementIndex =
+        Number(
+          element.getAttribute(
+            "data-audio-index"
+          )
+        );
 
-        if (
-          elementIndex ===
-          activeIndex
-        ) {
-          element.classList.add(
-            "article-audio-active"
-          );
-        } else {
-          element.classList.remove(
-            "article-audio-active"
-          );
-        }
+      if (
+        elementIndex === activeIndex
+      ) {
+        element.classList.add(
+          "article-audio-active"
+        );
+      } else {
+        element.classList.remove(
+          "article-audio-active"
+        );
       }
-    );
+    });
   }, [activeIndex, content]);
 
   return (
     <>
       <style jsx global>{`
-        .article-content
-          [data-audio-index] {
+
+        /* =================================================
+           AUDIO HIGHLIGHT
+        ================================================= */
+
+        .article-content [data-audio-index] {
           transition:
-            background-color 220ms
-              ease,
+            background-color 220ms ease,
             box-shadow 220ms ease,
             color 220ms ease;
-          }
+        }
 
-        .article-content
-          .article-audio-active {
+        .article-content .article-audio-active {
           background:
             linear-gradient(
               90deg,
@@ -628,12 +582,6 @@ export default function ArticleContent({
 
           border-radius: 7px;
 
-          /*
-           * Small horizontal breathing
-           * room so the highlight doesn't
-           * touch the text.
-           */
-
           padding-left: 5px;
           padding-right: 5px;
 
@@ -641,55 +589,410 @@ export default function ArticleContent({
           margin-right: -5px;
         }
 
-        /*
-         * Don't highlight media content.
-         */
-
-        .article-content
-          figure.article-media
-          .article-audio-active {
-          background: transparent;
-          box-shadow: none;
-        }
-
-        /*
-         * Mobile: softer highlight.
-         */
-
         @media (max-width: 640px) {
-          .article-content
-            .article-audio-active {
+          .article-content .article-audio-active {
             background:
-              rgba(
-                255,
-                235,
-                59,
-                0.34
-              );
+              rgba(255, 235, 59, 0.34);
 
             box-shadow:
               0 0 0 3px
-                rgba(
-                  255,
-                  235,
-                  59,
-                  0.1
-                );
+                rgba(255, 235, 59, 0.1);
           }
         }
 
-        /*
-         * Respect reduced motion.
-         */
-
-        @media (
-          prefers-reduced-motion: reduce
-        ) {
-          .article-content
-            [data-audio-index] {
+        @media (prefers-reduced-motion: reduce) {
+          .article-content [data-audio-index] {
             transition: none;
           }
         }
+
+
+        /* =================================================
+           CKEDITOR BASE CONTENT
+        ================================================= */
+
+        .article-content {
+          width: 100%;
+          max-width: 100%;
+          overflow-wrap: break-word;
+          word-wrap: break-word;
+        }
+
+        .article-content p {
+          margin-top: 0;
+          margin-bottom: 1.25rem;
+        }
+
+        .article-content h2,
+        .article-content h3,
+        .article-content h4 {
+          clear: both;
+        }
+
+
+        /* =================================================
+           CKEDITOR IMAGES
+        ================================================= */
+
+        .article-content figure.image {
+          display: table;
+          clear: both;
+          max-width: 100%;
+          margin: 1.5rem auto;
+        }
+
+        .article-content figure.image img {
+          display: block;
+          max-width: 100%;
+          height: auto;
+          box-sizing: border-box;
+        }
+
+
+        /* =================================================
+           DEFAULT / BLOCK IMAGE
+        ================================================= */
+
+        .article-content figure.image.image-style-block {
+          margin-left: auto;
+          margin-right: auto;
+        }
+
+        .article-content figure.image.image-style-block img {
+          margin-left: auto;
+          margin-right: auto;
+        }
+
+
+        /* =================================================
+           INLINE / LEFT IMAGE
+        ================================================= */
+
+        .article-content
+          figure.image.image-style-inline {
+          float: left;
+
+          margin-top: 0.4rem;
+          margin-right: 1.5rem;
+          margin-bottom: 1rem;
+          margin-left: 0;
+        }
+
+
+        /* =================================================
+           SIDE / RIGHT IMAGE
+        ================================================= */
+
+        .article-content
+          figure.image.image-style-side {
+          float: right;
+
+          margin-top: 0.4rem;
+          margin-right: 0;
+          margin-bottom: 1rem;
+          margin-left: 1.5rem;
+        }
+
+
+        /* =================================================
+           CKEDITOR RESIZED IMAGES
+
+           IMPORTANT:
+           Old Firebase content stores width on figure:
+
+           <figure
+             class="image image_resized"
+             style="width:75.32%;"
+           >
+
+           We preserve that exact figure width.
+        ================================================= */
+
+        .article-content
+          figure.image.image_resized {
+          display: table;
+          max-width: 100%;
+        }
+
+        .article-content
+          figure.image.image_resized img {
+          width: 100%;
+          max-width: 100%;
+        }
+
+
+        /* =================================================
+           ANY CKEDITOR IMAGE WITH INLINE WIDTH
+        ================================================= */
+
+        .article-content
+          figure.image[style] {
+          max-width: 100%;
+        }
+
+        .article-content
+          figure.image[style] img {
+          width: 100%;
+          max-width: 100%;
+        }
+
+
+        /* =================================================
+           IMAGE CAPTION
+        ================================================= */
+
+        .article-content figure.image figcaption {
+          display: table-caption;
+          caption-side: bottom;
+
+          padding-top: 0.6rem;
+
+          font-size: 0.875rem;
+          line-height: 1.5;
+
+          color: rgb(113 113 122);
+
+          text-align: center;
+        }
+
+
+        /* =================================================
+           CKEDITOR TABLES
+        ================================================= */
+
+        .article-content figure.table {
+          width: 100%;
+          max-width: 100%;
+          overflow-x: auto;
+          margin: 1.5rem 0;
+        }
+
+        .article-content table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 1.5rem 0;
+        }
+
+        .article-content table td,
+        .article-content table th {
+          border: 1px solid
+            rgba(113, 113, 122, 0.35);
+
+          padding: 0.75rem;
+
+          vertical-align: top;
+        }
+
+
+        /* =================================================
+           BLOCKQUOTE
+        ================================================= */
+
+        .article-content blockquote {
+          margin: 1.5rem 0;
+
+          padding:
+            0.9rem
+            1.25rem;
+
+          border-left:
+            4px solid
+            rgba(200, 16, 46, 0.8);
+
+          background:
+            rgba(0, 0, 0, 0.03);
+
+          font-style: italic;
+        }
+
+
+        /* =================================================
+           LISTS
+        ================================================= */
+
+        .article-content ul,
+        .article-content ol {
+          margin:
+            1rem 0
+            1.25rem 1.5rem;
+
+          padding-left: 1.25rem;
+        }
+
+        .article-content li {
+          margin-bottom: 0.5rem;
+        }
+
+
+        /* =================================================
+           LINKS
+        ================================================= */
+
+        .article-content a {
+          overflow-wrap: anywhere;
+        }
+
+
+        /* =================================================
+           MEDIA
+        ================================================= */
+
+        .article-content
+          figure.article-media {
+          clear: both;
+
+          width: 100%;
+          max-width: 100%;
+
+          margin: 1.5rem 0;
+        }
+
+        .article-content
+          .article-media-wrapper {
+          position: relative;
+
+          width: 100%;
+
+          aspect-ratio: 16 / 9;
+
+          overflow: hidden;
+        }
+
+        .article-content
+          .article-media-wrapper iframe {
+          position: absolute;
+
+          top: 0;
+          left: 0;
+
+          width: 100%;
+          height: 100%;
+
+          border: 0;
+        }
+
+        .article-content
+          .article-direct-video video {
+          display: block;
+
+          width: 100%;
+          max-width: 100%;
+
+          height: auto;
+        }
+
+
+        /* =================================================
+           SPOTIFY
+        ================================================= */
+
+        .article-content
+          .article-spotify-wrapper iframe {
+          display: block;
+
+          width: 100%;
+          min-height: 152px;
+
+          border: 0;
+
+          border-radius: 12px;
+        }
+
+
+        /* =================================================
+           SOUNDCLOUD
+        ================================================= */
+
+        .article-content
+          .article-soundcloud-wrapper iframe {
+          display: block;
+
+          width: 100%;
+          height: 166px;
+
+          border: 0;
+        }
+
+
+        /* =================================================
+           INSTAGRAM
+        ================================================= */
+
+        .article-content
+          .article-social-wrapper {
+          width: 100%;
+          max-width: 540px;
+
+          margin: 0 auto;
+        }
+
+        .article-content
+          .article-social-wrapper iframe {
+          display: block;
+
+          width: 100%;
+          min-height: 560px;
+
+          border: 0;
+        }
+
+
+        /* =================================================
+           CLEAR FLOATS
+        ================================================= */
+
+        .article-content::after {
+          content: "";
+
+          display: block;
+
+          clear: both;
+        }
+
+
+        /* =================================================
+           MOBILE
+        ================================================= */
+
+        @media (max-width: 640px) {
+
+          .article-content figure.image,
+          .article-content
+            figure.image.image-style-inline,
+          .article-content
+            figure.image.image-style-side,
+          .article-content
+            figure.image.image_resized {
+            float: none !important;
+
+            width: 100% !important;
+
+            max-width: 100% !important;
+
+            margin:
+              1.25rem 0 !important;
+          }
+
+          .article-content figure.image img {
+            width: 100% !important;
+
+            max-width: 100%;
+          }
+
+          .article-content table {
+            display: block;
+
+            max-width: 100%;
+
+            overflow-x: auto;
+          }
+
+          .article-content
+            .article-social-wrapper iframe {
+            min-height: 500px;
+          }
+        }
+
       `}</style>
 
       <div
