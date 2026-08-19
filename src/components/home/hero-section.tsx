@@ -1,9 +1,6 @@
-"use client";
-
 import Link from "next/link";
 import Image from "next/image";
 import { Clock3, Eye, ArrowRight } from "lucide-react";
-import { useEffect, useState } from "react";
 
 // ======================================================
 // TYPES
@@ -124,21 +121,6 @@ export default function HeroSection({
   const sideStories =
     featured?.slice(1, 5) || [];
 
-  const [, setTime] =
-    useState(Date.now());
-
-  // ====================================================
-  // LIVE TIME
-  // ====================================================
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTime(Date.now());
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
   if (!hero) {
     return null;
   }
@@ -151,7 +133,6 @@ export default function HeroSection({
         mb-8
       "
     >
-
       {/* ==================================================
           DESKTOP + MOBILE MAIN LAYOUT
       ================================================== */}
@@ -166,7 +147,6 @@ export default function HeroSection({
           lg:items-start
         "
       >
-
         {/* ==================================================
             MAIN HERO
         ================================================== */}
@@ -179,12 +159,10 @@ export default function HeroSection({
             lg:shrink-0
           "
         >
-
           <Link
             href={`/news/${hero.slug}`}
             className="group block w-full"
           >
-
             {/* ==================================================
                 IMAGE
             ================================================== */}
@@ -202,7 +180,6 @@ export default function HeroSection({
                 lg:h-[560px]
               "
             >
-
               <Image
                 src={hero.thumbnail}
                 alt={hero.title}
@@ -243,14 +220,10 @@ export default function HeroSection({
                   lg:h-[180px]
                 "
               />
-
             </div>
-
 
             {/* ==================================================
                 FULL WIDTH TEXT BOX
-
-                EXACTLY IMAGE WIDTH
             ================================================== */}
 
             <div
@@ -266,11 +239,6 @@ export default function HeroSection({
                 shadow-[0_12px_35px_rgba(0,0,0,0.14)]
               "
             >
-
-              {/* ==================================================
-                  TEXT CONTENT
-              ================================================== */}
-
               <div
                 className="
                   relative
@@ -289,7 +257,6 @@ export default function HeroSection({
                   xl:pt-8
                 "
               >
-
                 {/* CATEGORY */}
 
                 <div
@@ -300,7 +267,6 @@ export default function HeroSection({
                     gap-2
                   "
                 >
-
                   <span
                     className="
                       rounded-md
@@ -327,12 +293,18 @@ export default function HeroSection({
                     "
                   />
 
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-600">
+                  <span
+                    className="
+                      text-[10px]
+                      font-bold
+                      uppercase
+                      tracking-wider
+                      text-zinc-600
+                    "
+                  >
                     TOP STORY
                   </span>
-
                 </div>
-
 
                 {/* TITLE */}
 
@@ -357,7 +329,6 @@ export default function HeroSection({
                   )}
                 </h1>
 
-
                 {/* DESCRIPTION */}
 
                 {hero.shortDescription && (
@@ -380,7 +351,6 @@ export default function HeroSection({
                   </p>
                 )}
 
-
                 {/* META */}
 
                 <div
@@ -396,7 +366,6 @@ export default function HeroSection({
                     xl:gap-4
                   "
                 >
-
                   <span
                     className="
                       flex
@@ -410,7 +379,6 @@ export default function HeroSection({
                       hero.createdAt
                     )}
                   </span>
-
 
                   <span
                     className="
@@ -428,7 +396,6 @@ export default function HeroSection({
 
                     {" "}views
                   </span>
-
 
                   <span
                     className="
@@ -461,21 +428,14 @@ export default function HeroSection({
                       "
                     />
                   </span>
-
                 </div>
-
               </div>
-
             </div>
-
           </Link>
-
         </div>
-
 
         {/* ==================================================
             DESKTOP SIDEBAR
-            RIGHT SIDE — VERTICAL
         ================================================== */}
 
         <div
@@ -488,7 +448,6 @@ export default function HeroSection({
             lg:gap-3
           "
         >
-
           {sideStories.map(
             (story) => (
               <Link
@@ -501,7 +460,6 @@ export default function HeroSection({
                   flex-1
                 "
               >
-
                 <article
                   className="
                     flex
@@ -518,7 +476,6 @@ export default function HeroSection({
                     hover:shadow-lg
                   "
                 >
-
                   {/* IMAGE */}
 
                   <div
@@ -530,7 +487,6 @@ export default function HeroSection({
                       bg-zinc-200
                     "
                   >
-
                     <Image
                       src={story.thumbnail}
                       alt={story.title}
@@ -543,9 +499,7 @@ export default function HeroSection({
                         group-hover:scale-110
                       "
                     />
-
                   </div>
-
 
                   {/* CONTENT */}
 
@@ -558,41 +512,40 @@ export default function HeroSection({
                       p-3
                     "
                   >
-
                     <span
-  className="
-    self-start
-    shrink-0
-    max-w-full
-    truncate
-    rounded
-    bg-[#AD0000]
-    px-2
-    py-1
-    text-[9px]
-    font-black
-    uppercase
-    text-white
-  "
->
+                      className="
+                        self-start
+                        shrink-0
+                        max-w-full
+                        truncate
+                        rounded
+                        bg-[#AD0000]
+                        px-2
+                        py-1
+                        text-[9px]
+                        font-black
+                        uppercase
+                        text-white
+                      "
+                    >
                       {story.category || "NEWS"}
                     </span>
 
                     <h2
-  className="
-    mt-2
-    min-w-0
-    line-clamp-4
-    break-words
-    text-[13px]
-    font-extrabold
-    leading-[1.35]
-    text-zinc-900
-    transition-colors
-    group-hover:text-[#AD0000]
-    xl:text-[14px]
-  "
->
+                      className="
+                        mt-2
+                        min-w-0
+                        line-clamp-4
+                        break-words
+                        text-[13px]
+                        font-extrabold
+                        leading-[1.35]
+                        text-zinc-900
+                        transition-colors
+                        group-hover:text-[#AD0000]
+                        xl:text-[14px]
+                      "
+                    >
                       {limitText(
                         story.title,
                         100
@@ -610,7 +563,6 @@ export default function HeroSection({
                         text-zinc-500
                       "
                     >
-
                       <span
                         className="
                           flex
@@ -618,9 +570,7 @@ export default function HeroSection({
                           gap-1
                         "
                       >
-                        <Clock3
-                          size={10}
-                        />
+                        <Clock3 size={10} />
 
                         {formatTime(
                           story.createdAt
@@ -634,34 +584,24 @@ export default function HeroSection({
                           gap-1
                         "
                       >
-                        <Eye
-                          size={10}
-                        />
+                        <Eye size={10} />
 
                         {story.views ??
                           generateViews(
                             story.id
                           )}
                       </span>
-
                     </div>
-
                   </div>
-
                 </article>
-
               </Link>
             )
           )}
-
         </div>
-
       </div>
-
 
       {/* ==================================================
           MOBILE SIDE STORIES
-          VERTICAL
       ================================================== */}
 
       {sideStories.length > 0 && (
@@ -675,7 +615,6 @@ export default function HeroSection({
             lg:hidden
           "
         >
-
           {sideStories.map(
             (story) => (
               <Link
@@ -686,7 +625,6 @@ export default function HeroSection({
                   w-full
                 "
               >
-
                 <article
                   className="
                     flex
@@ -700,7 +638,6 @@ export default function HeroSection({
                     shadow-sm
                   "
                 >
-
                   {/* IMAGE */}
 
                   <div
@@ -712,7 +649,6 @@ export default function HeroSection({
                       bg-zinc-200
                     "
                   >
-
                     <Image
                       src={story.thumbnail}
                       alt={story.title}
@@ -720,9 +656,7 @@ export default function HeroSection({
                       sizes="180px"
                       className="object-cover"
                     />
-
                   </div>
-
 
                   {/* CONTENT */}
 
@@ -735,7 +669,6 @@ export default function HeroSection({
                       p-3
                     "
                   >
-
                     <span
                       className="
                         self-start
@@ -777,7 +710,6 @@ export default function HeroSection({
                         text-zinc-500
                       "
                     >
-
                       <span
                         className="
                           flex
@@ -785,9 +717,7 @@ export default function HeroSection({
                           gap-1
                         "
                       >
-                        <Clock3
-                          size={10}
-                        />
+                        <Clock3 size={10} />
 
                         {formatTime(
                           story.createdAt
@@ -801,30 +731,21 @@ export default function HeroSection({
                           gap-1
                         "
                       >
-                        <Eye
-                          size={10}
-                        />
+                        <Eye size={10} />
 
                         {story.views ??
                           generateViews(
                             story.id
                           )}
                       </span>
-
                     </div>
-
                   </div>
-
                 </article>
-
               </Link>
             )
           )}
-
         </div>
       )}
-
     </section>
   );
 }
-
