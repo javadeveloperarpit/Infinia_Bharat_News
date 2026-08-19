@@ -628,7 +628,7 @@ export default function ShortsSection({
                   }
                 }}
                 tabIndex={0}
-                role="link"
+      
                 aria-label={`Open ${
                   short.title || "reel"
                 }`}
