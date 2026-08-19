@@ -1,22 +1,59 @@
 @import "tailwindcss";
-@import "../styles/globals.css";
+
+/* =========================================================
+   INFINIA BHARAT NEWS — GLOBAL STYLES
+   Consolidated global stylesheet
+   ========================================================= */
+
+
+/* =========================================================
+   ROOT / BRAND VARIABLES
+   ========================================================= */
 
 :root {
-  --background: #FDF8F8;
-  --foreground: #1A1A1A;
+  /* BRAND */
+  --primary: #730708;
+  --primary-hover: #560607;
+  --accent: #ECCA6D;
 
   --brand-maroon: #730708;
   --brand-maroon-dark: #4A0405;
   --brand-gold: #ECCA6D;
   --brand-white: #FDF8F8;
 
-  --card: #ffffff;
-  --border: rgba(115, 7, 8, 0.15);
+  /* BACKGROUND */
+  --background: #FDF8F8;
+  --surface: #FFFFFF;
+  --card: #FFFFFF;
+
+  /* TEXT */
+  --foreground: #18181B;
+  --muted: #71717A;
+
+  /* BORDER */
+  --border: #E4E4E7;
+
+  /* STATUS */
+  --success: #16A34A;
+  --warning: #CA8A04;
+  --danger: #DC2626;
+
+  /* RADIUS */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  /* SHADOW */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.12);
 }
 
-/* ================================
+
+/* =========================================================
    RESET
-================================ */
+   ========================================================= */
 
 *,
 *::before,
@@ -25,8 +62,8 @@
 }
 
 html {
-  scroll-behavior: smooth;
   width: 100%;
+  scroll-behavior: smooth;
 }
 
 body {
@@ -39,9 +76,10 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* ================================
+
+/* =========================================================
    MEDIA SAFETY
-================================ */
+   ========================================================= */
 
 img,
 video,
@@ -51,9 +89,24 @@ iframe {
   max-width: 100%;
 }
 
-/* ================================
+
+/* =========================================================
+   GLOBAL SCROLLBAR HIDE
+   ========================================================= */
+
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
+
+/* =========================================================
    MAIN CONTAINER
-================================ */
+   ========================================================= */
 
 .container-news {
   width: 100%;
@@ -63,13 +116,14 @@ iframe {
   padding-right: 32px;
 }
 
-/* ================================
+
+/* =========================================================
    PREMIUM NEWS CARD
-================================ */
+   ========================================================= */
 
 .news-card {
   background: var(--card);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(115, 7, 8, 0.15);
   border-radius: 16px;
   overflow: hidden;
   transition: 0.35s ease;
@@ -77,13 +131,13 @@ iframe {
 
 .news-card:hover {
   transform: translateY(-6px);
-  box-shadow:
-    0 15px 40px rgba(115, 7, 8, 0.18);
+  box-shadow: 0 15px 40px rgba(115, 7, 8, 0.18);
 }
 
-/* ================================
-   IMAGE ZOOM
-================================ */
+
+/* =========================================================
+   IMAGE HOVER
+   ========================================================= */
 
 .image-hover {
   transition: 0.45s ease;
@@ -93,51 +147,59 @@ iframe {
   transform: scale(1.06);
 }
 
-/* ================================
+
+/* =========================================================
    SECTION TITLE
-================================ */
+   ========================================================= */
 
 .section-title {
   font-size: 24px;
   font-weight: 800;
+
   display: flex;
   align-items: center;
   gap: 12px;
+
   color: var(--brand-maroon);
 }
 
 .section-title::before {
   content: "";
+
   width: 6px;
   height: 28px;
+
   background: var(--brand-gold);
   border-radius: 10px;
 }
 
-/* ================================
+
+/* =========================================================
    GOLD BORDER
-================================ */
+   ========================================================= */
 
 .gold-border {
   border: 1px solid var(--brand-gold);
 }
 
-/* ================================
+
+/* =========================================================
    PREMIUM BUTTON
-================================ */
+   ========================================================= */
 
 .brand-button {
-  background:
-    linear-gradient(
-      135deg,
-      #ECCA6D,
-      #D8A93A
-    );
+  background: linear-gradient(
+    135deg,
+    #ECCA6D,
+    #D8A93A
+  );
 
   color: #730708;
   font-weight: 700;
+
   border-radius: 999px;
   padding: 10px 22px;
+
   transition: 0.3s ease;
 }
 
@@ -145,34 +207,32 @@ iframe {
   transform: scale(1.05);
 }
 
-/* ================================
+
+/* =========================================================
    BRAND HEADER
-================================ */
+   ========================================================= */
 
 .brand-header {
-  background:
-    linear-gradient(
-      135deg,
-      #730708,
-      #4A0405
-    );
+  background: linear-gradient(
+    135deg,
+    #730708,
+    #4A0405
+  );
 
   color: white;
 }
 
-/* ================================
-   BREAKING BAR
-================================ */
+
+/* =========================================================
+   BREAKING NEWS BAR
+   ========================================================= */
 
 .breaking-bar {
   background: #730708;
   color: #FDF8F8;
 
-  border-top:
-    1px solid rgba(236, 202, 109, 0.3);
-
-  border-bottom:
-    1px solid rgba(236, 202, 109, 0.3);
+  border-top: 1px solid rgba(236, 202, 109, 0.3);
+  border-bottom: 1px solid rgba(236, 202, 109, 0.3);
 }
 
 .breaking-label {
@@ -181,9 +241,58 @@ iframe {
   font-weight: 800;
 }
 
-/* ================================
+
+/* =========================================================
+   BREAKING NEWS TRACK
+   ========================================================= */
+
+.breaking-track {
+  display: flex;
+  width: max-content;
+
+  animation: breaking-loop 2s linear infinite;
+}
+
+.breaking-group {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.breaking-item {
+  display: flex;
+  align-items: center;
+
+  gap: 25px;
+  padding-right: 40px;
+
+  white-space: nowrap;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  color: #27272a;
+}
+
+.breaking-item span {
+  color: #dc2626;
+  font-size: 22px;
+}
+
+@keyframes breaking-loop {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+
+/* =========================================================
    TICKER
-================================ */
+   ========================================================= */
 
 @keyframes ticker {
   from {
@@ -196,122 +305,529 @@ iframe {
 }
 
 .ticker-animation {
-  animation:
-    ticker 25s linear infinite;
+  animation: ticker 25s linear infinite;
 }
 
-/* ================================
-   ARTICLE CONTENT
-================================ */
+
+/* =========================================================
+   ARTICLE CONTENT — BASE
+   ========================================================= */
 
 .article-content {
-  color: #27272a;
-  min-width: 0;
+  width: 100%;
   max-width: 100%;
+  min-width: 0;
+
+  color: #27272a;
+
+  overflow-wrap: anywhere;
+  word-break: break-word;
+
+  line-height: 1.8;
+}
+
+
+/* =========================================================
+   ARTICLE PARAGRAPH
+   ========================================================= */
+
+.article-content p {
+  font-size: 19px;
+  line-height: 1.9;
+
+  margin-top: 0;
+  margin-bottom: 1rem;
+
+  color: #3f3f46;
+
+  overflow-wrap: anywhere;
+}
+
+
+/* =========================================================
+   ARTICLE HEADINGS
+   ========================================================= */
+
+.article-content h1,
+.article-content h2,
+.article-content h3 {
+  font-weight: 800;
+  line-height: 1.3;
+
+  color: #18181b;
+
+  margin-top: 1.8rem;
+  margin-bottom: 1rem;
 }
 
 .article-content h1 {
   font-size: 42px;
   font-weight: 900;
   line-height: 1.25;
-  margin: 45px 0 25px;
-  color: #18181b;
+
+  margin-top: 45px;
+  margin-bottom: 25px;
 }
 
 .article-content h2 {
   font-size: 32px;
-  font-weight: 800;
-  line-height: 1.3;
-  margin: 40px 0 20px;
-  color: #18181b;
 }
 
 .article-content h3 {
   font-size: 24px;
-  font-weight: 700;
-  margin: 30px 0 15px;
   color: #27272a;
 }
 
-.article-content p {
-  font-size: 19px;
-  line-height: 1.9;
-  margin: 22px 0;
-  color: #3f3f46;
 
-  overflow-wrap: anywhere;
-}
+/* =========================================================
+   ARTICLE STRONG
+   ========================================================= */
 
 .article-content strong {
   font-weight: 800;
   color: #18181b;
 }
 
+
+/* =========================================================
+   ARTICLE LINKS
+   ========================================================= */
+
+.article-content a {
+  text-decoration: underline;
+
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+
+/* =========================================================
+   ARTICLE LISTS
+   ========================================================= */
+
 .article-content ul {
-  list-style: disc;
-  padding-left: 35px;
-  margin: 25px 0;
+  list-style-type: disc;
+
+  padding-left: 1.5rem;
+  margin: 1rem 0;
 }
 
 .article-content ol {
-  list-style: decimal;
-  padding-left: 35px;
-  margin: 25px 0;
+  list-style-type: decimal;
+
+  padding-left: 1.5rem;
+  margin: 1rem 0;
 }
 
 .article-content li {
   font-size: 18px;
   line-height: 1.8;
-  margin: 10px 0;
+
+  margin: 10px 0 0.35rem;
 
   overflow-wrap: anywhere;
 }
 
+
+/* =========================================================
+   ARTICLE BLOCKQUOTE
+   ========================================================= */
+
 .article-content blockquote {
-  border-left: 5px solid #730708;
-  background: #faf5f5;
+  margin: 1.5rem 0;
+
   padding: 20px 25px;
-  margin: 35px 0;
+
+  border-left: 5px solid #730708;
+
+  background: #faf5f5;
+
   border-radius: 10px;
+
+  font-style: italic;
 }
 
+
+/* =========================================================
+   ARTICLE HR
+   ========================================================= */
+
 .article-content hr {
-  margin: 45px 0;
-  border-color: #e4e4e7;
+  border: 0;
+  border-top: 1px solid #d4d4d8;
+
+  margin: 2rem 0;
 }
+
+
+/* =========================================================
+   ARTICLE IMAGES
+   ========================================================= */
 
 .article-content img {
   display: block;
-  width: 100%;
-  max-width: 100%;
-  height: auto;
-  border-radius: 16px;
-  margin: 30px 0;
+
+  max-width: 100% !important;
+  width: auto;
+
+  height: auto !important;
+
+  margin-left: auto;
+  margin-right: auto;
+
+  object-fit: contain;
 }
 
-/* Tables */
-.article-content table {
+.article-content figure {
   width: 100%;
   max-width: 100%;
+
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.article-content figure.image {
+  margin: 1.5rem auto;
+  max-width: 100%;
+}
+
+.article-content figure.image.image_resized {
+  max-width: 100%;
+}
+
+.article-content figure.image img {
+  display: block;
+
+  height: auto;
+  max-width: 100%;
+}
+
+.article-content figure.image.image-style-inline {
+  display: inline-block;
+}
+
+.article-content figure.image.image-style-block {
+  display: block;
+
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.article-content figure.image.image-style-side {
+  float: right;
+
+  width: 50%;
+
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.article-content figcaption {
+  text-align: center;
+
+  font-size: 0.875rem;
+  opacity: 0.7;
+
+  margin-top: 0.5rem;
+}
+
+
+/* =========================================================
+   ARTICLE TABLES
+   ========================================================= */
+
+.article-content table {
+  display: block;
+
+  width: 100%;
+  max-width: 100%;
+
+  overflow-x: auto;
+
+  border-collapse: collapse;
+
+  -webkit-overflow-scrolling: touch;
+}
+
+.article-content figure.table {
+  width: 100%;
+  max-width: 100%;
+
+  overflow-x: auto;
+
+  margin: 1.5rem 0;
+
+  -webkit-overflow-scrolling: touch;
+}
+
+.article-content figure.table table {
+  width: 100%;
   border-collapse: collapse;
 }
 
-/* Links / long URLs */
-.article-content a {
-  overflow-wrap: anywhere;
+.article-content figure.table th,
+.article-content figure.table td {
+  border: 1px solid #d4d4d8;
+
+  padding: 0.6rem 0.75rem;
+
+  text-align: left;
 }
 
-/* Code */
+
+/* =========================================================
+   ARTICLE CODE
+   ========================================================= */
+
 .article-content pre {
   max-width: 100%;
+
   overflow-x: auto;
+
+  padding: 1rem;
+
+  border-radius: 0.75rem;
+
+  background: #18181b;
+  color: white;
+
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+
+  -webkit-overflow-scrolling: touch;
+}
+
+.article-content code {
   overflow-wrap: anywhere;
 }
 
-/* ================================
+
+/* =========================================================
+   ARTICLE VIDEO
+   ========================================================= */
+
+.article-content video {
+  display: block;
+
+  width: 100%;
+  max-width: 100%;
+
+  height: auto;
+}
+
+.article-content .article-direct-video video {
+  display: block;
+
+  width: 100%;
+  max-width: 100%;
+
+  height: auto;
+
+  border-radius: 12px;
+  background: #000;
+}
+
+
+/* =========================================================
+   ARTICLE MEDIA / EMBEDS
+   ========================================================= */
+
+.article-media {
+  width: 100%;
+  max-width: 100%;
+
+  margin: 28px 0;
+}
+
+.article-media-wrapper {
+  position: relative;
+
+  width: 100%;
+
+  aspect-ratio: 16 / 9;
+
+  overflow: hidden;
+
+  border-radius: 12px;
+
+  background: #000;
+}
+
+.article-media-wrapper iframe {
+  position: absolute;
+
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  border: 0;
+
+  display: block;
+}
+
+.article-content .article-media {
+  width: 100%;
+  max-width: 100%;
+
+  margin: 1.5rem 0;
+}
+
+.article-content .article-media-wrapper {
+  position: relative;
+
+  width: 100%;
+
+  aspect-ratio: 16 / 9;
+
+  overflow: hidden;
+
+  border-radius: 0.75rem;
+}
+
+.article-content .article-media-wrapper iframe {
+  width: 100%;
+  height: 100%;
+
+  border: 0;
+}
+
+
+/* =========================================================
+   ARTICLE IFRAME
+   ========================================================= */
+
+.article-content iframe {
+  display: block;
+
+  width: 100%;
+  max-width: 100%;
+}
+
+
+/* =========================================================
+   SPOTIFY
+   ========================================================= */
+
+.article-spotify-wrapper {
+  width: 100%;
+
+  min-height: 152px;
+
+  overflow: hidden;
+
+  border-radius: 12px;
+}
+
+.article-spotify-wrapper iframe {
+  width: 100%;
+
+  min-height: 152px;
+
+  border: 0;
+
+  display: block;
+}
+
+.article-content .article-spotify-wrapper {
+  width: 100%;
+
+  overflow: hidden;
+
+  border-radius: 0.75rem;
+}
+
+.article-content .article-spotify-wrapper iframe {
+  width: 100%;
+
+  min-height: 352px;
+
+  border: 0;
+}
+
+
+/* =========================================================
+   SOUNDCLOUD
+   ========================================================= */
+
+.article-soundcloud-wrapper {
+  width: 100%;
+
+  min-height: 166px;
+
+  overflow: hidden;
+
+  border-radius: 12px;
+}
+
+.article-soundcloud-wrapper iframe {
+  width: 100%;
+  height: 166px;
+
+  border: 0;
+
+  display: block;
+}
+
+
+/* =========================================================
+   INSTAGRAM / SOCIAL
+   ========================================================= */
+
+.article-social-wrapper {
+  width: 100%;
+  max-width: 550px;
+
+  margin: 0 auto;
+
+  overflow: hidden;
+}
+
+.article-social-wrapper iframe {
+  width: 100%;
+
+  min-height: 600px;
+
+  border: 0;
+
+  display: block;
+}
+
+.article-content .article-social-wrapper {
+  width: 100%;
+
+  overflow: hidden;
+}
+
+.article-content .article-social-wrapper iframe {
+  width: 100%;
+
+  min-height: 500px;
+
+  border: 0;
+}
+
+
+/* =========================================================
+   UNKNOWN MEDIA
+   ========================================================= */
+
+.article-unknown-media {
+  padding: 16px;
+
+  border-radius: 10px;
+
+  background: #f4f4f5;
+}
+
+.article-unknown-media a {
+  font-weight: 600;
+}
+
+
+/* =========================================================
    CKEDITOR CONTENT
-================================ */
+   ========================================================= */
 
 .ck-content {
   max-width: 100%;
@@ -321,18 +837,21 @@ iframe {
 .ck-content h1 {
   font-size: 2.2rem;
   font-weight: 800;
+
   margin: 1rem 0;
 }
 
 .ck-content h2 {
   font-size: 1.8rem;
   font-weight: 700;
+
   margin: 1rem 0;
 }
 
 .ck-content h3 {
   font-size: 1.4rem;
   font-weight: 700;
+
   margin: 0.8rem 0;
 }
 
@@ -360,81 +879,6 @@ iframe {
   max-width: 100%;
 }
 
-/* ================================
-   MOBILE
-================================ */
-
-@media (max-width: 768px) {
-
-  .container-news {
-    width: 100%;
-    max-width: 100%;
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-
-  .section-title {
-    font-size: 20px;
-  }
-
-  .article-content {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-  }
-
-  .article-content h1 {
-    font-size: 32px;
-    line-height: 1.3;
-  }
-
-  .article-content h2 {
-    font-size: 26px;
-  }
-
-  .article-content h3 {
-    font-size: 21px;
-  }
-
-  .article-content p {
-    font-size: 18px;
-    line-height: 1.8;
-  }
-
-  .article-content ul,
-  .article-content ol {
-    padding-left: 25px;
-  }
-
-  .article-content img {
-    width: 100%;
-    max-width: 100%;
-  }
-}
-
-/* ================================
-   VERY SMALL PHONES
-================================ */
-
-@media (max-width: 480px) {
-
-  .container-news {
-    padding-left: 14px;
-    padding-right: 14px;
-  }
-
-  .article-content h1 {
-    font-size: 28px;
-  }
-
-  .article-content h2 {
-    font-size: 24px;
-  }
-
-  .article-content p {
-    font-size: 17px;
-  }
-}
 
 /* =========================================================
    INFINIA REELS
@@ -443,8 +887,11 @@ iframe {
 .reels-page {
   width: 100%;
   height: 100dvh;
+
   background: #000;
+
   overflow: hidden;
+
   position: relative;
 }
 
@@ -472,6 +919,7 @@ iframe {
   min-height: 100dvh;
 
   display: flex;
+
   align-items: center;
   justify-content: center;
 
@@ -486,6 +934,7 @@ iframe {
   height: 100%;
 
   display: flex;
+
   align-items: center;
   justify-content: center;
 }
@@ -505,8 +954,8 @@ iframe {
   border-radius: 8px;
 
   box-shadow:
-    0 0 0 1px rgba(255,255,255,0.06),
-    0 25px 80px rgba(0,0,0,0.8);
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 25px 80px rgba(0, 0, 0, 0.8);
 }
 
 .reel-video {
@@ -520,8 +969,9 @@ iframe {
   background: #050505;
 }
 
+
 /* =========================================================
-   GRADIENTS
+   REEL GRADIENTS
    ========================================================= */
 
 .reel-top-gradient {
@@ -531,12 +981,11 @@ iframe {
 
   height: 180px;
 
-  background:
-    linear-gradient(
-      to bottom,
-      rgba(0,0,0,0.65),
-      transparent
-    );
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.65),
+    transparent
+  );
 
   pointer-events: none;
 }
@@ -548,19 +997,19 @@ iframe {
 
   height: 45%;
 
-  background:
-    linear-gradient(
-      to top,
-      rgba(0,0,0,0.92),
-      rgba(0,0,0,0.55) 35%,
-      transparent
-    );
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.92),
+    rgba(0, 0, 0, 0.55) 35%,
+    transparent
+  );
 
   pointer-events: none;
 }
 
+
 /* =========================================================
-   BRAND
+   REEL BRAND
    ========================================================= */
 
 .reel-brand {
@@ -570,6 +1019,7 @@ iframe {
   left: 18px;
 
   display: flex;
+
   flex-direction: column;
 
   line-height: 1;
@@ -579,14 +1029,13 @@ iframe {
   letter-spacing: 0.4px;
 
   text-shadow:
-    0 2px 8px rgba(0,0,0,0.7);
+    0 2px 8px rgba(0, 0, 0, 0.7);
 
   z-index: 5;
 }
 
 .brand-red {
   color: #e31b35;
-
   font-size: 17px;
 }
 
@@ -600,8 +1049,9 @@ iframe {
   letter-spacing: 1.2px;
 }
 
+
 /* =========================================================
-   CATEGORY
+   REEL CATEGORY
    ========================================================= */
 
 .reel-category {
@@ -614,7 +1064,7 @@ iframe {
 
   border-radius: 5px;
 
-  background: rgba(200,16,46,0.9);
+  background: rgba(200, 16, 46, 0.9);
 
   color: #fff;
 
@@ -626,8 +1076,9 @@ iframe {
   z-index: 5;
 }
 
+
 /* =========================================================
-   ACTION BUTTONS
+   REEL ACTIONS
    ========================================================= */
 
 .reel-actions {
@@ -637,6 +1088,7 @@ iframe {
   bottom: 120px;
 
   display: flex;
+
   flex-direction: column;
 
   align-items: center;
@@ -657,6 +1109,7 @@ iframe {
   cursor: pointer;
 
   display: flex;
+
   flex-direction: column;
 
   align-items: center;
@@ -687,22 +1140,23 @@ iframe {
 
   border-radius: 50%;
 
-  background: rgba(35,35,35,0.85);
+  background: rgba(35, 35, 35, 0.85);
 
   backdrop-filter: blur(10px);
 
   font-size: 22px;
 
   box-shadow:
-    0 5px 20px rgba(0,0,0,0.4);
+    0 5px 20px rgba(0, 0, 0, 0.4);
 }
 
 .share-icon {
   font-size: 25px;
 }
 
+
 /* =========================================================
-   CONTENT
+   REEL CONTENT
    ========================================================= */
 
 .reel-content {
@@ -738,25 +1192,22 @@ iframe {
 
   border-radius: 50%;
 
-  background:
-    linear-gradient(
-      135deg,
-      #c8102e,
-      #790016
-    );
+  background: linear-gradient(
+    135deg,
+    #c8102e,
+    #790016
+  );
 
   color: #fff;
 
   font-size: 17px;
-
   font-weight: 900;
 
-  border: 1px solid rgba(255,255,255,0.35);
+  border: 1px solid rgba(255, 255, 255, 0.35);
 }
 
 .author-name {
   font-size: 12px;
-
   font-weight: 700;
 }
 
@@ -772,34 +1223,35 @@ iframe {
   margin: 0;
 
   font-size: 20px;
-
   line-height: 1.3;
 
   font-weight: 800;
 
   text-shadow:
-    0 2px 8px rgba(0,0,0,0.7);
+    0 2px 8px rgba(0, 0, 0, 0.7);
 }
 
 .reel-description {
   margin: 7px 0 0;
 
   font-size: 12px;
-
   line-height: 1.45;
 
-  color: rgba(255,255,255,0.88);
+  color: rgba(255, 255, 255, 0.88);
 
   display: -webkit-box;
+
   -webkit-line-clamp: 2;
   line-clamp: 2;
+
   -webkit-box-orient: vertical;
 
   overflow: hidden;
 }
 
+
 /* =========================================================
-   PAUSED
+   REEL PAUSED
    ========================================================= */
 
 .reel-paused {
@@ -814,16 +1266,17 @@ iframe {
 
   font-size: 45px;
 
-  color: rgba(255,255,255,0.9);
+  color: rgba(255, 255, 255, 0.9);
 
   pointer-events: none;
 
   text-shadow:
-    0 5px 25px rgba(0,0,0,0.8);
+    0 5px 25px rgba(0, 0, 0, 0.8);
 }
 
+
 /* =========================================================
-   DESKTOP DOTS
+   REEL DESKTOP DOTS
    ========================================================= */
 
 .reels-dots {
@@ -849,7 +1302,7 @@ iframe {
 
   border-radius: 50%;
 
-  background: rgba(255,255,255,0.35);
+  background: rgba(255, 255, 255, 0.35);
 
   transition:
     height 0.25s ease,
@@ -864,29 +1317,285 @@ iframe {
   background: #c8102e;
 }
 
+
+/* =========================================================
+   LOADER
+   ========================================================= */
+
+@keyframes loader-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-loader-fade-in {
+  animation: loader-fade-in 0.15s ease-out;
+}
+
+
+/* =========================================================
+   LOGO BREATHING
+   ========================================================= */
+
+@keyframes logo-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.035);
+  }
+}
+
+.animate-logo-breathe {
+  animation: logo-breathe 1.8s ease-in-out infinite;
+}
+
+
+/* =========================================================
+   LOGO GLOW
+   ========================================================= */
+
+@keyframes logo-glow {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.95);
+  }
+
+  50% {
+    opacity: 0.75;
+    transform: scale(1.08);
+  }
+}
+
+.animate-logo-glow {
+  animation: logo-glow 1.8s ease-in-out infinite;
+}
+
+
+/* =========================================================
+   CRYSTAL RING
+   ========================================================= */
+
+@keyframes crystal-ring {
+  0% {
+    transform: rotate(0deg);
+
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      transparent 250deg,
+      rgba(239, 68, 68, 0.05) 270deg,
+      rgba(239, 68, 68, 0.75) 305deg,
+      rgba(250, 204, 21, 0.9) 325deg,
+      transparent 350deg,
+      transparent 360deg
+    );
+
+    -webkit-mask: radial-gradient(
+      farthest-side,
+      transparent calc(100% - 2px),
+      #000 calc(100% - 1px)
+    );
+
+    mask: radial-gradient(
+      farthest-side,
+      transparent calc(100% - 2px),
+      #000 calc(100% - 1px)
+    );
+  }
+
+  100% {
+    transform: rotate(360deg);
+
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      transparent 250deg,
+      rgba(239, 68, 68, 0.05) 270deg,
+      rgba(239, 68, 68, 0.75) 305deg,
+      rgba(250, 204, 21, 0.9) 325deg,
+      transparent 350deg,
+      transparent 360deg
+    );
+
+    -webkit-mask: radial-gradient(
+      farthest-side,
+      transparent calc(100% - 2px),
+      #000 calc(100% - 1px)
+    );
+
+    mask: radial-gradient(
+      farthest-side,
+      transparent calc(100% - 2px),
+      #000 calc(100% - 1px)
+    );
+  }
+}
+
+.animate-crystal-ring {
+  animation: crystal-ring 2.2s linear infinite;
+}
+
+
+/* =========================================================
+   LOGO GLASS SHINE
+   ========================================================= */
+
+@keyframes logo-shine {
+  0% {
+    left: -100%;
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 0.8;
+  }
+
+  45%,
+  100% {
+    left: 160%;
+    opacity: 0;
+  }
+}
+
+.animate-logo-shine {
+  animation: logo-shine 2.6s ease-in-out infinite;
+}
+
+
+/* =========================================================
+   NAVBAR SWIPE
+   ========================================================= */
+
+@keyframes navbarSwipe {
+  0%,
+  100% {
+    transform: translateY(-50%) translateX(0);
+    opacity: 0.55;
+  }
+
+  50% {
+    transform: translateY(-50%) translateX(-5px);
+    opacity: 1;
+  }
+}
+
+@keyframes navbarArrow {
+  0%,
+  100% {
+    transform: translateX(0);
+    opacity: 0.45;
+  }
+
+  50% {
+    transform: translateX(4px);
+    opacity: 1;
+  }
+}
+
+
 /* =========================================================
    DESKTOP
    ========================================================= */
 
 @media (min-width: 768px) {
-
   .reel-video-container {
     height: min(92dvh, 900px);
-
     border-radius: 10px;
   }
 
   .reel-slide {
     padding-right: 100px;
   }
-
 }
 
+
 /* =========================================================
-   MOBILE
+   TABLET / MOBILE
    ========================================================= */
 
-@media (max-width: 767px) {
+@media (max-width: 768px) {
+  .container-news {
+    width: 100%;
+    max-width: 100%;
+
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .section-title {
+    font-size: 20px;
+  }
+
+  .article-content {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+
+    overflow-x: hidden;
+  }
+
+  .article-content h1 {
+    font-size: 32px;
+    line-height: 1.3;
+  }
+
+  .article-content h2 {
+    font-size: 26px;
+  }
+
+  .article-content h3 {
+    font-size: 21px;
+  }
+
+  .article-content p {
+    font-size: 18px;
+    line-height: 1.8;
+  }
+
+  .article-content ul,
+  .article-content ol {
+    padding-left: 25px;
+  }
+
+  .article-content img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  .article-content iframe {
+    max-width: 100% !important;
+  }
+
+  .article-content figure.image.image-style-side {
+    float: none;
+
+    width: 100%;
+
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .article-content figure.table {
+    overflow-x: auto;
+
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .article-content figure.table table {
+    min-width: 100%;
+  }
+
+  .article-content table {
+    font-size: 0.9rem;
+  }
 
   .reel-video-container {
     width: 100vw;
@@ -932,274 +1641,41 @@ iframe {
   .reels-dots {
     display: none;
   }
-
-}
-/* ==========================================
-   INFINIA PREMIUM LOGO LOADER
-========================================== */
-
-@keyframes loader-fade-in {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-.animate-loader-fade-in {
-  animation: loader-fade-in 0.15s ease-out;
 }
 
 
-/* ==========================================
-   LOGO BREATHING
-========================================== */
+/* =========================================================
+   VERY SMALL PHONES
+   ========================================================= */
 
-@keyframes logo-breathe {
-  0%,
-  100% {
-    transform: scale(1);
+@media (max-width: 480px) {
+  .container-news {
+    padding-left: 14px;
+    padding-right: 14px;
   }
 
-  50% {
-    transform: scale(1.035);
+  .article-content h1 {
+    font-size: 28px;
+  }
+
+  .article-content h2 {
+    font-size: 24px;
+  }
+
+  .article-content p {
+    font-size: 17px;
   }
 }
 
-.animate-logo-breathe {
-  animation: logo-breathe 1.8s ease-in-out infinite;
-}
 
-
-/* ==========================================
-   SOFT RED GLOW
-========================================== */
-
-@keyframes logo-glow {
-  0%,
-  100% {
-    opacity: 0.35;
-    transform: scale(0.95);
-  }
-
-  50% {
-    opacity: 0.75;
-    transform: scale(1.08);
-  }
-}
-
-.animate-logo-glow {
-  animation: logo-glow 1.8s ease-in-out infinite;
-}
-
-
-/* ==========================================
-   CRYSTAL RING
-========================================== */
-
-@keyframes crystal-ring {
-  0% {
-    transform: rotate(0deg);
-    background:
-      conic-gradient(
-        from 0deg,
-        transparent 0deg,
-        transparent 250deg,
-        rgba(239, 68, 68, 0.05) 270deg,
-        rgba(239, 68, 68, 0.75) 305deg,
-        rgba(250, 204, 21, 0.9) 325deg,
-        transparent 350deg,
-        transparent 360deg
-      );
-    -webkit-mask:
-      radial-gradient(
-        farthest-side,
-        transparent calc(100% - 2px),
-        #000 calc(100% - 1px)
-      );
-    mask:
-      radial-gradient(
-        farthest-side,
-        transparent calc(100% - 2px),
-        #000 calc(100% - 1px)
-      );
-  }
-
-  100% {
-    transform: rotate(360deg);
-    background:
-      conic-gradient(
-        from 0deg,
-        transparent 0deg,
-        transparent 250deg,
-        rgba(239, 68, 68, 0.05) 270deg,
-        rgba(239, 68, 68, 0.75) 305deg,
-        rgba(250, 204, 21, 0.9) 325deg,
-        transparent 350deg,
-        transparent 360deg
-      );
-    -webkit-mask:
-      radial-gradient(
-        farthest-side,
-        transparent calc(100% - 2px),
-        #000 calc(100% - 1px)
-      );
-    mask:
-      radial-gradient(
-        farthest-side,
-        transparent calc(100% - 2px),
-        #000 calc(100% - 1px)
-      );
-  }
-}
-
-.animate-crystal-ring {
-  animation: crystal-ring 2.2s linear infinite;
-}
-
-
-/* ==========================================
-   LOGO GLASS SHINE
-========================================== */
-
-@keyframes logo-shine {
-  0% {
-    left: -100%;
-    opacity: 0;
-  }
-
-  15% {
-    opacity: 0.8;
-  }
-
-  45%,
-  100% {
-    left: 160%;
-    opacity: 0;
-  }
-}
-
-.animate-logo-shine {
-  animation: logo-shine 2.6s ease-in-out infinite;
-}
-
-/* ==========================================
-   RESPONSIVE ARTICLE CONTENT
-========================================== */
-
-.article-content {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-/* ==========================================
-   IMAGES
-========================================== */
-
-.article-content img {
-  display: block;
-
-  max-width: 100% !important;
-  width: auto;
-  height: auto !important;
-
-  margin-left: auto;
-  margin-right: auto;
-
-  object-fit: contain;
-}
-
-/* ==========================================
-   VERY LARGE IMAGES
-========================================== */
-
-.article-content figure {
-  width: 100%;
-  max-width: 100%;
-  margin-left: 0;
-  margin-right: 0;
-}
-
-.article-content figure img {
-  max-width: 100% !important;
-  height: auto !important;
-}
-
-/* ==========================================
-   VIDEOS
-========================================== */
-
-.article-content video {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  height: auto;
-}
-
-/* ==========================================
-   IFRAMES / EMBEDS
-========================================== */
-
-.article-content iframe {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-}
-
-/* ==========================================
-   TABLES
-========================================== */
-
-.article-content table {
-  display: block;
-
-  width: 100%;
-  max-width: 100%;
-
-  overflow-x: auto;
-
-  -webkit-overflow-scrolling: touch;
-}
-
-/* ==========================================
-   PRE / CODE
-========================================== */
-
-.article-content pre {
-  max-width: 100%;
-  overflow-x: auto;
-
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-
-  -webkit-overflow-scrolling: touch;
-}
-
-/* ==========================================
-   LONG LINKS
-========================================== */
-
-.article-content a {
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-/* ==========================================
-   MOBILE
-========================================== */
+/* =========================================================
+   SMALL MOBILE
+   ========================================================= */
 
 @media (max-width: 640px) {
   .article-content {
     font-size: 1rem;
     line-height: 1.75;
-
-    overflow-x: hidden;
   }
 
   .article-content img {
@@ -1213,503 +1689,5 @@ iframe {
 
   .article-content table {
     font-size: 0.9rem;
-  }
-}
-
-/* =====================================================
-   GLOBAL SCROLLBAR HIDE
-===================================================== */
-
-* {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-*::-webkit-scrollbar {
-  display: none;
-}
-
-/* ============================================================
-   ARTICLE MEDIA
-   ============================================================ */
-
-.article-media {
-  width: 100%;
-  max-width: 100%;
-  margin: 28px 0;
-}
-
-.article-media-wrapper {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  border-radius: 12px;
-  background: #000;
-}
-
-.article-media-wrapper iframe {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  border: 0;
-  display: block;
-}
-
-
-/* ============================================================
-   DIRECT VIDEO
-   ============================================================ */
-
-.article-direct-video video {
-  width: 100%;
-  max-width: 100%;
-  height: auto;
-  display: block;
-  border-radius: 12px;
-  background: #000;
-}
-
-
-/* ============================================================
-   SPOTIFY
-   ============================================================ */
-
-.article-spotify-wrapper {
-  width: 100%;
-  min-height: 152px;
-  overflow: hidden;
-  border-radius: 12px;
-}
-
-.article-spotify-wrapper iframe {
-  width: 100%;
-  min-height: 152px;
-  border: 0;
-  display: block;
-}
-
-
-/* ============================================================
-   SOUNDCLOUD
-   ============================================================ */
-
-.article-soundcloud-wrapper {
-  width: 100%;
-  min-height: 166px;
-  overflow: hidden;
-  border-radius: 12px;
-}
-
-.article-soundcloud-wrapper iframe {
-  width: 100%;
-  height: 166px;
-  border: 0;
-  display: block;
-}
-
-
-/* ============================================================
-   INSTAGRAM / SOCIAL
-   ============================================================ */
-
-.article-social-wrapper {
-  width: 100%;
-  max-width: 550px;
-  margin: 0 auto;
-  overflow: hidden;
-}
-
-.article-social-wrapper iframe {
-  width: 100%;
-  min-height: 600px;
-  border: 0;
-  display: block;
-}
-
-
-/* ============================================================
-   UNKNOWN MEDIA
-   ============================================================ */
-
-.article-unknown-media {
-  padding: 16px;
-  border-radius: 10px;
-  background: #f4f4f5;
-}
-
-.article-unknown-media a {
-  font-weight: 600;
-}
-
-/* =========================================================
-   CKEDITOR PUBLIC ARTICLE CONTENT
-========================================================= */
-
-.article-content {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-
-  overflow-wrap: anywhere;
-  word-break: break-word;
-
-  line-height: 1.8;
-}
-
-
-/* =========================================================
-   PARAGRAPH
-========================================================= */
-
-.article-content p {
-  margin-top: 0;
-  margin-bottom: 1rem;
-}
-
-
-/* =========================================================
-   HEADINGS
-========================================================= */
-
-.article-content h1,
-.article-content h2,
-.article-content h3 {
-  font-weight: 800;
-  line-height: 1.3;
-  margin-top: 1.8rem;
-  margin-bottom: 1rem;
-}
-
-.article-content h1 {
-  font-size: 2rem;
-}
-
-.article-content h2 {
-  font-size: 1.6rem;
-}
-
-.article-content h3 {
-  font-size: 1.3rem;
-}
-
-
-/* =========================================================
-   LINKS
-========================================================= */
-
-.article-content a {
-  text-decoration: underline;
-  overflow-wrap: anywhere;
-}
-
-
-/* =========================================================
-   LISTS
-========================================================= */
-
-.article-content ul {
-  list-style-type: disc;
-  padding-left: 1.5rem;
-  margin: 1rem 0;
-}
-
-.article-content ol {
-  list-style-type: decimal;
-  padding-left: 1.5rem;
-  margin: 1rem 0;
-}
-
-.article-content li {
-  margin-bottom: 0.35rem;
-}
-
-
-/* =========================================================
-   BLOCKQUOTE
-========================================================= */
-
-.article-content blockquote {
-  margin: 1.5rem 0;
-  padding: 1rem 1.25rem;
-  border-left: 4px solid #ecca6d;
-  background: rgba(0, 0, 0, 0.04);
-  font-style: italic;
-}
-
-
-/* =========================================================
-   IMAGES
-========================================================= */
-
-/*
-   IMPORTANT:
-   CKEditor image width ko override mat karo.
-*/
-
-.article-content figure.image {
-  margin: 1.5rem auto;
-  max-width: 100%;
-}
-
-
-/*
-   CKEditor resized image
-
-   Example:
-   <figure class="image image_resized"
-           style="width:50%;">
-*/
-
-.article-content figure.image.image_resized {
-  max-width: 100%;
-}
-
-
-/*
-   Actual image
-*/
-
-.article-content figure.image img {
-  display: block;
-  height: auto;
-  max-width: 100%;
-}
-
-
-/*
-   Inline image
-*/
-
-.article-content figure.image.image-style-inline {
-  display: inline-block;
-}
-
-
-/*
-   Block image
-*/
-
-.article-content figure.image.image-style-block {
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-
-/*
-   Side image
-
-   CKEditor may generate this class depending
-   on ImageStyle configuration.
-*/
-
-.article-content figure.image.image-style-side {
-  float: right;
-  width: 50%;
-  margin-left: 1.5rem;
-  margin-bottom: 1rem;
-}
-
-
-/* =========================================================
-   IMAGE CAPTION
-========================================================= */
-
-.article-content figcaption {
-  text-align: center;
-  font-size: 0.875rem;
-  opacity: 0.7;
-  margin-top: 0.5rem;
-}
-
-
-/* =========================================================
-   TABLE
-========================================================= */
-
-.article-content figure.table {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: auto;
-  margin: 1.5rem 0;
-}
-
-.article-content figure.table table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.article-content figure.table th,
-.article-content figure.table td {
-  border: 1px solid #d4d4d8;
-  padding: 0.6rem 0.75rem;
-  text-align: left;
-}
-
-
-/* =========================================================
-   HORIZONTAL LINE
-========================================================= */
-
-.article-content hr {
-  border: 0;
-  border-top: 1px solid #d4d4d8;
-  margin: 2rem 0;
-}
-
-
-/* =========================================================
-   PRE / CODE
-========================================================= */
-
-.article-content pre {
-  max-width: 100%;
-  overflow-x: auto;
-  padding: 1rem;
-  border-radius: 0.75rem;
-  background: #18181b;
-  color: white;
-}
-
-.article-content code {
-  overflow-wrap: anywhere;
-}
-
-
-/* =========================================================
-   MEDIA
-========================================================= */
-
-.article-content .article-media {
-  width: 100%;
-  max-width: 100%;
-  margin: 1.5rem 0;
-}
-
-.article-content .article-media-wrapper {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  border-radius: 0.75rem;
-}
-
-.article-content .article-media-wrapper iframe {
-  width: 100%;
-  height: 100%;
-  border: 0;
-}
-
-
-/* =========================================================
-   VIDEO
-========================================================= */
-
-.article-content .article-direct-video video {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  height: auto;
-}
-
-
-/* =========================================================
-   SPOTIFY
-========================================================= */
-
-.article-content .article-spotify-wrapper {
-  width: 100%;
-  overflow: hidden;
-  border-radius: 0.75rem;
-}
-
-.article-content .article-spotify-wrapper iframe {
-  width: 100%;
-  min-height: 352px;
-  border: 0;
-}
-
-
-/* =========================================================
-   INSTAGRAM
-========================================================= */
-
-.article-content .article-social-wrapper {
-  width: 100%;
-  overflow: hidden;
-}
-
-.article-content .article-social-wrapper iframe {
-  width: 100%;
-  min-height: 500px;
-  border: 0;
-}
-
-
-/* =========================================================
-   MOBILE
-========================================================= */
-
-@media (max-width: 768px) {
-
-  .article-content h1 {
-    font-size: 1.65rem;
-  }
-
-  .article-content h2 {
-    font-size: 1.4rem;
-  }
-
-  .article-content h3 {
-    font-size: 1.2rem;
-  }
-
-  /*
-     Side image mobile par float nahi karegi.
-  */
-
-  .article-content figure.image.image-style-side {
-    float: none;
-    width: 100%;
-    margin-left: 0;
-    margin-right: 0;
-  }
-
-  /*
-     Tables horizontally scroll hongi.
-  */
-
-  .article-content figure.table {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-}
-
-@keyframes navbarSwipe {
-  0%,
-  100% {
-    transform: translateY(-50%) translateX(0);
-    opacity: 0.55;
-  }
-
-  50% {
-    transform: translateY(-50%) translateX(-5px);
-    opacity: 1;
-  }
-}
-
-@keyframes navbarArrow {
-  0%,
-  100% {
-    transform: translateX(0);
-    opacity: 0.45;
-  }
-
-  50% {
-    transform: translateX(4px);
-    opacity: 1;
   }
 }
