@@ -1,4 +1,4 @@
-const CACHE_NAME = "infinia-bharat-news-v2";
+const CACHE_NAME = "infinia-bharat-news-v3";
 
 const STATIC_CACHE = [
   "/",
@@ -11,9 +11,17 @@ const STATIC_CACHE = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_CACHE);
-    })
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => {
+        return cache.addAll(STATIC_CACHE);
+      })
+      .catch((error) => {
+        console.error(
+          "Service Worker cache install failed:",
+          error
+        );
+      })
   );
 
   self.skipWaiting();
@@ -32,6 +40,9 @@ self.addEventListener("activate", (event) => {
           cacheNames
             .filter(
               (name) =>
+                name.startsWith(
+                  "infinia-bharat-news-"
+                ) &&
                 name !== CACHE_NAME
             )
             .map((name) =>
@@ -39,9 +50,10 @@ self.addEventListener("activate", (event) => {
             )
         );
       })
+      .then(() => {
+        return self.clients.claim();
+      })
   );
-
-  self.clients.claim();
 });
 
 // ======================================================
@@ -51,17 +63,14 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const request = event.request;
 
-  // Only GET
+  // Only GET requests
   if (request.method !== "GET") {
     return;
   }
 
   const url = new URL(request.url);
 
-  // ====================================================
-  // EXTERNAL REQUESTS
-  // ====================================================
-
+  // Only handle same-origin requests
   if (
     url.origin !==
     self.location.origin
@@ -70,7 +79,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   // ====================================================
-  // NEVER CACHE API / FIREBASE
+  // NEVER INTERCEPT API / FIREBASE
   // ====================================================
 
   if (
@@ -86,24 +95,21 @@ self.addEventListener("fetch", (event) => {
   }
 
   // ====================================================
-  // NEXT INTERNAL REQUESTS
+  // NEVER INTERCEPT NEXT INTERNAL REQUESTS
   // ====================================================
 
-  // Let Next.js handle RSC / data requests.
   if (
-    url.searchParams.has("_rsc") ||
     url.pathname.startsWith(
       "/_next/"
-    )
+    ) ||
+    url.searchParams.has("_rsc")
   ) {
     return;
   }
 
   // ====================================================
-  // HTML PAGES
-  //
-  // Network first
-  // Offline -> cached page
+  // PAGE NAVIGATION
+  // NETWORK FIRST
   // ====================================================
 
   if (
@@ -114,7 +120,7 @@ self.addEventListener("fetch", (event) => {
         .then((response) => {
           if (
             response &&
-            response.status === 200
+            response.ok
           ) {
             const clone =
               response.clone();
@@ -126,7 +132,8 @@ self.addEventListener("fetch", (event) => {
                   request,
                   clone
                 );
-              });
+              })
+              .catch(() => {});
           }
 
           return response;
@@ -141,8 +148,22 @@ self.addEventListener("fetch", (event) => {
             return cached;
           }
 
-          return (
-            caches.match("/")
+          const home =
+            await caches.match("/");
+
+          if (home) {
+            return home;
+          }
+
+          return new Response(
+            "Offline",
+            {
+              status: 503,
+              headers: {
+                "Content-Type":
+                  "text/plain; charset=utf-8",
+              },
+            }
           );
         })
     );
@@ -152,33 +173,31 @@ self.addEventListener("fetch", (event) => {
 
   // ====================================================
   // STATIC ASSETS
-  //
-  // Cache first
+  // CACHE FIRST
   // ====================================================
 
-  if (
-    url.pathname.startsWith(
-      "/_next/static/"
-    ) ||
+  const isStaticAsset =
     url.pathname.startsWith(
       "/icons/"
     ) ||
-    url.pathname.match(
-      /\.(png|jpg|jpeg|webp|svg|gif|ico|woff2?)$/i
-    )
-  ) {
+    /\.(png|jpg|jpeg|webp|svg|gif|ico|woff|woff2)$/i.test(
+      url.pathname
+    );
+
+  if (isStaticAsset) {
     event.respondWith(
-      caches.match(request).then(
-        (cached) => {
+      caches
+        .match(request)
+        .then((cached) => {
           if (cached) {
             return cached;
           }
 
-          return fetch(request).then(
-            (response) => {
+          return fetch(request)
+            .then((response) => {
               if (
                 response &&
-                response.status === 200
+                response.ok
               ) {
                 const clone =
                   response.clone();
@@ -190,16 +209,20 @@ self.addEventListener("fetch", (event) => {
                       request,
                       clone
                     );
-                  });
+                  })
+                  .catch(() => {});
               }
 
               return response;
-            }
-          );
-        }
-      )
+            });
+        })
     );
 
     return;
   }
+
+  // ====================================================
+  // EVERYTHING ELSE
+  // LET BROWSER HANDLE IT
+  // ====================================================
 });
