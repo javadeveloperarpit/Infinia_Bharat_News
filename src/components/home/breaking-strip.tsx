@@ -49,7 +49,17 @@ export default function BreakingStrip({
 }: BreakingStripProps) {
 
   const [news, setNews] =
-    useState<BreakingNewsItem[]>([]);
+  useState<BreakingNewsItem[]>(() => {
+    const active = initialNews.filter(
+      (item) => item.active
+    );
+
+    return [
+      ...active,
+      ...active,
+      ...active,
+    ];
+  });
 
   const [position, setPosition] =
     useState(0);

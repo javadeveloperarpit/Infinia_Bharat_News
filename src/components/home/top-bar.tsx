@@ -160,17 +160,16 @@ export default function TopBar() {
       "
     >
       <div
-        className="
-          container-news
-          min-h-10
-          flex
-          flex-wrap
-          items-center
-          justify-between
-          gap-2
-          py-2
-        "
-      >
+  className="
+    container-news
+    min-h-10
+    flex
+    items-center
+    justify-between
+    gap-2
+    py-2
+  "
+>
 
         {/* ==========================================
             LEFT
@@ -231,25 +230,27 @@ export default function TopBar() {
         ========================================== */}
 
         <div
-          className="
-            hidden
-            lg:flex
-            items-center
-            text-xs
-            font-semibold
-            tracking-wide
-            text-[#ECCA6D]
-          "
-          aria-hidden="true"
-        >
-          <span>
-            {typing}
-
-            <span className="animate-pulse">
-              |
-            </span>
-          </span>
-        </div>
+  className="
+    hidden
+    lg:flex
+    items-center
+    justify-center
+    w-[320px]
+    min-w-[320px]
+    h-5
+    overflow-hidden
+    text-xs
+    font-semibold
+    tracking-wide
+    text-[#ECCA6D]
+  "
+  aria-hidden="true"
+>
+  <span className="whitespace-nowrap">
+    {typing}
+    <span className="animate-pulse">|</span>
+  </span>
+</div>
 
         {/* ==========================================
             RIGHT
