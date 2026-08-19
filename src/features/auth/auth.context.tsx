@@ -1,105 +1,65 @@
 "use client";
 
 import {
- createContext,
- useContext,
- useEffect,
- useState
+  createContext,
+  useContext,
+  useEffect,
+  useState,
 } from "react";
 
-
 import {
- onAuthStateChanged,
- User as FirebaseUser
+  onAuthStateChanged,
+  User as FirebaseUser,
 } from "firebase/auth";
-
 
 import { auth } from "@/lib/firebase/firebase";
 
-
 interface AuthContextType {
-
- user: FirebaseUser | null;
-
- loading:boolean;
-
+  user: FirebaseUser | null;
+  loading: boolean;
 }
 
-
-const AuthContext =
-createContext<AuthContextType>({
- user:null,
- loading:true
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
 });
 
+export function AuthProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [user, setUser] =
+    useState<FirebaseUser | null>(null);
 
+  const [loading, setLoading] =
+    useState(true);
 
-export function AuthProvider(
- {
- children
- }:{
- children:React.ReactNode
- }
-){
+  useEffect(() => {
+    const unsubscribe =
+      onAuthStateChanged(
+        auth,
+        (currentUser) => {
+          setUser(currentUser);
+          setLoading(false);
+        }
+      );
 
- const [user,setUser]
- =
- useState<FirebaseUser|null>(null);
+    return unsubscribe;
+  }, []);
 
-
- const [loading,setLoading]
- =
- useState(true);
-
-
-
- useEffect(()=>{
-
-
-  const unsubscribe =
-  onAuthStateChanged(
-  auth,
-  (currentUser)=>{
-
-
-    setUser(currentUser);
-
-    setLoading(false);
-
-  }
-);
-
-
-
-  return unsubscribe;
-
-
- },[]);
-
-
-
- return (
-
-  <AuthContext.Provider
-   value={{
-    user,
-    loading
-   }}
-  >
-
-   {children}
-
-  </AuthContext.Provider>
-
- );
-
-
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-
-
-export function useAuth(){
-
- return useContext(AuthContext);
-
+export function useAuth() {
+  return useContext(AuthContext);
 }

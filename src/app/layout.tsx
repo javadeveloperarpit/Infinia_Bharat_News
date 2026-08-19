@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import "./globals.css";
 
-import Providers from "./providers";
+
 import { siteConfig } from "@/config/site";
 import PageLoadingBar from "@/components/navigation/PageLoadingBar";
 import ServiceWorkerRegister from "@/components/pwa/service-worker-register";
@@ -228,9 +228,9 @@ export default function RootLayout({
   />
         <PageLoadingBar />
 
-        <Providers>
+        
           {children}
-        </Providers>
+        
       </body>
     </html>
   );
