@@ -193,7 +193,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body className="min-h-screen antialiased">
+      <body className="min-h-screen antialiased overflow-x-hidden">
         <ServiceWorkerRegister />
 
 <script

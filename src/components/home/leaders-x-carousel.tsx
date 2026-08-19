@@ -13,6 +13,8 @@ import {
   useState,
 } from "react";
 
+import Image from "next/image";
+
 interface XPost {
   person: string;
   handle: string;
@@ -104,8 +106,11 @@ function formatPostDate(date: string) {
    PROFILE IMAGE
 ========================================================= */
 
-function getProfileImage(handle: string) {
-  return `https://unavatar.io/x/${handle}`;
+function getProfileImage(
+  handle: string,
+  size = 64
+) {
+  return `https://unavatar.io/x/${handle}?size=${size}`;
 }
 
 /* =========================================================
@@ -965,16 +970,18 @@ function XCard({
             sm:w-9
           "
         >
-          <img
-            src={profileImage}
-            alt={post.person}
-            loading="lazy"
-            className="
-              h-full
-              w-full
-              object-cover
-            "
-          />
+          <Image
+  src={profileImage}
+  alt={post.person}
+  width={64}
+  height={64}
+  sizes="(max-width: 640px) 28px, 36px"
+  className="
+    h-full
+    w-full
+    object-cover
+  "
+/>
         </div>
 
         <div
@@ -1073,20 +1080,18 @@ function XCard({
             sm:mt-2
           "
         >
-          <img
-            src={post.image}
-            alt=""
-            loading="lazy"
-            className="
-              h-[42px]
-              w-full
-              object-cover
-              transition-transform
-              duration-500
-              group-hover:scale-[1.03]
-              sm:h-[78px]
-            "
-          />
+           <Image
+    src={profileImage}
+    alt={post.person}
+    width={64}
+    height={64}
+    sizes="(max-width: 640px) 28px, 36px"
+    className="
+      h-full
+      w-full
+      object-cover
+    "
+  />
         </div>
       )}
 
