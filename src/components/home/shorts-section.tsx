@@ -1,10 +1,7 @@
 "use client";
 
 import {
-  useCallback,
-  useEffect,
   useRef,
-  useState,
 } from "react";
 
 import Image from "next/image";
@@ -13,7 +10,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Play,
-  Loader2,
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
@@ -35,36 +31,6 @@ interface ShortsSectionProps {
 }
 
 // ==========================================
-// GET YOUTUBE ID
-// ==========================================
-
-function getYoutubeId(short: Short): string | null {
-  if (short.id) {
-    return short.id;
-  }
-
-  try {
-    const url = new URL(short.url);
-
-    if (url.hostname.includes("youtube.com")) {
-      if (url.pathname.startsWith("/shorts/")) {
-        return url.pathname.split("/")[2] || null;
-      }
-
-      return url.searchParams.get("v") || null;
-    }
-
-    if (url.hostname === "youtu.be") {
-      return url.pathname.replace("/", "") || null;
-    }
-  } catch {
-    // Ignore invalid URL
-  }
-
-  return null;
-}
-
-// ==========================================
 // COMPONENT
 // ==========================================
 
@@ -75,76 +41,6 @@ export default function ShortsSection({
 
   const carouselRef =
     useRef<HTMLDivElement | null>(null);
-
-  const [playingIndex, setPlayingIndex] =
-    useState<number | null>(null);
-
-  const [loadingIndex, setLoadingIndex] =
-    useState<number | null>(null);
-
-  const timersRef =
-    useRef<
-      Record<
-        number,
-        ReturnType<typeof setTimeout>
-      >
-    >({});
-
-  // ==========================================
-  // CLEAR TIMER
-  // ==========================================
-
-  const clearPlayTimer = useCallback(
-    (index: number) => {
-      const timer = timersRef.current[index];
-
-      if (timer) {
-        clearTimeout(timer);
-        delete timersRef.current[index];
-      }
-    },
-    []
-  );
-
-  // ==========================================
-  // STOP ALL PREVIEWS
-  // ==========================================
-
-  const stopAll = useCallback(() => {
-    Object.keys(timersRef.current).forEach(
-      (key) => {
-        clearPlayTimer(Number(key));
-      }
-    );
-
-    setPlayingIndex(null);
-    setLoadingIndex(null);
-  }, [clearPlayTimer]);
-
-  // ==========================================
-  // DELAYED AUTOPLAY
-  // ==========================================
-
-  const startDelayedPlay = useCallback(
-    (index: number) => {
-      clearPlayTimer(index);
-
-      // Already playing
-      if (playingIndex === index) {
-        return;
-      }
-
-      setLoadingIndex(index);
-
-      timersRef.current[index] = setTimeout(() => {
-        setPlayingIndex(index);
-        setLoadingIndex(null);
-
-        delete timersRef.current[index];
-      }, 1200);
-    },
-    [clearPlayTimer, playingIndex]
-  );
 
   // ==========================================
   // OPEN REEL PAGE
@@ -159,8 +55,6 @@ export default function ShortsSection({
     event.preventDefault();
     event.stopPropagation();
 
-    stopAll();
-
     router.push(
       `/reel/${encodeURIComponent(short.id)}`
     );
@@ -171,7 +65,8 @@ export default function ShortsSection({
   // ==========================================
 
   function getScrollAmount() {
-    const container = carouselRef.current;
+    const container =
+      carouselRef.current;
 
     if (!container) {
       return 0;
@@ -187,7 +82,9 @@ export default function ShortsSection({
     }
 
     const styles =
-      window.getComputedStyle(container);
+      window.getComputedStyle(
+        container
+      );
 
     const gap = parseFloat(
       styles.columnGap ||
@@ -203,21 +100,24 @@ export default function ShortsSection({
   // ==========================================
 
   function handleNext() {
-    const container = carouselRef.current;
+    const container =
+      carouselRef.current;
 
     if (!container) {
       return;
     }
 
-    stopAll();
-
-    const amount = getScrollAmount();
+    const amount =
+      getScrollAmount();
 
     const maxScroll =
       container.scrollWidth -
       container.clientWidth;
 
-    if (container.scrollLeft >= maxScroll - 10) {
+    if (
+      container.scrollLeft >=
+      maxScroll - 10
+    ) {
       container.scrollTo({
         left: 0,
         behavior: "smooth",
@@ -237,17 +137,19 @@ export default function ShortsSection({
   // ==========================================
 
   function handlePrevious() {
-    const container = carouselRef.current;
+    const container =
+      carouselRef.current;
 
     if (!container) {
       return;
     }
 
-    stopAll();
+    const amount =
+      getScrollAmount();
 
-    const amount = getScrollAmount();
-
-    if (container.scrollLeft <= 10) {
+    if (
+      container.scrollLeft <= 10
+    ) {
       container.scrollTo({
         left:
           container.scrollWidth -
@@ -265,129 +167,13 @@ export default function ShortsSection({
   }
 
   // ==========================================
-  // VISIBILITY AUTOPLAY
-  // ==========================================
-
-  useEffect(() => {
-    const container = carouselRef.current;
-
-    if (!container) {
-      return;
-    }
-
-    const cards = Array.from(
-      container.querySelectorAll(
-        "[data-reel-card]"
-      )
-    );
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        let bestVisibleIndex: number | null =
-          null;
-
-        let bestRatio = 0;
-
-        entries.forEach((entry) => {
-          if (
-            entry.isIntersecting &&
-            entry.intersectionRatio >= 0.75 &&
-            entry.intersectionRatio > bestRatio
-          ) {
-            const element =
-              entry.target as HTMLElement;
-
-            bestVisibleIndex = Number(
-              element.dataset.index
-            );
-
-            bestRatio =
-              entry.intersectionRatio;
-          }
-        });
-
-        if (bestVisibleIndex !== null) {
-          startDelayedPlay(bestVisibleIndex);
-        }
-
-        entries.forEach((entry) => {
-          const element =
-            entry.target as HTMLElement;
-
-          const index = Number(
-            element.dataset.index
-          );
-
-          if (
-            !entry.isIntersecting ||
-            entry.intersectionRatio < 0.75
-          ) {
-            clearPlayTimer(index);
-
-            setLoadingIndex((current) =>
-              current === index
-                ? null
-                : current
-            );
-
-            setPlayingIndex((current) =>
-              current === index
-                ? null
-                : current
-            );
-          }
-        });
-      },
-      {
-        root: container,
-        threshold: [
-          0,
-          0.25,
-          0.5,
-          0.75,
-          1,
-        ],
-      }
-    );
-
-    cards.forEach((card) => {
-      observer.observe(card);
-    });
-
-    return () => {
-      observer.disconnect();
-
-      Object.keys(timersRef.current).forEach(
-        (key) => {
-          clearPlayTimer(Number(key));
-        }
-      );
-    };
-  }, [
-    shorts,
-    startDelayedPlay,
-    clearPlayTimer,
-  ]);
-
-  // ==========================================
-  // CLEANUP
-  // ==========================================
-
-  useEffect(() => {
-    return () => {
-      Object.values(
-        timersRef.current
-      ).forEach((timer) => {
-        clearTimeout(timer);
-      });
-    };
-  }, []);
-
-  // ==========================================
   // EMPTY
   // ==========================================
 
-  if (!shorts || shorts.length === 0) {
+  if (
+    !shorts ||
+    shorts.length === 0
+  ) {
     return null;
   }
 
@@ -397,12 +183,17 @@ export default function ShortsSection({
 
   return (
     <section className="w-full">
+
       {/* ======================================
           HEADER
       ====================================== */}
 
       <div className="mb-5 flex items-center justify-between gap-3">
+
         <div className="flex min-w-0 items-center gap-3">
+
+          {/* ICON */}
+
           <div
             className="
               relative
@@ -440,7 +231,10 @@ export default function ShortsSection({
             />
           </div>
 
+          {/* TITLE */}
+
           <div className="min-w-0">
+
             <h2
               className="
                 text-lg
@@ -466,17 +260,29 @@ export default function ShortsSection({
             >
               देश की बड़ी खबरें, अब रील्स में
             </p>
+
           </div>
+
         </div>
 
+        {/* ==================================
+            ACTIONS
+        ================================== */}
+
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+
           {/* DESKTOP ARROWS */}
 
           {shorts.length > 7 && (
             <div className="hidden items-center gap-2 sm:flex">
+
+              {/* PREVIOUS */}
+
               <button
                 type="button"
-                onClick={handlePrevious}
+                onClick={
+                  handlePrevious
+                }
                 aria-label="Previous reels"
                 className="
                   flex
@@ -503,9 +309,13 @@ export default function ShortsSection({
                 />
               </button>
 
+              {/* NEXT */}
+
               <button
                 type="button"
-                onClick={handleNext}
+                onClick={
+                  handleNext
+                }
                 aria-label="Next reels"
                 className="
                   flex
@@ -531,6 +341,7 @@ export default function ShortsSection({
                   strokeWidth={2.5}
                 />
               </button>
+
             </div>
           )}
 
@@ -539,7 +350,6 @@ export default function ShortsSection({
           <button
             type="button"
             onClick={() => {
-              stopAll();
               router.push("/reels");
             }}
             className="
@@ -567,7 +377,9 @@ export default function ShortsSection({
               strokeWidth={2.5}
             />
           </button>
+
         </div>
+
       </div>
 
       {/* ======================================
@@ -581,6 +393,7 @@ export default function ShortsSection({
           overflow-hidden
         "
       >
+
         <div
           ref={carouselRef}
           className="
@@ -601,36 +414,43 @@ export default function ShortsSection({
             scrollbarWidth: "none",
           }}
         >
-          {shorts.map((short, index) => {
-            const youtubeId =
-              getYoutubeId(short);
 
-            const isPlaying =
-              playingIndex === index;
+          {shorts.map(
+            (
+              short,
+              index
+            ) => (
 
-            const isLoading =
-              loadingIndex === index;
-
-            return (
               <article
                 key={`${short.id}-${index}`}
                 data-reel-card
-                data-index={index}
                 onClick={(event) =>
-                  openReel(event, short)
+                  openReel(
+                    event,
+                    short
+                  )
                 }
-                onKeyDown={(event) => {
+                onKeyDown={(
+                  event
+                ) => {
+
                   if (
-                    event.key === "Enter" ||
-                    event.key === " "
+                    event.key ===
+                      "Enter" ||
+                    event.key ===
+                      " "
                   ) {
-                    openReel(event, short);
+                    openReel(
+                      event,
+                      short
+                    );
                   }
+
                 }}
                 tabIndex={0}
-      
                 aria-label={`Open ${
-                  short.title || "reel"
+                  short.title ||
+                  "reel"
                 }`}
                 className="
                   group
@@ -651,7 +471,10 @@ export default function ShortsSection({
                   focus:ring-red-500
                 "
               >
-                {/* VIDEO AREA */}
+
+                {/* ==================================
+                    VIDEO / THUMBNAIL AREA
+                ================================== */}
 
                 <div
                   className="
@@ -662,10 +485,13 @@ export default function ShortsSection({
                     bg-zinc-950
                   "
                 >
+
                   {/* THUMBNAIL */}
 
                   <Image
-                    src={short.thumbnail}
+                    src={
+                      short.thumbnail
+                    }
                     alt={
                       short.title ||
                       "News reel"
@@ -678,38 +504,14 @@ export default function ShortsSection({
                     "
                     className="
                       object-cover
-                      transition-opacity
+                      transition-transform
                       duration-500
+                      group-hover:scale-105
                     "
-                    priority={index === 0}
+                    priority={
+                      index === 0
+                    }
                   />
-
-                  {/* VIDEO PREVIEW */}
-
-                  {isPlaying &&
-                    youtubeId && (
-                      <iframe
-                        src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&playsinline=1&rel=0&modestbranding=1&loop=1&playlist=${youtubeId}`}
-                        title={
-                          short.title ||
-                          "News reel preview"
-                        }
-                        className="
-                          pointer-events-none
-                          absolute
-                          inset-0
-                          z-[1]
-                          h-full
-                          w-full
-                          border-0
-                        "
-                        allow="
-                          autoplay;
-                          encrypted-media;
-                          picture-in-picture
-                        "
-                      />
-                    )}
 
                   {/* TOP GRADIENT */}
 
@@ -743,78 +545,38 @@ export default function ShortsSection({
                     "
                   />
 
-                  {/* LOADER */}
-
-                  {isLoading &&
-                    !isPlaying && (
-                      <div
-                        className="
-                          absolute
-                          left-1/2
-                          top-1/2
-                          z-[3]
-                          -translate-x-1/2
-                          -translate-y-1/2
-                        "
-                      >
-                        <div
-                          className="
-                            flex
-                            h-9
-                            w-9
-                            items-center
-                            justify-center
-                            rounded-full
-                            bg-black/55
-                            backdrop-blur-md
-                          "
-                        >
-                          <Loader2
-                            size={20}
-                            className="
-                              animate-spin
-                              text-white
-                            "
-                          />
-                        </div>
-                      </div>
-                    )}
-
                   {/* PLAY BUTTON */}
 
-                  {!isPlaying &&
-                    !isLoading && (
-                      <div
-                        className="
-                          pointer-events-none
-                          absolute
-                          left-1/2
-                          top-1/2
-                          z-[3]
-                          flex
-                          h-10
-                          w-10
-                          -translate-x-1/2
-                          -translate-y-1/2
-                          items-center
-                          justify-center
-                          rounded-full
-                          bg-white/90
-                          text-red-600
-                          shadow-xl
-                          transition-all
-                          duration-300
-                          group-hover:scale-110
-                        "
-                      >
-                        <Play
-                          size={16}
-                          fill="currentColor"
-                          strokeWidth={0}
-                          className="ml-0.5"
-                        />
-                      </div>
-                    )}
+                  <div
+                    className="
+                      pointer-events-none
+                      absolute
+                      left-1/2
+                      top-1/2
+                      z-[3]
+                      flex
+                      h-10
+                      w-10
+                      -translate-x-1/2
+                      -translate-y-1/2
+                      items-center
+                      justify-center
+                      rounded-full
+                      bg-white/90
+                      text-red-600
+                      shadow-xl
+                      transition-all
+                      duration-300
+                      group-hover:scale-110
+                    "
+                  >
+                    <Play
+                      size={16}
+                      fill="currentColor"
+                      strokeWidth={0}
+                      className="ml-0.5"
+                    />
+                  </div>
 
                   {/* LOGO WATERMARK */}
 
@@ -840,9 +602,12 @@ export default function ShortsSection({
                       className="object-contain"
                     />
                   </div>
+
                 </div>
 
-                {/* TITLE */}
+                {/* ==================================
+                    TITLE
+                ================================== */}
 
                 <div
                   className="
@@ -868,23 +633,6 @@ export default function ShortsSection({
                   </h3>
                 </div>
 
-                {/* ACTIVE BORDER */}
-
-                {isPlaying && (
-                  <div
-                    className="
-                      pointer-events-none
-                      absolute
-                      inset-0
-                      z-[5]
-                      rounded-xl
-                      border-2
-                      border-red-500
-                      shadow-[0_0_22px_rgba(239,68,68,0.25)]
-                    "
-                  />
-                )}
-
                 {/* HOVER BORDER */}
 
                 <div
@@ -901,11 +649,16 @@ export default function ShortsSection({
                     group-hover:border-red-500/60
                   "
                 />
+
               </article>
-            );
-          })}
+
+            )
+          )}
+
         </div>
+
       </div>
+
     </section>
   );
 }
