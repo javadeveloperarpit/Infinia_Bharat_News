@@ -170,38 +170,59 @@ export default function LeadersXCarousel({
   ========================================================= */
 
   useEffect(() => {
-    const track = trackRef.current;
+  const track = trackRef.current;
 
-    if (!track) {
+  if (!track) {
+    return;
+  }
+
+  let frameId: number | null = null;
+
+  const measure = () => {
+    const firstSet =
+      track.querySelector(
+        "[data-x-set='first']"
+      ) as HTMLElement | null;
+
+    if (!firstSet) {
       return;
     }
 
-    const measure = () => {
-      const firstSet =
-        track.querySelector(
-          "[data-x-set='first']"
-        ) as HTMLElement | null;
+    if (frameId !== null) {
+      cancelAnimationFrame(frameId);
+    }
 
-      if (!firstSet) {
-        return;
-      }
+    frameId =
+      requestAnimationFrame(() => {
+        const width =
+          firstSet.getBoundingClientRect().width;
 
-      setLoopWidth(
-        firstSet.offsetWidth
-      );
-    };
+        setLoopWidth((previousWidth) =>
+          Math.round(previousWidth) ===
+          Math.round(width)
+            ? previousWidth
+            : width
+        );
 
-    measure();
+        frameId = null;
+      });
+  };
 
-    const observer =
-      new ResizeObserver(measure);
+  measure();
 
-    observer.observe(track);
+  const observer =
+    new ResizeObserver(measure);
 
-    return () => {
-      observer.disconnect();
-    };
-  }, [posts]);
+  observer.observe(track);
+
+  return () => {
+    observer.disconnect();
+
+    if (frameId !== null) {
+      cancelAnimationFrame(frameId);
+    }
+  };
+}, [posts]);
 
   /* =========================================================
      CONTINUOUS AUTO MOVEMENT
@@ -293,60 +314,54 @@ export default function LeadersXCarousel({
   ========================================================= */
 
   function move(
-    direction: "left" | "right"
-  ) {
-    if (!loopWidth) {
-      return;
-    }
-
-    pausedRef.current = true;
-
-    const card =
-      trackRef.current?.querySelector(
-        "[data-x-card]"
-      ) as HTMLElement | null;
-
-    if (!card) {
-      return;
-    }
-
-    const gap = 8;
-
-    const amount =
-      card.offsetWidth + gap;
-
-    if (
-      direction === "right"
-    ) {
-      positionRef.current +=
-        amount;
-
-      while (
-        positionRef.current >=
-        loopWidth
-      ) {
-        positionRef.current -=
-          loopWidth;
-      }
-    } else {
-      positionRef.current -=
-        amount;
-
-      while (
-        positionRef.current < 0
-      ) {
-        positionRef.current +=
-          loopWidth;
-      }
-    }
-
-    if (trackRef.current) {
-      trackRef.current.style.transform =
-        `translate3d(${-positionRef.current}px, 0, 0)`;
-    }
-
-    scheduleResume(1200);
+  direction: "left" | "right"
+) {
+  if (!loopWidth) {
+    return;
   }
+
+  pausedRef.current = true;
+
+  const gap = 8;
+
+  const isDesktop =
+    window.matchMedia(
+      "(min-width: 640px)"
+    ).matches;
+
+  const cardWidth =
+    isDesktop
+      ? 315
+      : 205;
+
+  const amount =
+    cardWidth + gap;
+
+  if (direction === "right") {
+    positionRef.current += amount;
+
+    while (
+      positionRef.current >= loopWidth
+    ) {
+      positionRef.current -= loopWidth;
+    }
+  } else {
+    positionRef.current -= amount;
+
+    while (
+      positionRef.current < 0
+    ) {
+      positionRef.current += loopWidth;
+    }
+  }
+
+  if (trackRef.current) {
+    trackRef.current.style.transform =
+      `translate3d(${-positionRef.current}px, 0, 0)`;
+  }
+
+  scheduleResume(1200);
+}
 
   /* =========================================================
      POINTER DOWN
@@ -1069,31 +1084,36 @@ function XCard({
       {/* IMAGE */}
 
       {post.image && (
-        <div
-          className="
-            mt-1.5
-            overflow-hidden
-            rounded-lg
-            border
-            border-zinc-200
-            bg-zinc-100
-            sm:mt-2
-          "
-        >
-           <Image
-    src={profileImage}
-    alt={post.person}
-    width={64}
-    height={64}
-    sizes="(max-width: 640px) 28px, 36px"
+  <div
     className="
-      h-full
-      w-full
-      object-cover
+      mt-1.5
+      h-[42px]
+      overflow-hidden
+      rounded-lg
+      border
+      border-zinc-200
+      bg-zinc-100
+      sm:mt-2
+      sm:h-[78px]
     "
-  />
-        </div>
-      )}
+  >
+    <Image
+      src={post.image}
+      alt=""
+      width={315}
+      height={78}
+      sizes="(max-width: 640px) 205px, 315px"
+      className="
+        h-full
+        w-full
+        object-cover
+        transition-transform
+        duration-500
+        group-hover:scale-[1.03]
+      "
+    />
+  </div>
+)}
 
       {/* FOOTER */}
 

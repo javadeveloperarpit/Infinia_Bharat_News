@@ -238,23 +238,23 @@ export default function PageLoadingBar() {
           {/* CRYSTAL SHINE */}
 
           <div
-            className="
-              pointer-events-none
-              absolute
-              -left-[100%]
-              top-[-30%]
-              z-20
-              h-[180%]
-              w-[35%]
-              rotate-[25deg]
-              bg-gradient-to-r
-              from-transparent
-              via-white/80
-              to-transparent
-              blur-[3px]
-              animate-logo-shine
-            "
-          />
+  className="
+    pointer-events-none
+    absolute
+    left-0
+    top-[-30%]
+    z-20
+    h-[180%]
+    w-[35%]
+    rotate-[25deg]
+    bg-gradient-to-r
+    from-transparent
+    via-white/80
+    to-transparent
+    blur-[3px]
+    animate-logo-shine
+  "
+/>
 
         </div>
 

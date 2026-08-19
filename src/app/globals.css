@@ -1450,7 +1450,7 @@ iframe {
 
 @keyframes logo-shine {
   0% {
-    left: -100%;
+    transform: translateX(-300%);
     opacity: 0;
   }
 
@@ -1458,17 +1458,21 @@ iframe {
     opacity: 0.8;
   }
 
-  45%,
+  45% {
+    transform: translateX(300%);
+    opacity: 0;
+  }
+
   100% {
-    left: 160%;
+    transform: translateX(300%);
     opacity: 0;
   }
 }
 
 .animate-logo-shine {
   animation: logo-shine 2.6s ease-in-out infinite;
+  will-change: transform, opacity;
 }
-
 
 /* =========================================================
    NAVBAR SWIPE
