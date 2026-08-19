@@ -327,15 +327,7 @@ export default function HeroSection({
                     "
                   />
 
-                  <span
-                    className="
-                      text-[9px]
-                      font-bold
-                      uppercase
-                      tracking-wider
-                      text-zinc-400
-                    "
-                  >
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-600">
                     TOP STORY
                   </span>
 

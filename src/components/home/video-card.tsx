@@ -208,19 +208,21 @@ export default function VideoCard({
           {/* CATEGORY */}
 
           <span
-            className="
-              inline-flex
-              self-start
-              bg-red-50
-              text-red-600
-              px-2
-              py-1
-              rounded
-              text-[10px]
-              font-black
-              uppercase
-            "
-          >
+          className="
+            inline-flex
+            self-start
+            max-w-full
+            truncate
+            bg-red-600
+            text-white
+            px-2
+            py-1
+            rounded
+            text-[10px]
+            font-black
+            uppercase
+          "
+        >
             {category || "VIDEO"}
           </span>
 
@@ -254,7 +256,7 @@ export default function VideoCard({
               items-center
               justify-end
               text-[11px]
-              text-zinc-500
+              text-zinc-600
             "
           >
 

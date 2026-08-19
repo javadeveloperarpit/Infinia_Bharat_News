@@ -111,19 +111,26 @@ function handleLogoClick() {
       "
     >
       <Image
-        src="/logo.webp"
-        alt="INFINIA Bharat News"
-        width={220}
-        height={70}
-        priority
-        className="
-          h-auto
-          w-[115px]
-          object-contain
-          sm:w-[155px]
-          lg:w-[220px]
-        "
-      />
+  src="/logo.webp"
+  alt="INFINIA Bharat News"
+  width={440}
+  height={140}
+  priority
+  fetchPriority="high"
+  sizes="
+    (max-width: 639px) 115px,
+    (max-width: 1023px) 155px,
+    220px
+  "
+  className="
+    block
+    h-auto
+    w-[115px]
+    object-contain
+    sm:w-[155px]
+    lg:w-[220px]
+  "
+/>
     </Link>
 
 

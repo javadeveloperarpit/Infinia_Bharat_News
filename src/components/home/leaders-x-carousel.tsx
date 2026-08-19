@@ -654,8 +654,9 @@ export default function LeadersXCarousel({
                 flex
                 items-center
                 gap-1.5
-                text-[9px]
-                text-zinc-500
+                text-[10px]
+                font-medium
+                text-zinc-600
                 sm:mt-1
                 sm:text-xs
               "
@@ -1011,15 +1012,16 @@ function XCard({
           </div>
 
           <div
-            className="
-              truncate
-              text-[9px]
-              text-zinc-500
-              sm:text-[10px]
-            "
-          >
-            @{post.handle}
-          </div>
+  className="
+    truncate
+    text-[10px]
+    font-medium
+    text-zinc-600
+    sm:text-[11px]
+  "
+>
+  @{post.handle}
+</div>
         </div>
 
         <XCircle
@@ -1124,24 +1126,28 @@ function XCard({
           >
             <span
               className="
-                text-[7px]
+                text-[9px]
                 font-bold
                 uppercase
                 tracking-wide
-                text-zinc-600
-                sm:text-[8px]
+                text-zinc-700
+                sm:text-[10px]
               "
             >
               Posted on X
             </span>
 
             <span
-              className="
-                text-[7px]
-                text-zinc-400
-                sm:text-[8px]
-              "
-            >
+  className="
+    flex
+    items-center
+    gap-1
+    text-[10px]
+    font-semibold
+    text-zinc-700
+    sm:text-[11px]
+  "
+>
               {formatPostDate(
                 post.pubDate
               )}
@@ -1149,24 +1155,25 @@ function XCard({
           </div>
         </div>
 
-        <div
-          className="
-            flex
-            items-center
-            gap-0.5
-            text-[8px]
-            font-semibold
-            text-zinc-400
-            transition-colors
-            group-hover:text-[#1d9bf0]
-            sm:text-[9px]
-          "
-        >
-          View
-          <ExternalLink
-            size={9}
-          />
-        </div>
+       <div
+  className="
+    flex
+    items-center
+    gap-1
+    text-[10px]
+    font-bold
+    text-zinc-700
+    transition-colors
+    group-hover:text-[#1d9bf0]
+    sm:text-[11px]
+  "
+>
+  View
+
+  <ExternalLink
+    size={11}
+  />
+</div>
       </div>
     </a>
   );

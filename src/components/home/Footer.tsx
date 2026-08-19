@@ -84,7 +84,7 @@ mb-5
 <p
 
 className="
-text-zinc-400
+text-zinc-300
 text-sm
 leading-6
 "
@@ -134,7 +134,7 @@ flex
 flex-col
 gap-3
 text-sm
-text-zinc-400
+text-zinc-300
 "
 
 >
@@ -280,7 +280,7 @@ flex
 flex-col
 gap-3
 text-sm
-text-zinc-400
+text-zinc-300
 "
 
 >
@@ -363,6 +363,8 @@ href="https://www.instagram.com/infiniabharatnews"
 
 target="_blank"
 
+aria-label="Follow INFINIA BHARAT NEWS on Instagram"
+
 rel="noopener noreferrer"
 
 className="
@@ -396,6 +398,8 @@ transition
 href="https://www.youtube.com/@Infinia_Bharat_News"
 
 target="_blank"
+
+aria-label="Subscribe to INFINIA BHARAT NEWS on YouTube"
 
 rel="noopener noreferrer"
 
@@ -431,6 +435,8 @@ transition
 href="https://www.facebook.com/share/1jBhdb8phJ/"
 
 target="_blank"
+
+aria-label="Follow INFINIA BHARAT NEWS on Facebook"
 
 rel="noopener noreferrer"
 
@@ -475,20 +481,7 @@ transition
 
 
 
-<div
-
-className="
-mt-10
-pt-6
-border-t
-border-white/10
-text-center
-text-sm
-text-zinc-500
-"
-
->
-
+<div className="mt-10 pt-6 border-t border-white/10 text-center text-sm text-zinc-300">
 
 © {new Date().getFullYear()} INFINIA BHARAT NEWS. All Rights Reserved.
 

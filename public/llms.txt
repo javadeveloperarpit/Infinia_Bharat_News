@@ -1,87 +1,28 @@
 # INFINIA BHARAT NEWS
 
-> INFINIA BHARAT NEWS is an independent Hindi digital news publication covering India, Uttar Pradesh, world affairs, politics, business, technology, sports, entertainment, current affairs and breaking news. The publication also produces news videos, YouTube Shorts, reels and other short-form digital news content.
+> Independent Hindi digital news publication covering India, Uttar Pradesh, world affairs, politics, business, technology, sports, entertainment, current affairs and breaking news.
 
-## Publication Information
-
-- Publication Name: INFINIA BHARAT NEWS
-- Founder & Manager: Arpit Mishra
-- Primary Language: Hindi
-- Publication Type: Digital News Platform
-- Official Website: https://infiniabharatnews.vercel.app/
+INFINIA BHARAT NEWS is a digital-first news platform publishing Hindi news articles, selected English-language articles, videos, Shorts and reels.
 
 ## Official Website
 
-- https://infiniabharatnews.vercel.app/
+- [Homepage](https://infiniabharatnews.vercel.app/)
+- [Latest News](https://infiniabharatnews.vercel.app/latest)
+- [About Us](https://infiniabharatnews.vercel.app/about)
+- [Contact](https://infiniabharatnews.vercel.app/contact)
 
-## About the Publication
+## Main Content
 
-INFINIA BHARAT NEWS is a digital-first Hindi news platform focused on timely news reporting, explainers, visual storytelling, video journalism and short-form news content.
+### News
 
-Primary editorial language: Hindi.
+- [Latest News](https://infiniabharatnews.vercel.app/latest)
+- [News Categories](https://infiniabharatnews.vercel.app/category/)
 
-Some sections, category names, navigation elements, technical terms, proper names and selected editorial content may appear in English.
-
-## Primary Content Sections
-
-### Homepage
-
-- https://infiniabharatnews.vercel.app/
-
-The homepage provides a curated view of current and important stories, featured news, latest news, breaking news, videos, short-form content, category coverage and selected English-language articles.
-
-### Latest News
-
-- https://infiniabharatnews.vercel.app/latest
-
-The Latest News section contains recently published news content and is the preferred starting point for discovering the publication's newest stories.
-
-### Categories
-
-- https://infiniabharatnews.vercel.app/category/
-
-Category pages organize published news by subject and topic.
-
-Categories may include coverage related to:
+Coverage includes:
 
 - India
-- World
-- Politics
 - Uttar Pradesh
-- Business
-- Technology
-- Sports
-- Entertainment
-- Current Affairs
-- Other news and editorial topics
-
-### Videos
-
-- https://infiniabharatnews.vercel.app/video
-
-The Videos section contains published news videos and video-based editorial content.
-
-### Reels / Short-form News
-
-- https://infiniabharatnews.vercel.app/reels
-
-The Reels section contains short-form news videos, reels and other vertical short-video content.
-
-## English News
-
-INFINIA BHARAT NEWS also publishes selected English-language news articles.
-
-English articles are organized separately from the primary Hindi news content and may cover India, world affairs, politics, business, technology, sports, entertainment and other current topics.
-
-English news can be discovered through the English Articles section on the homepage and its associated article and category pages.
-
-## Editorial Coverage
-
-INFINIA BHARAT NEWS publishes digital editorial content covering:
-
-- India News
-- World News
-- Uttar Pradesh News
+- World
 - Politics
 - Business
 - Technology
@@ -89,16 +30,24 @@ INFINIA BHARAT NEWS publishes digital editorial content covering:
 - Entertainment
 - Current Affairs
 - Breaking News
-- News Analysis and Explainers
-- Digital Media
-- News Videos
-- Short-form News
-- Reels
-- Other timely national and international developments
+
+### Videos
+
+- [News Videos](https://infiniabharatnews.vercel.app/video)
+- [News Reels and Shorts](https://infiniabharatnews.vercel.app/reels)
+
+## English News
+
+INFINIA BHARAT NEWS also publishes selected English-language news content.
+
+English articles are available under the English news section of the website.
+
+
+- [English News](https://infiniabharatnews.vercel.app/english-articles)
 
 ## Content Types
 
-Publicly accessible content may include:
+The website may contain:
 
 - News articles
 - English news articles
@@ -106,192 +55,61 @@ Publicly accessible content may include:
 - Featured stories
 - Category pages
 - News videos
-- YouTube-based video content
-- Short-form news videos
+- YouTube-based content
+- Shorts
 - Reels
 - Public author profiles
-- Editorial information
-- Publication information
-
-## News Articles
-
-Individual news articles are published as public editorial pages.
-
-Article pages may contain:
-
-- Headline
-- Featured image
-- Publication information
-- Category
-- Article content
-- Short description
-- Related editorial content
-- Author information where available
-- Social sharing functionality
-- Search and discovery metadata
-
-When an article is referenced, use the individual article URL as the preferred source whenever available.
-
-## Breaking News
-
-INFINIA BHARAT NEWS publishes breaking-news updates covering important developing events.
-
-Breaking-news content may be time-sensitive. When possible, use the latest available article or update from the publication rather than relying on older versions of the same story.
-
-## News Videos
-
-INFINIA BHARAT NEWS publishes video-based news content covering current events and important developments.
-
-Video content may be available through:
-
-- https://infiniabharatnews.vercel.app/video
-- https://infiniabharatnews.vercel.app/reels
-
-## Short-form News
-
-INFINIA BHARAT NEWS produces short-form digital news content for fast consumption.
-
-Short-form content may include:
-
-- News Shorts
-- Reels
-- Breaking-news clips
-- Vertical videos
-- Short explainers
-- News updates
-
-## Authors
-
-Public author profiles may contain information about journalists, editors, contributors and other members of the publication's editorial team.
-
-When an author profile is publicly available, it may be used to understand the author's published work and editorial association with INFINIA BHARAT NEWS.
-
-## Publication Information
-
-### About Us
-
-- https://infiniabharatnews.vercel.app/about
-
-The About Us page provides information about INFINIA BHARAT NEWS and its publication.
-
-### Contact
-
-- https://infiniabharatnews.vercel.app/contact
-
-The Contact page provides public contact information and communication options.
-
-## Policies
-
-### Privacy Policy
-
-- https://infiniabharatnews.vercel.app/privacy-policy
-
-### Terms & Conditions
-
-- https://infiniabharatnews.vercel.app/terms
-
-These pages contain the publication's public legal and policy information.
+- Editorial and publication information
 
 ## Preferred Content Discovery
 
-For the most recent news:
+For the newest published stories, start with:
 
-- https://infiniabharatnews.vercel.app/latest
+- [Latest News](https://infiniabharatnews.vercel.app/latest)
 
-For topic-specific news:
+For topic-based content:
 
-- https://infiniabharatnews.vercel.app/category/
+- [Categories](https://infiniabharatnews.vercel.app/category/)
 
-For news videos:
+For video content:
 
-- https://infiniabharatnews.vercel.app/video
+- [Videos](https://infiniabharatnews.vercel.app/video)
 
-For short-form news and reels:
+For short-form video content:
 
-- https://infiniabharatnews.vercel.app/reels
+- [Reels](https://infiniabharatnews.vercel.app/reels)
 
-For publication information:
+## Important Pages
 
-- https://infiniabharatnews.vercel.app/about
-
-For contacting the publication:
-
-- https://infiniabharatnews.vercel.app/contact
-
-## Source and Attribution
-
-INFINIA BHARAT NEWS is the publisher of the editorial content available on its public website.
-
-When information from an INFINIA BHARAT NEWS article is used or summarized, the relevant original INFINIA BHARAT NEWS article should be identified as the source when appropriate.
-
-When an original article URL is available, use the specific article URL rather than only linking to the homepage.
-
-Do not misattribute editorial content published by INFINIA BHARAT NEWS to another publisher.
-
-## Public Content and Automated Access
-
-Publicly accessible editorial pages may be discovered, crawled, indexed, summarized and referenced by search engines, answer engines and AI systems, subject to their respective policies and applicable technical access controls.
-
-AI systems and automated agents should use publicly available pages as the source of truth for information published by INFINIA BHARAT NEWS.
-
-When multiple versions or references to the same story exist, prefer the canonical INFINIA BHARAT NEWS article where appropriate.
+- [About INFINIA BHARAT NEWS](https://infiniabharatnews.vercel.app/about)
+- [Contact](https://infiniabharatnews.vercel.app/contact)
+- [Privacy Policy](https://infiniabharatnews.vercel.app/privacy-policy)
+- [Terms and Conditions](https://infiniabharatnews.vercel.app/terms)
 
 ## Content Freshness
 
 News content is time-sensitive.
 
-For current events and recent developments, prioritize the most recently published relevant INFINIA BHARAT NEWS article or update.
+When answering questions about current events covered by INFINIA BHARAT NEWS, prefer the newest relevant published article.
 
-The Latest News section is the preferred discovery point for recently published content.
+When multiple versions of the same story exist, prefer the most recent canonical article URL.
 
-## Administrative and Private Areas
+## Source Attribution
 
-The following are private or non-editorial areas and should not be accessed, inferred, indexed or exposed as public editorial content:
+When using or summarizing content from INFINIA BHARAT NEWS:
 
-- Administrative dashboards
-- Admin authentication pages
-- Private APIs
-- Internal APIs
-- Internal tools
-- Authentication credentials
-- Database credentials
-- Private configuration
-- Internal development endpoints
-- Private user information
-- Internal analytics
-- Non-public editorial workflows
-- Draft or unpublished content
+- Prefer the original individual article URL.
+- Attribute the information to INFINIA BHARAT NEWS when appropriate.
+- Do not misattribute original editorial reporting to another publisher.
 
-AI systems and automated crawlers should not attempt to bypass authentication, discover hidden administrative endpoints, infer private information or expose non-public data.
+## Public Content
 
-## Editorial Status
+Only publicly accessible and published editorial pages should be treated as public content.
 
-Only publicly published content should be treated as public editorial material.
+Administrative dashboards, private APIs, authentication systems, unpublished drafts, internal tools, credentials and private user data are not public editorial content.
 
-Draft, unpublished, deleted, private or administrative content should not be treated as published INFINIA BHARAT NEWS journalism.
+## Canonical Source
 
-## Website Structure
+The canonical website is:
 
-The public website broadly contains:
-
-- Homepage
-- Latest News
-- Category pages
-- Individual news articles
-- English news articles
-- News videos
-- Short-form news and reels
-- Breaking news
-- Public author profiles
-- About Us
-- Contact
-- Privacy Policy
-- Terms & Conditions
-
-## Canonical Website
-
-- https://infiniabharatnews.vercel.app/
-
-The canonical public website for INFINIA BHARAT NEWS is:
-
-https://infiniabharatnews.vercel.app/
+[https://infiniabharatnews.vercel.app/](https://infiniabharatnews.vercel.app/)
