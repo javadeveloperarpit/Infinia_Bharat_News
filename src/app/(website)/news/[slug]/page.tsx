@@ -857,8 +857,12 @@ const youtubeVideos =
   title={article.title}
   content={article.content}
   language={
-    article.category === "English"
-      ? "en-IN"
+    /^[\x00-\x7F\s]+$/.test(
+      `${article.title} ${article.content || ""}`
+        .replace(/<[^>]*>/g, "")
+        .slice(0, 1000)
+    )
+      ? "en-US"
       : "hi-IN"
   }
 />

@@ -24,24 +24,52 @@ interface ArticleAudioPlayerProps {
   language?: string;
 }
 
-interface SpeechChunk {
+interface SpeechBlock {
+  index: number;
   text: string;
   estimatedSeconds: number;
 }
 
-const WORDS_PER_MINUTE = 145;
-const MIN_CHUNK_SECONDS = 2;
+const WORDS_PER_MINUTE = 150;
+const MIN_BLOCK_SECONDS = 1.5;
 
-function htmlToText(html: string) {
-  if (!html) return "";
+function estimateDuration(text: string) {
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+
+  return Math.max(
+    MIN_BLOCK_SECONDS,
+    (words / WORDS_PER_MINUTE) * 60
+  );
+}
+
+/* =========================================================
+   EXTRACT READABLE ARTICLE BLOCKS
+========================================================= */
+
+function extractSpeechBlocks(
+  html: string
+): SpeechBlock[] {
+  if (!html) return [];
 
   if (typeof window === "undefined") {
-    return html
+    const text = html
       .replace(/<script[\s\S]*?<\/script>/gi, "")
       .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
+      .replace(/<figure[\s\S]*?<\/figure>/gi, "")
       .replace(/<[^>]+>/g, " ")
       .replace(/\s+/g, " ")
       .trim();
+
+    return text
+      ? [
+          {
+            index: 0,
+            text,
+            estimatedSeconds: estimateDuration(text),
+          },
+        ]
+      : [];
   }
 
   const parser = new DOMParser();
@@ -53,102 +81,81 @@ function htmlToText(html: string) {
 
   doc
     .querySelectorAll(
-      "script, style, noscript, iframe"
+      "script, style, noscript, iframe, video, figure"
     )
     .forEach((element) => element.remove());
 
-  return (doc.body.textContent || "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
+  const selectors = [
+    "p",
+    "h2",
+    "h3",
+    "h4",
+    "blockquote",
+    "li",
+  ];
 
-/* =========================================================
-   SMART CHUNKING
-========================================================= */
+  const blocks: SpeechBlock[] = [];
 
-function splitText(
-  text: string,
-  maxLength = 190
-): SpeechChunk[] {
-  const sentences =
-    text.match(
-      /[^.!?।॥]+[.!?।॥]+|[^.!?।॥]+$/g
-    ) || [];
+  doc
+    .querySelectorAll(selectors.join(","))
+    .forEach((element) => {
+      const text =
+        element.textContent
+          ?.replace(/\s+/g, " ")
+          .trim() || "";
 
-  const chunks: SpeechChunk[] = [];
+      if (!text) return;
 
-  let current = "";
-
-  for (const sentence of sentences) {
-    const clean = sentence.trim();
-
-    if (!clean) continue;
-
-    if (
-      current.length +
-        clean.length +
-        1 <=
-      maxLength
-    ) {
-      current = current
-        ? `${current} ${clean}`
-        : clean;
-    } else {
-      if (current) {
-        chunks.push({
-          text: current,
-          estimatedSeconds:
-            estimateDuration(current),
-        });
+      if (
+        element.closest(
+          "figure, iframe, video, script, style"
+        )
+      ) {
+        return;
       }
 
-      current = clean;
+      blocks.push({
+        index: blocks.length,
+        text,
+        estimatedSeconds: estimateDuration(text),
+      });
+    });
+
+  /*
+   * Fallback:
+   * If article has no normal readable HTML blocks,
+   * extract plain text.
+   */
+
+  if (!blocks.length) {
+    const text =
+      doc.body.textContent
+        ?.replace(/\s+/g, " ")
+        .trim() || "";
+
+    if (text) {
+      blocks.push({
+        index: 0,
+        text,
+        estimatedSeconds: estimateDuration(text),
+      });
     }
   }
 
-  if (current) {
-    chunks.push({
-      text: current,
-      estimatedSeconds:
-        estimateDuration(current),
-    });
-  }
-
-  return chunks;
-}
-
-/* =========================================================
-   ESTIMATE AUDIO TIME
-========================================================= */
-
-function estimateDuration(text: string) {
-  const words =
-    text.trim().split(/\s+/).length;
-
-  return Math.max(
-    MIN_CHUNK_SECONDS,
-    (words / WORDS_PER_MINUTE) * 60
-  );
+  return blocks;
 }
 
 function formatTime(seconds: number) {
-  const safe =
-    Math.max(0, Math.round(seconds));
+  const safe = Math.max(0, Math.round(seconds));
 
-  const minutes =
-    Math.floor(safe / 60);
+  const minutes = Math.floor(safe / 60);
 
-  const remaining =
-    safe % 60;
+  const remaining = safe % 60;
 
   return `${minutes}:${remaining
     .toString()
     .padStart(2, "0")}`;
 }
-
-/* =========================================================
-   COMPONENT
-========================================================= */
 
 export default function ArticleAudioPlayer({
   title,
@@ -164,8 +171,8 @@ export default function ArticleAudioPlayer({
   const [isPaused, setIsPaused] =
     useState(false);
 
-  const [currentChunk, setCurrentChunk] =
-    useState(0);
+  const [currentBlock, setCurrentBlock] =
+    useState(-1);
 
   const [speed, setSpeed] =
     useState(1);
@@ -179,8 +186,8 @@ export default function ArticleAudioPlayer({
   const [isSeeking, setIsSeeking] =
     useState(false);
 
-  const chunksRef =
-    useRef<SpeechChunk[]>([]);
+  const blocksRef =
+    useRef<SpeechBlock[]>([]);
 
   const currentIndexRef =
     useRef(0);
@@ -194,60 +201,106 @@ export default function ArticleAudioPlayer({
   const progressRef =
     useRef<HTMLDivElement | null>(null);
 
+  const activeUtteranceRef =
+    useRef<SpeechSynthesisUtterance | null>(
+      null
+    );
+
   /* =======================================================
-     TEXT
+     BLOCKS
   ======================================================= */
 
-  const text = useMemo(() => {
-    const articleText =
-      htmlToText(content || "");
+  const blocks = useMemo(
+    () =>
+      extractSpeechBlocks(
+        content || ""
+      ),
+    [content]
+  );
+
+  const hasContent =
+    Boolean(title?.trim()) ||
+    blocks.length > 0;
+
+  /*
+   * Audio starts with title, then article blocks.
+   *
+   * Title gets index -1 so it DOES NOT highlight
+   * an article paragraph.
+   */
+
+  const speechQueue = useMemo(() => {
+    const queue: SpeechBlock[] = [];
+
+    if (title?.trim()) {
+      queue.push({
+        index: -1,
+        text: title.trim(),
+        estimatedSeconds: estimateDuration(
+          title.trim()
+        ),
+      });
+    }
 
     return [
-      title,
-      articleText,
-    ]
-      .filter(Boolean)
-      .join(". ")
-      .trim();
-  }, [title, content]);
-
-  const chunks = useMemo(
-    () => splitText(text),
-    [text]
-  );
+      ...queue,
+      ...blocks,
+    ];
+  }, [title, blocks]);
 
   /* =======================================================
      TOTAL TIME
   ======================================================= */
 
-  const totalSeconds = useMemo(() => {
-    return chunks.reduce(
-      (total, chunk) =>
-        total + chunk.estimatedSeconds,
-      0
-    );
-  }, [chunks]);
+  const totalSeconds = useMemo(
+    () =>
+      speechQueue.reduce(
+        (total, item) =>
+          total + item.estimatedSeconds,
+        0
+      ),
+    [speechQueue]
+  );
 
   const elapsedSeconds = useMemo(() => {
-    return chunks
-      .slice(0, currentChunk)
+    const currentQueueIndex =
+      currentIndexRef.current;
+
+    return speechQueue
+      .slice(0, currentQueueIndex)
       .reduce(
-        (total, chunk) =>
-          total + chunk.estimatedSeconds,
+        (total, item) =>
+          total + item.estimatedSeconds,
         0
       );
-  }, [chunks, currentChunk]);
+  }, [speechQueue, currentBlock]);
 
-  const currentChunkProgress =
-    chunks.length > 0
-      ? currentChunk / chunks.length
-      : 0;
+  const progress = useMemo(() => {
+    if (!speechQueue.length) return 0;
 
-  const progress =
-    Math.min(
+    if (currentBlock === -1) {
+      return 0;
+    }
+
+    const queueIndex =
+      currentIndexRef.current;
+
+    return Math.min(
       100,
-      currentChunkProgress * 100
+      Math.max(
+        0,
+        (queueIndex /
+          Math.max(
+            1,
+            speechQueue.length - 1
+          )) *
+          100
+      )
     );
+  }, [
+    currentBlock,
+    speechQueue.length,
+  ]);
 
   /* =======================================================
      SPEED REF
@@ -282,9 +335,10 @@ export default function ArticleAudioPlayer({
     if (!supported) return;
 
     const loadVoices = () => {
-      setVoices(
-        window.speechSynthesis.getVoices()
-      );
+      const available =
+        window.speechSynthesis.getVoices();
+
+      setVoices(available);
     };
 
     loadVoices();
@@ -308,13 +362,15 @@ export default function ArticleAudioPlayer({
         typeof window !== "undefined" &&
         "speechSynthesis" in window
       ) {
+        stoppedRef.current = true;
+
         window.speechSynthesis.cancel();
       }
     };
   }, []);
 
   /* =======================================================
-     VOICE
+     SELECT BEST VOICE
   ======================================================= */
 
   const selectedVoice = useMemo(() => {
@@ -328,6 +384,10 @@ export default function ArticleAudioPlayer({
     const base =
       requested.split("-")[0];
 
+    /*
+     * Exact language first.
+     */
+
     const exact =
       voices.find(
         (voice) =>
@@ -337,45 +397,73 @@ export default function ArticleAudioPlayer({
 
     if (exact) return exact;
 
+    /*
+     * Prefer natural / online voices.
+     */
+
+    const preferred =
+      voices.find((voice) => {
+        const lang =
+          voice.lang.toLowerCase();
+
+        const name =
+          voice.name.toLowerCase();
+
+        return (
+          lang.startsWith(`${base}-`) &&
+          (
+            name.includes("natural") ||
+            name.includes("online") ||
+            name.includes("neural") ||
+            name.includes("google")
+          )
+        );
+      });
+
+    if (preferred) return preferred;
+
+    /*
+     * Any matching language family.
+     */
+
     const family =
-      voices.find(
-        (voice) =>
-          voice.lang
-            .toLowerCase()
-            .startsWith(
-              `${base}-`
-            )
+      voices.find((voice) =>
+        voice.lang
+          .toLowerCase()
+          .startsWith(`${base}-`)
       );
 
     if (family) return family;
 
-    if (base === "hi") {
-      const hindi =
-        voices.find((voice) =>
-          voice.lang
-            .toLowerCase()
-            .startsWith("hi")
-        );
-
-      if (hindi) return hindi;
-    }
+    /*
+     * Final language-specific fallback.
+     */
 
     if (base === "en") {
-      const english =
+      return (
         voices.find((voice) =>
           voice.lang
             .toLowerCase()
             .startsWith("en")
-        );
+        ) || voices[0]
+      );
+    }
 
-      if (english) return english;
+    if (base === "hi") {
+      return (
+        voices.find((voice) =>
+          voice.lang
+            .toLowerCase()
+            .startsWith("hi")
+        ) || voices[0]
+      );
     }
 
     return voices[0];
   }, [voices, language]);
 
   /* =======================================================
-     HIGHLIGHT ARTICLE
+     HIGHLIGHT
   ======================================================= */
 
   const updateHighlight =
@@ -386,15 +474,14 @@ export default function ArticleAudioPlayer({
         return;
       }
 
+      setCurrentBlock(index);
+
       window.dispatchEvent(
         new CustomEvent(
-          "article-audio-highlight",
+          "article-audio-progress",
           {
             detail: {
               index,
-              text:
-                chunksRef.current[index]
-                  ?.text || "",
             },
           }
         )
@@ -402,28 +489,31 @@ export default function ArticleAudioPlayer({
     }, []);
 
   /* =======================================================
-     SPEAK CHUNK
+     SPEAK
   ======================================================= */
 
-  const speakChunk = useCallback(
-    (index: number) => {
+  const speakQueueItem = useCallback(
+    (queueIndex: number) => {
       if (!supported) return;
 
       if (
-        !chunksRef.current.length
+        !speechQueue.length
       ) {
         return;
       }
 
       if (
-        index >=
-        chunksRef.current.length
+        queueIndex >=
+        speechQueue.length
       ) {
         setIsPlaying(false);
         setIsPaused(false);
 
-        setCurrentChunk(
-          chunksRef.current.length
+        currentIndexRef.current =
+          speechQueue.length;
+
+        setCurrentBlock(
+          blocks.length
         );
 
         updateHighlight(-1);
@@ -431,31 +521,23 @@ export default function ArticleAudioPlayer({
         return;
       }
 
-      const chunk =
-        chunksRef.current[index];
+      const item =
+        speechQueue[queueIndex];
 
       currentIndexRef.current =
-        index;
+        queueIndex;
 
-      setCurrentChunk(index);
-
-      window.dispatchEvent(
-  new CustomEvent(
-    "article-audio-progress",
-    {
-      detail: {
-        index,
-      },
-    }
-  )
-);
-
-      updateHighlight(index);
+      updateHighlight(
+        item.index
+      );
 
       const utterance =
         new SpeechSynthesisUtterance(
-          chunk.text
+          item.text
         );
+
+      activeUtteranceRef.current =
+        utterance;
 
       utterance.rate =
         speedRef.current;
@@ -472,16 +554,20 @@ export default function ArticleAudioPlayer({
           selectedVoice.lang;
       } else {
         utterance.lang =
-          language || "hi-IN";
+          language;
       }
 
       utterance.onstart = () => {
-        if (!stoppedRef.current) {
-          setIsPlaying(true);
-          setIsPaused(false);
-
-          updateHighlight(index);
+        if (stoppedRef.current) {
+          return;
         }
+
+        setIsPlaying(true);
+        setIsPaused(false);
+
+        updateHighlight(
+          item.index
+        );
       };
 
       utterance.onend = () => {
@@ -490,27 +576,41 @@ export default function ArticleAudioPlayer({
         }
 
         const next =
-          currentIndexRef.current + 1;
+          queueIndex + 1;
 
         if (
           next <
-          chunksRef.current.length
+          speechQueue.length
         ) {
-          speakChunk(next);
+          speakQueueItem(next);
         } else {
           setIsPlaying(false);
           setIsPaused(false);
 
-          setCurrentChunk(
-            chunksRef.current.length
+          currentIndexRef.current =
+            speechQueue.length;
+
+          setCurrentBlock(
+            blocks.length
           );
 
           updateHighlight(-1);
         }
       };
 
-      utterance.onerror = () => {
-        if (stoppedRef.current) {
+      utterance.onerror = (
+        event
+      ) => {
+        /*
+         * cancel/interrupted should not
+         * permanently break the player.
+         */
+
+        if (
+          stoppedRef.current ||
+          event.error === "canceled" ||
+          event.error === "interrupted"
+        ) {
           return;
         }
 
@@ -523,8 +623,10 @@ export default function ArticleAudioPlayer({
       );
     },
     [
+      blocks.length,
       language,
       selectedVoice,
+      speechQueue,
       supported,
       updateHighlight,
     ]
@@ -535,11 +637,12 @@ export default function ArticleAudioPlayer({
   ======================================================= */
 
   const handlePlay = useCallback(() => {
-    if (!supported || !text) {
+    if (
+      !supported ||
+      !speechQueue.length
+    ) {
       return;
     }
-
-    chunksRef.current = chunks;
 
     stoppedRef.current = false;
 
@@ -561,27 +664,24 @@ export default function ArticleAudioPlayer({
       return;
     }
 
-    let index =
+    let queueIndex =
       currentIndexRef.current;
 
     if (
-      index >=
-      chunksRef.current.length
+      queueIndex >=
+      speechQueue.length
     ) {
-      index = 0;
+      queueIndex = 0;
 
       currentIndexRef.current = 0;
-
-      setCurrentChunk(0);
     }
 
-    speakChunk(index);
+    speakQueueItem(queueIndex);
   }, [
-    chunks,
     isPaused,
-    speakChunk,
+    speakQueueItem,
+    speechQueue.length,
     supported,
-    text,
   ]);
 
   /* =======================================================
@@ -612,85 +712,72 @@ export default function ArticleAudioPlayer({
 
     window.speechSynthesis.cancel();
 
+    currentIndexRef.current = 0;
+
+    setCurrentBlock(-1);
+
     stoppedRef.current = false;
 
-    chunksRef.current = chunks;
-
-    currentIndexRef.current = 0;
-
-    setCurrentChunk(0);
-
     setTimeout(() => {
-      speakChunk(0);
-    }, 50);
+      speakQueueItem(0);
+    }, 80);
   };
 
   /* =======================================================
-     STOP
+     SEEK
   ======================================================= */
 
-  const handleStop = () => {
-    if (!supported) return;
+  const seekToQueueIndex =
+    useCallback(
+      (
+        queueIndex: number,
+        shouldPlay = isPlaying
+      ) => {
+        if (!speechQueue.length) return;
 
-    stoppedRef.current = true;
+        const safeIndex =
+          Math.max(
+            0,
+            Math.min(
+              speechQueue.length - 1,
+              Math.round(queueIndex)
+            )
+          );
 
-    window.speechSynthesis.cancel();
+        currentIndexRef.current =
+          safeIndex;
 
-    currentIndexRef.current = 0;
+        const item =
+          speechQueue[safeIndex];
 
-    setCurrentChunk(0);
+        stoppedRef.current = true;
 
-    setIsPlaying(false);
-    setIsPaused(false);
+        window.speechSynthesis.cancel();
 
-    updateHighlight(-1);
-  };
+        stoppedRef.current = false;
 
-  /* =======================================================
-     SEEK TO CHUNK
-  ======================================================= */
-
-  const seekToChunk = useCallback(
-    (index: number) => {
-      if (!chunks.length) return;
-
-      const safeIndex =
-        Math.max(
-          0,
-          Math.min(
-            chunks.length - 1,
-            Math.round(index)
-          )
+        updateHighlight(
+          item.index
         );
 
-      chunksRef.current = chunks;
-
-      currentIndexRef.current =
-        safeIndex;
-
-      setCurrentChunk(safeIndex);
-
-      stoppedRef.current = true;
-
-      window.speechSynthesis.cancel();
-
-      stoppedRef.current = false;
-
-      updateHighlight(safeIndex);
-
-      if (isPlaying) {
-        setTimeout(() => {
-          speakChunk(safeIndex);
-        }, 70);
-      }
-    },
-    [
-      chunks,
-      isPlaying,
-      speakChunk,
-      updateHighlight,
-    ]
-  );
+        if (shouldPlay) {
+          setTimeout(() => {
+            speakQueueItem(
+              safeIndex
+            );
+          }, 80);
+        } else {
+          setIsPlaying(false);
+          setIsPaused(false);
+        }
+      },
+      [
+        isPlaying,
+        speakQueueItem,
+        speechQueue,
+        updateHighlight,
+      ]
+    );
 
   /* =======================================================
      +/- 10 SEC
@@ -699,18 +786,18 @@ export default function ArticleAudioPlayer({
   const seekBySeconds = (
     seconds: number
   ) => {
-    if (!chunks.length) return;
+    if (!speechQueue.length) return;
 
     const currentTime =
-      chunks
+      speechQueue
         .slice(
           0,
           currentIndexRef.current
         )
         .reduce(
-          (total, chunk) =>
+          (total, item) =>
             total +
-            chunk.estimatedSeconds,
+            item.estimatedSeconds,
           0
         );
 
@@ -729,23 +816,28 @@ export default function ArticleAudioPlayer({
 
     for (
       let i = 0;
-      i < chunks.length;
+      i < speechQueue.length;
       i++
     ) {
       accumulated +=
-        chunks[i].estimatedSeconds;
+        speechQueue[i]
+          .estimatedSeconds;
 
-      if (accumulated >= targetTime) {
+      if (
+        accumulated >= targetTime
+      ) {
         targetIndex = i;
         break;
       }
     }
 
-    seekToChunk(targetIndex);
+    seekToQueueIndex(
+      targetIndex
+    );
   };
 
   /* =======================================================
-     TIMELINE SEEK
+     TIMELINE
   ======================================================= */
 
   const seekFromPointer = (
@@ -754,7 +846,10 @@ export default function ArticleAudioPlayer({
     const element =
       progressRef.current;
 
-    if (!element || !chunks.length) {
+    if (
+      !element ||
+      !speechQueue.length
+    ) {
       return;
     }
 
@@ -773,9 +868,12 @@ export default function ArticleAudioPlayer({
 
     const target =
       ratio *
-      (chunks.length - 1);
+      Math.max(
+        0,
+        speechQueue.length - 1
+      );
 
-    seekToChunk(target);
+    seekToQueueIndex(target);
   };
 
   const handlePointerDown = (
@@ -841,8 +939,8 @@ export default function ArticleAudioPlayer({
       stoppedRef.current = false;
 
       setTimeout(() => {
-        speakChunk(index);
-      }, 70);
+        speakQueueItem(index);
+      }, 80);
     }
   };
 
@@ -851,7 +949,8 @@ export default function ArticleAudioPlayer({
   ======================================================= */
 
   const statusText =
-    currentChunk >= chunks.length
+    currentIndexRef.current >=
+    speechQueue.length
       ? "लेख पूरा हो गया"
       : isPlaying
         ? "अभी पढ़ा जा रहा है"
@@ -859,13 +958,13 @@ export default function ArticleAudioPlayer({
           ? "ऑडियो रुका हुआ है"
           : "खबर सुनने के लिए चलाएं";
 
-  if (!supported || !text) {
+  if (
+    !supported ||
+    !hasContent ||
+    !speechQueue.length
+  ) {
     return null;
   }
-
-  /* =======================================================
-     UI
-  ======================================================= */
 
   return (
     <section
@@ -882,8 +981,6 @@ export default function ArticleAudioPlayer({
         shadow-[0_12px_40px_rgba(0,0,0,0.07)]
       "
     >
-      {/* PREMIUM TOP LINE */}
-
       <div
         className="
           absolute
@@ -897,10 +994,6 @@ export default function ArticleAudioPlayer({
           to-red-600
         "
       />
-
-      {/* ==================================================
-          HEADER
-      ================================================== */}
 
       <div
         className="
@@ -1010,8 +1103,6 @@ export default function ArticleAudioPlayer({
           </div>
         </div>
 
-        {/* SETTINGS */}
-
         <button
           type="button"
           onClick={() =>
@@ -1057,10 +1148,6 @@ export default function ArticleAudioPlayer({
         </button>
       </div>
 
-      {/* ==================================================
-          TIMELINE
-      ================================================== */}
-
       <div className="px-4 sm:px-6">
         <div
           ref={progressRef}
@@ -1092,8 +1179,6 @@ export default function ArticleAudioPlayer({
           aria-valuemax={100}
           aria-valuenow={Math.round(progress)}
         >
-          {/* TRACK */}
-
           <div
             className="
               relative
@@ -1104,8 +1189,6 @@ export default function ArticleAudioPlayer({
               bg-zinc-100
             "
           >
-            {/* RED PROGRESS */}
-
             <div
               className="
                 absolute
@@ -1121,8 +1204,6 @@ export default function ArticleAudioPlayer({
                 width: `${progress}%`,
               }}
             />
-
-            {/* YELLOW CURRENT POSITION */}
 
             <div
               className="
@@ -1145,8 +1226,6 @@ export default function ArticleAudioPlayer({
             />
           </div>
         </div>
-
-        {/* TIME */}
 
         <div
           className="
@@ -1174,10 +1253,6 @@ export default function ArticleAudioPlayer({
         </div>
       </div>
 
-      {/* ==================================================
-          CONTROLS
-      ================================================== */}
-
       <div
         className="
           flex
@@ -1191,15 +1266,12 @@ export default function ArticleAudioPlayer({
           sm:py-5
         "
       >
-        {/* BACK 10 */}
-
         <button
           type="button"
           onClick={() =>
             seekBySeconds(-10)
           }
           className="
-            group
             flex
             h-10
             w-10
@@ -1220,18 +1292,10 @@ export default function ArticleAudioPlayer({
             strokeWidth={2}
           />
 
-          <span
-            className="
-              -mt-1
-              text-[8px]
-              font-bold
-            "
-          >
+          <span className="-mt-1 text-[8px] font-bold">
             10
           </span>
         </button>
-
-        {/* PLAY */}
 
         <button
           type="button"
@@ -1290,15 +1354,12 @@ export default function ArticleAudioPlayer({
           )}
         </button>
 
-        {/* FORWARD 10 */}
-
         <button
           type="button"
           onClick={() =>
             seekBySeconds(10)
           }
           className="
-            group
             flex
             h-10
             w-10
@@ -1319,21 +1380,11 @@ export default function ArticleAudioPlayer({
             strokeWidth={2}
           />
 
-          <span
-            className="
-              -mt-1
-              text-[8px]
-              font-bold
-            "
-          >
+          <span className="-mt-1 text-[8px] font-bold">
             10
           </span>
         </button>
       </div>
-
-      {/* ==================================================
-          READING POSITION
-      ================================================== */}
 
       <div
         className="
@@ -1354,18 +1405,16 @@ export default function ArticleAudioPlayer({
             sm:text-[11px]
           "
         >
-          {currentChunk < chunks.length
-            ? `पढ़ा जा रहा है · ${Math.min(
-                100,
-                Math.round(progress)
+          {currentBlock >= 0
+            ? `पढ़ा जा रहा है · ${Math.round(
+                progress
               )}%`
-            : "लेख पूरा हो गया"}
+            : currentIndexRef.current >=
+              speechQueue.length
+              ? "लेख पूरा हो गया"
+              : "खबर सुनने के लिए चलाएं"}
         </p>
       </div>
-
-      {/* ==================================================
-          SPEED SETTINGS
-      ================================================== */}
 
       {showSettings && (
         <div

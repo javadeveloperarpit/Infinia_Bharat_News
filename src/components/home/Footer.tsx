@@ -9,7 +9,7 @@ import {
 
 import {
   getCategories
-} from "@/services/category.service";
+} from "@/services/public/category.public.service";
 
 
 export default async function Footer(){
