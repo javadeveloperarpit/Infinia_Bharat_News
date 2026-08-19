@@ -19,8 +19,17 @@ import {
 getCategories
 } from "@/services/category.service";
 
-import Editor from "@/components/editor/NewsEditor";
+import dynamic from "next/dynamic";
 
+const Editor = dynamic(
+  () => import("@/components/editor/NewsEditor"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="min-h-[400px] w-full animate-pulse rounded-xl border bg-zinc-100" />
+    ),
+  }
+);
 
 export default function EditArticlePage(){
 

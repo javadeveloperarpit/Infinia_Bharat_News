@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 
 import "./globals.css";
 
@@ -8,17 +7,6 @@ import { siteConfig } from "@/config/site";
 import PageLoadingBar from "@/components/navigation/PageLoadingBar";
 import ServiceWorkerRegister from "@/components/pwa/service-worker-register";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -196,7 +184,6 @@ export default function RootLayout({
     <html
       lang={siteConfig.language.split("-")[0]}
       data-scroll-behavior="smooth"
-      className={`${geistSans.variable} ${geistMono.variable}`}
     >
       <head>
         {/* Google AdSense Verification */}
