@@ -181,6 +181,9 @@ const allImages = [
 
     alternates: {
       canonical: articleUrl,
+      types: {
+    "application/amphtml": `${siteConfig.url}/amp/news/${article.slug}`,
+  },
     },
 
     // ======================================================
@@ -387,6 +390,9 @@ export default async function NewsPage({
 
   const articleUrl =
     `${siteConfig.url}/news/${article.slug}`;
+  
+  const ampUrl =
+  `${siteConfig.url}/amp/news/${article.slug}`;
 
 
     // ==========================================================

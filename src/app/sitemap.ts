@@ -53,7 +53,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
         priority: 0.8,
       }));
+      
+// ==========================================================
+// AMP ARTICLES
+// ==========================================================
 
+const ampArticleUrls: MetadataRoute.Sitemap =
+  articles
+    .filter((article) => article.slug)
+    .map((article) => ({
+      url: `${siteConfig.url}/amp/news/${article.slug}`,
+
+      lastModified:
+        article.updatedAt || article.createdAt
+          ? new Date(
+              article.updatedAt ||
+                article.createdAt!
+            )
+          : undefined,
+
+      changeFrequency: "daily",
+
+      priority: 0.7,
+    }));
   // ==========================================================
   // VIDEOS
   // ==========================================================
@@ -259,6 +281,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...uniqueAuthorUrls,
 
     ...articleUrls,
+
+    ...ampArticleUrls,
 
     ...videoUrls,
 
