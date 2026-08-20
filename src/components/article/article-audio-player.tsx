@@ -310,111 +310,76 @@ function extractSpeechBlocks(
     return [];
   }
 
-  if (
-    typeof window === "undefined"
-  ) {
-    const text = html
-      .replace(
-        /<script[\s\S]*?<\/script>/gi,
-        ""
-      )
-      .replace(
-        /<style[\s\S]*?<\/style>/gi,
-        ""
-      )
-      .replace(
-        /<iframe[\s\S]*?<\/iframe>/gi,
-        ""
-      )
-      .replace(
-        /<figure[\s\S]*?<\/figure>/gi,
-        ""
-      )
-      .replace(
-        /<[^>]+>/g,
-        " "
-      )
-      .replace(
-        /\s+/g,
-        " "
-      )
-      .trim();
-
-    return text
-      ? [
-          {
-            index: 0,
-            text,
-            estimatedSeconds:
-              estimateDuration(text),
-          },
-        ]
-      : [];
-  }
-
-  const parser =
-    new DOMParser();
-
-  const doc =
-    parser.parseFromString(
-      html,
-      "text/html"
-    );
-
-  doc
-    .querySelectorAll(
-      [
-        "script",
-        "style",
-        "noscript",
-        "iframe",
-        "video",
-        "audio",
-        "figure",
-      ].join(",")
+  const cleanHtml = html
+    .replace(
+      /<script[\s\S]*?<\/script>/gi,
+      ""
     )
-    .forEach((element) =>
-      element.remove()
+    .replace(
+      /<style[\s\S]*?<\/style>/gi,
+      ""
+    )
+    .replace(
+      /<noscript[\s\S]*?<\/noscript>/gi,
+      ""
+    )
+    .replace(
+      /<iframe[\s\S]*?<\/iframe>/gi,
+      ""
+    )
+    .replace(
+      /<video[\s\S]*?<\/video>/gi,
+      ""
+    )
+    .replace(
+      /<audio[\s\S]*?<\/audio>/gi,
+      ""
+    )
+    .replace(
+      /<figure[\s\S]*?<\/figure>/gi,
+      ""
     );
 
-  const selectors = [
-    "p",
-    "h2",
-    "h3",
-    "h4",
-    "blockquote",
-    "li",
-  ];
+  const blockRegex =
+    /<(p|h2|h3|h4|blockquote|li)\b[^>]*>([\s\S]*?)<\/\1>/gi;
 
   const blocks: SpeechBlock[] = [];
 
-  doc
-    .querySelectorAll(
-      selectors.join(",")
-    )
-    .forEach((element) => {
-      const text =
-        element.textContent
-          ?.replace(/\s+/g, " ")
-          .trim() || "";
+  let match: RegExpExecArray | null;
 
-      if (!text) {
-        return;
-      }
+  while (
+    (match = blockRegex.exec(cleanHtml)) !== null
+  ) {
+    const text = match[2]
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&amp;/gi, "&")
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'")
+      .replace(/\s+/g, " ")
+      .trim();
 
-      blocks.push({
-        index: blocks.length,
-        text,
-        estimatedSeconds:
-          estimateDuration(text),
-      });
+    if (!text) {
+      continue;
+    }
+
+    blocks.push({
+      index: blocks.length,
+      text,
+      estimatedSeconds:
+        estimateDuration(text),
     });
+  }
 
   if (!blocks.length) {
-    const text =
-      doc.body.textContent
-        ?.replace(/\s+/g, " ")
-        .trim() || "";
+    const text = cleanHtml
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&amp;/gi, "&")
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'")
+      .replace(/\s+/g, " ")
+      .trim();
 
     if (text) {
       blocks.push({
@@ -493,6 +458,10 @@ export default function ArticleAudioPlayer({
 
   const currentIndexRef =
     useRef(0);
+  const [
+  currentQueueIndex,
+  setCurrentQueueIndex,
+] = useState(0);
 
   const speedRef =
     useRef(1);
@@ -599,53 +568,50 @@ export default function ArticleAudioPlayer({
   );
 
   const elapsedSeconds = useMemo(() => {
-    return speechQueue
-      .slice(
-        0,
-        currentIndexRef.current
-      )
-      .reduce(
-        (total, item) =>
-          total +
-          item.estimatedSeconds,
-        0
-      );
-  }, [
-    speechQueue,
-    currentBlock,
-  ]);
+  return speechQueue
+    .slice(
+      0,
+      currentQueueIndex
+    )
+    .reduce(
+      (total, item) =>
+        total +
+        item.estimatedSeconds,
+      0
+    );
+}, [
+  speechQueue,
+  currentQueueIndex,
+]);
 
   const progress = useMemo(() => {
-    if (!speechQueue.length) {
-      return 0;
-    }
+  if (!speechQueue.length) {
+    return 0;
+  }
 
-    const queueIndex =
-      currentIndexRef.current;
+  if (
+    currentQueueIndex >=
+    speechQueue.length
+  ) {
+    return 100;
+  }
 
-    if (
-      queueIndex >=
-      speechQueue.length
-    ) {
-      return 100;
-    }
-
-    return Math.min(
-      100,
-      Math.max(
-        0,
-        (queueIndex /
-          Math.max(
-            1,
-            speechQueue.length - 1
-          )) *
-          100
-      )
-    );
-  }, [
-    currentBlock,
-    speechQueue.length,
-  ]);
+  return Math.min(
+    100,
+    Math.max(
+      0,
+      (currentQueueIndex /
+        Math.max(
+          1,
+          speechQueue.length - 1
+        )) *
+        100
+    )
+  );
+}, [
+  currentQueueIndex,
+  speechQueue.length,
+]);
 
   /* =======================================================
      SPEED
@@ -766,26 +732,27 @@ export default function ArticleAudioPlayer({
           return;
         }
 
-        if (
-          queueIndex >=
-          speechQueue.length
-        ) {
-          setIsPlaying(false);
-          setIsPaused(false);
+        if (queueIndex >= speechQueue.length) {
+  setIsPlaying(false);
+  setIsPaused(false);
 
-          currentIndexRef.current =
-            speechQueue.length;
+  currentIndexRef.current = speechQueue.length;
+  setCurrentQueueIndex(speechQueue.length);
 
-          updateHighlight(-1);
+  updateHighlight(-1);
 
-          return;
-        }
+  return;
+}
 
         const item =
           speechQueue[queueIndex];
 
         currentIndexRef.current =
           queueIndex;
+
+        setCurrentQueueIndex(
+  queueIndex
+);
 
         updateHighlight(
           item.index
@@ -860,14 +827,16 @@ export default function ArticleAudioPlayer({
           ) {
             speakQueueItem(next);
           } else {
-            setIsPlaying(false);
-            setIsPaused(false);
+  setIsPlaying(false);
+  setIsPaused(false);
 
-            currentIndexRef.current =
-              speechQueue.length;
+  currentIndexRef.current = speechQueue.length;
+  setCurrentQueueIndex(
+    speechQueue.length
+  );
 
-            updateHighlight(-1);
-          }
+  updateHighlight(-1);
+}
         };
 
         utterance.onerror = (
@@ -946,13 +915,15 @@ export default function ArticleAudioPlayer({
         currentIndexRef.current;
 
       if (
-        queueIndex >=
-        speechQueue.length
-      ) {
-        queueIndex = 0;
+  queueIndex >=
+  speechQueue.length
+) {
+  queueIndex = 0;
 
-        currentIndexRef.current = 0;
-      }
+  currentIndexRef.current = 0;
+
+  setCurrentQueueIndex(0);
+}
 
       speakQueueItem(
         queueIndex
@@ -1008,6 +979,10 @@ export default function ArticleAudioPlayer({
 
         currentIndexRef.current =
           safeIndex;
+        
+        setCurrentQueueIndex(
+  safeIndex
+);
 
         const item =
           speechQueue[safeIndex];
@@ -1216,8 +1191,8 @@ export default function ArticleAudioPlayer({
   ======================================================= */
 
   const statusText =
-    currentIndexRef.current >=
-    speechQueue.length
+    currentQueueIndex >=
+speechQueue.length
       ? "लेख पूरा हो गया"
       : isPlaying
       ? "अभी पढ़ा जा रहा है"
@@ -1564,8 +1539,8 @@ export default function ArticleAudioPlayer({
             ? `पढ़ा जा रहा है · ${Math.round(
                 progress
               )}%`
-            : currentIndexRef.current >=
-              speechQueue.length
+            : currentQueueIndex >=
+speechQueue.length
             ? "लेख पूरा हो गया"
             : "खबर सुनने के लिए चलाएं"}
         </p>

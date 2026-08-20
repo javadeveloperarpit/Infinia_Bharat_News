@@ -385,7 +385,7 @@ iframe {
 
 .article-content strong {
   font-weight: 800;
-  color: #18181b;
+  color: inherit;
 }
 
 
