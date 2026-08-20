@@ -205,7 +205,6 @@ export default function NewsEditor({
     <div
       className="
         rounded-xl
-        overflow-hidden
         border
         bg-white
         min-h-[600px]
