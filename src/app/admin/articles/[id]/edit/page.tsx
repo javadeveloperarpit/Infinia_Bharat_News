@@ -209,84 +209,102 @@ content:value
 
 
 
-async function handleUpdate(){
+async function handleUpdate() {
 
-try{
+  try {
 
-setSaving(true);
+    setSaving(true);
 
+    const user = auth.currentUser;
 
-const user = auth.currentUser;
+    if (!user) {
 
+      alert("Please login again");
 
-if(!user){
+      return;
 
-alert("Please login again");
+    }
 
-return;
-
-}
-
-
-const token =
-await user.getIdToken();
+    const token =
+      await user.getIdToken();
 
 
+    // ======================================
+    // IMPORTANT
+    // createdAt ko edit/update nahi karna
+    // ======================================
 
-const res =
-await fetch(
-`/api/admin/articles/${id}`,
-{
-method:"PUT",
-
-headers:{
-"Content-Type":"application/json",
-
-Authorization:
-`Bearer ${token}`
-},
-
-body:JSON.stringify(form)
-
-});
+    const {
+      createdAt,
+      updatedAt,
+      ...updateData
+    } = form;
 
 
-const data =
-await res.json();
+    const res =
+      await fetch(
+        `/api/admin/articles/${id}`,
+        {
+
+          method: "PUT",
+
+          headers: {
+
+            "Content-Type":
+              "application/json",
+
+            Authorization:
+              `Bearer ${token}`
+
+          },
+
+          body:
+            JSON.stringify(updateData)
+
+        }
+      );
 
 
-if(!res.ok){
-
-throw new Error(
-data.message
-);
-
-}
+    const data =
+      await res.json();
 
 
-alert(
-"Article Updated Successfully"
-);
+    if (!res.ok) {
+
+      throw new Error(
+        data.message ||
+        "Failed to update article"
+      );
+
+    }
 
 
-router.push(
-"/admin/articles"
-);
+    alert(
+      "Article Updated Successfully"
+    );
 
 
-}
-catch(error:any){
+    router.push(
+      "/admin/articles"
+    );
 
-console.error(error);
 
-alert(error.message);
+  }
+  catch(error:any) {
 
-}
-finally{
+    console.error(error);
 
-setSaving(false);
+    alert(
+      error.message ||
+      "Failed to update article"
+    );
 
-}
+  }
+  finally {
+
+    setSaving(false);
+
+  }
 
 }
 

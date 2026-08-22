@@ -14,9 +14,17 @@ import {
 // FIREBASE VALUE -> JSON SAFE
 // ======================================================
 
+// ======================================================
+// FIREBASE VALUE -> JSON SAFE
+// ======================================================
+
 export function serializeValue(
   value: any
 ): any {
+
+  // ================================================
+  // NULL / UNDEFINED
+  // ================================================
 
   if (
     value === null ||
@@ -25,39 +33,143 @@ export function serializeValue(
     return null;
   }
 
+
+  // ================================================
+  // FIRESTORE TIMESTAMP
+  //
+  // IMPORTANT:
+  // Convert BEFORE generic object recursion.
+  // ================================================
+
   if (
     typeof value === "object" &&
-    typeof value.toDate === "function"
+    typeof value?.toDate === "function"
   ) {
-    return value.toDate().toISOString();
+
+    try {
+
+      return value
+        .toDate()
+        .toISOString();
+
+    } catch (error) {
+
+      console.error(
+        "TIMESTAMP SERIALIZATION ERROR:",
+        error
+      );
+
+      return null;
+
+    }
+
   }
 
-  if (value instanceof Date) {
-    return value.toISOString();
+
+  // ================================================
+  // FIRESTORE TIMESTAMP FALLBACK
+  //
+  // Handles objects like:
+  //
+  // {
+  //   seconds: 1787404771,
+  //   nanoseconds: 679000000
+  // }
+  // ================================================
+
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    typeof value.seconds === "number"
+  ) {
+
+    const milliseconds =
+      value.seconds * 1000 +
+      Math.floor(
+        (value.nanoseconds || 0) /
+        1_000_000
+      );
+
+    const date =
+      new Date(milliseconds);
+
+    if (
+      !Number.isNaN(
+        date.getTime()
+      )
+    ) {
+
+      return date
+        .toISOString();
+
+    }
+
   }
 
-  if (Array.isArray(value)) {
-    return value.map(serializeValue);
+
+  // ================================================
+  // JAVASCRIPT DATE
+  // ================================================
+
+  if (
+    value instanceof Date
+  ) {
+
+    return value
+      .toISOString();
+
   }
 
-  if (typeof value === "object") {
 
-    const result: Record<string, any> = {};
+  // ================================================
+  // ARRAY
+  // ================================================
+
+  if (
+    Array.isArray(value)
+  ) {
+
+    return value.map(
+      serializeValue
+    );
+
+  }
+
+
+  // ================================================
+  // OBJECT
+  // ================================================
+
+  if (
+    typeof value === "object"
+  ) {
+
+    const result:
+      Record<string, any> =
+      {};
 
     for (
       const [key, item]
       of Object.entries(value)
     ) {
+
       result[key] =
         serializeValue(item);
+
     }
 
     return result;
+
   }
 
-  return value;
-}
 
+  // ================================================
+  // PRIMITIVE
+  // ================================================
+
+  return value;
+
+}
 // ======================================================
 // GITHUB URL
 // ======================================================

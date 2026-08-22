@@ -286,13 +286,33 @@ const slug =
 // PREPARE UPDATE DATA
 // ======================================================
 
+// ======================================================
+// PREPARE UPDATE DATA
+// IMPORTANT:
+// createdAt NEVER changes after article creation
+// ======================================================
+
+const {
+  createdAt: _createdAt,
+  updatedAt: _updatedAt,
+  author: _author,
+  slug: _slug,
+  ...safeBody
+} = body;
+
+
 const updateData: Record<string, any> = {
-  ...body,
+  ...safeBody,
 
   slug,
 
   author,
 
+  // KEEP ORIGINAL CREATED AT
+  createdAt:
+    oldData.createdAt,
+
+  // ONLY UPDATE THIS
   updatedAt:
     FieldValue.serverTimestamp(),
 };
