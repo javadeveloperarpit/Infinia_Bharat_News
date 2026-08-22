@@ -603,7 +603,6 @@
     "content": "<h2>China Car Recall: 4.3 Million Vehicles पर बड़ा Safety Recall</h2><p><strong>Beijing:</strong> China ने अपनी अब तक की <strong>सबसे बड़ी automotive recall campaign</strong> शुरू की है। Tesla समेत आठ अन्य automakers करीब <strong>4.3 million vehicles</strong> को recall कर रहे हैं। इन गाड़ियों में मुख्य concern emergency situation में doors खोलने से जुड़ा है।</p><h3>Why Are These Cars Being Recalled?</h3><p>China के regulator <strong>State Administration for Market Regulation (SAMR)</strong> के मुताबिक, कुछ vehicles में emergency mechanical door releases को पहचानना और operate करना मुश्किल हो सकता है। गंभीर accident के बाद अगर vehicle का electrical system काम करना बंद कर दे, तो passengers के लिए बाहर निकलना या rescuers के लिए door खोलना मुश्किल हो सकता है।</p><h3>Tesla Recall सबसे बड़ा</h3><p>इस recall campaign में <strong>Tesla सबसे ज्यादा प्रभावित</strong> है। करीब <strong>2.98 million Tesla vehicles</strong> recall किए जा रहे हैं, जिनमें Model 3, Model Y, Model S और Model X के कुछ vehicles शामिल हैं। Tesla software updates और warning labels के जरिए समस्या को address करेगी।</p><h3>Xiaomi और Leapmotor भी शामिल</h3><p>Recall में <strong>Xiaomi, Leapmotor, Xpeng, Geely</strong> समेत कई Chinese EV manufacturers शामिल हैं। उपलब्ध रिपोर्टों के अनुसार Xiaomi करीब <strong>390,000 vehicles</strong>, जबकि Leapmotor करीब <strong>371,000 vehicles</strong> recall कर रही है।</p><h3>China में 2027 से Hidden Door Handles पर Ban</h3><p>यह action ऐसे समय आया है जब China concealed या hidden door handles की safety को लेकर नियम सख्त कर रहा है। देश <strong>2027 से नए vehicles में ऐसे concealed door-handle designs को phase out करने</strong> की दिशा में बढ़ रहा है।</p><hr><p>China का यह <strong>4.3 million vehicle recall</strong> दिखाता है कि modern EVs में design और technology के साथ safety को लेकर regulators कितने सख्त हो रहे हैं। Emergency में door आसानी से खुल सके, इसे अब vehicle safety का अहम हिस्सा माना जा रहा है।</p><p><a href=\"https://news.google.com/search?q=site%3Ainfiniabharatnews.vercel.app&amp;hl=en-IN&amp;gl=IN&amp;ceid=IN%3Aen\">China car recall, 4.3 million vehicles recall, Tesla recall China, Xiaomi car recall, Leapmotor recall, Xpeng recall, China EV recall 2026, Tesla Model 3 recall, Tesla Model Y recall, electric car safety, hidden door handles, China automotive news</a></p>",
     "seoTitle": "china-car-recall-43-million-tesla-xiaomi-leapmotor-door-safety",
     "seoDescription": "China ने करीब 4.3 million vehicles का सबसे बड़ा car recall शुरू किया है। Tesla, Xiaomi, Leapmotor और Xpeng समेत कई कंपनियों की EVs में emergency door opening safety को लेकर चिंता है।",
-    "featured": false,
     "breaking": false,
     "status": "published",
     "slug": "china-car-recall-43-million-tesla-xiaomi-leapmotor-door-safety-20260822-143043746",
@@ -622,7 +621,9 @@
       "nanoseconds": 939000000
     },
     "categoryId": "vuEBq7WUocdOXD7kV1LL",
-    "updatedAt": "2026-08-22T14:35:04.183Z"
+    "featured": true,
+    "priority": 5,
+    "updatedAt": "2026-08-22T14:37:19.985Z"
   },
   {
     "id": "U1NoM1eQFZ0k6jos9eAq",
