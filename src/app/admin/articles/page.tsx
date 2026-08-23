@@ -10,19 +10,8 @@ import {
 import Link from "next/link";
 
 import {
-  collection,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  type QueryDocumentSnapshot,
-  type DocumentData,
-} from "firebase/firestore";
-
-import { db } from "@/lib/firebase/firebase";
-
-import {
   deleteArticle,
+  getLatestArticles,
   updateArticle,
 } from "@/services/article.service";
 
@@ -41,10 +30,6 @@ import {
   X,
   AlertCircle,
   Clock3,
-  Cloud,
-  Check,
-  CircleAlert,
-  Database,
 } from "lucide-react";
 
 // ======================================================
@@ -83,31 +68,12 @@ interface ArticleStats {
 }
 
 // ======================================================
-// FIREBASE / JSON SYNC TYPES
-// ======================================================
-
-interface SyncArticle {
-  id: string;
-  title?: string;
-  slug?: string;
-  status?: string;
-  createdAt?: any;
-  updatedAt?: any;
-  publishedAt?: any;
-  date?: any;
-  [key: string]: any;
-}
-
-interface PendingArticle extends SyncArticle {
-  firebaseId: string;
-  matchedBy?: "id" | "slug" | "title";
-}
-
-// ======================================================
 // DATE HELPERS
 // ======================================================
 
-function parseArticleDate(article: any): Date | null {
+function parseArticleDate(
+  article: any
+): Date | null {
   const value =
     article?.publishedAt ??
     article?.createdAt ??
@@ -124,18 +90,6 @@ function parseArticleDate(article: any): Date | null {
       return value.toDate();
     }
 
-    if (
-      typeof value === "object" &&
-      typeof value?.seconds === "number"
-    ) {
-      return new Date(
-        value.seconds * 1000 +
-          Math.floor(
-            (value.nanoseconds ?? 0) / 1000000
-          )
-      );
-    }
-
     const date = new Date(value);
 
     if (Number.isNaN(date.getTime())) {
@@ -148,35 +102,10 @@ function parseArticleDate(article: any): Date | null {
   }
 }
 
-function getDateMillis(value: any): number {
-  if (!value) return 0;
-
-  try {
-    if (
-      typeof value === "object" &&
-      typeof value?.toDate === "function"
-    ) {
-      return value.toDate().getTime();
-    }
-
-    if (
-      typeof value === "object" &&
-      typeof value?.seconds === "number"
-    ) {
-      return value.seconds * 1000;
-    }
-
-    const date = new Date(value);
-
-    return Number.isNaN(date.getTime())
-      ? 0
-      : date.getTime();
-  } catch {
-    return 0;
-  }
-}
-
-function isSameDay(date: Date, target: Date) {
+function isSameDay(
+  date: Date,
+  target: Date
+) {
   return (
     date.getFullYear() === target.getFullYear() &&
     date.getMonth() === target.getMonth() &&
@@ -184,14 +113,23 @@ function isSameDay(date: Date, target: Date) {
   );
 }
 
-function isWithinDays(date: Date, days: number) {
+function isWithinDays(
+  date: Date,
+  days: number
+) {
   const now = new Date();
 
-  const diff = now.getTime() - date.getTime();
+  const diff =
+    now.getTime() - date.getTime();
 
   return (
     diff >= 0 &&
-    diff <= days * 24 * 60 * 60 * 1000
+    diff <=
+      days *
+        24 *
+        60 *
+        60 *
+        1000
   );
 }
 
@@ -199,31 +137,30 @@ function isWithinDays(date: Date, days: number) {
 // STRING HELPERS
 // ======================================================
 
-function normalize(value: any): string {
+function normalize(
+  value: any
+): string {
   return String(value ?? "")
     .trim()
     .toLowerCase();
 }
 
-function normalizeSlug(value: any): string {
+function normalizeSlug(
+  value: any
+): string {
   return normalize(value).replace(
     /^\/+|\/+$/g,
     ""
   );
 }
 
-function normalizeTitle(value: any): string {
-  return normalize(value)
-    .replace(/\s+/g, " ")
-    .replace(/[“”‘’"'`]/g, "")
-    .trim();
-}
-
 // ======================================================
 // CATEGORY HELPERS
 // ======================================================
 
-function getArticleCategoryRaw(article: any): string {
+function getArticleCategoryRaw(
+  article: any
+): string {
   const category =
     article?.category ??
     article?.categorySlug ??
@@ -249,23 +186,37 @@ function findCategory(
   article: any,
   categories: CategoryItem[]
 ): CategoryItem | undefined {
-  const raw = getArticleCategoryRaw(article);
+  const raw =
+    getArticleCategoryRaw(article);
 
   if (!raw) return undefined;
 
-  return categories.find((category) => {
-    const id = normalizeSlug(category.id);
-    const slug = normalizeSlug(category.slug);
-    const name = normalizeSlug(category.name);
-    const nameHi = normalizeSlug(category.nameHi);
+  return categories.find(
+    (category) => {
+      const id = normalizeSlug(
+        category.id
+      );
 
-    return (
-      raw === id ||
-      raw === slug ||
-      raw === name ||
-      raw === nameHi
-    );
-  });
+      const slug = normalizeSlug(
+        category.slug
+      );
+
+      const name = normalizeSlug(
+        category.name
+      );
+
+      const nameHi = normalizeSlug(
+        category.nameHi
+      );
+
+      return (
+        raw === id ||
+        raw === slug ||
+        raw === name ||
+        raw === nameHi
+      );
+    }
+  );
 }
 
 function resolveCategorySlug(
@@ -323,96 +274,121 @@ function buildCategoryStats(
   articles: any[],
   categories: CategoryItem[]
 ): CategoryStat[] {
-  const published = articles.filter(
-    (article) =>
-      article?.status === "published"
-  );
-
-  const total = published.length;
-
-  const countMap = new Map<string, number>();
-
-  const metadataMap = new Map<
-    string,
-    {
-      name: string;
-      slug: string;
-    }
-  >();
-
-  categories.forEach((category) => {
-    const slug = normalizeSlug(
-      category.slug ||
-        category.id ||
-        category.name
+  const published =
+    articles.filter(
+      (article) =>
+        article?.status === "published"
     );
 
-    if (!slug) return;
+  const total =
+    published.length;
 
-    countMap.set(slug, 0);
+  const countMap =
+    new Map<string, number>();
 
-    metadataMap.set(slug, {
-      name:
-        category.nameHi ||
-        category.name ||
-        slug,
-      slug,
-    });
-  });
+  const metadataMap =
+    new Map<
+      string,
+      {
+        name: string;
+        slug: string;
+      }
+    >();
 
-  published.forEach((article) => {
-    const slug = resolveCategorySlug(
-      article,
-      categories
-    );
+  categories.forEach(
+    (category) => {
+      const slug =
+        normalizeSlug(
+          category.slug ||
+            category.id ||
+            category.name
+        );
 
-    countMap.set(
-      slug,
-      (countMap.get(slug) ?? 0) + 1
-    );
+      if (!slug) return;
 
-    if (!metadataMap.has(slug)) {
+      countMap.set(slug, 0);
+
       metadataMap.set(slug, {
-        name: resolveCategoryName(
-          article,
-          categories
-        ),
+        name:
+          category.nameHi ||
+          category.name ||
+          slug,
         slug,
       });
     }
-  });
+  );
 
-  return Array.from(countMap.entries())
-    .map(([key, count]) => {
-      const metadata =
-        metadataMap.get(key);
+  published.forEach(
+    (article) => {
+      const slug =
+        resolveCategorySlug(
+          article,
+          categories
+        );
 
-      return {
-        key,
-        name:
-          metadata?.name ||
-          key,
-        slug:
-          metadata?.slug ||
-          key,
-        count,
-        percentage:
-          total > 0
-            ? Math.round(
-                (count / total) * 100
-              )
-            : 0,
-      };
-    })
-    .sort((a, b) => {
-      if (a.count !== b.count) {
-        return a.count - b.count;
-      }
-
-      return a.slug.localeCompare(
-        b.slug
+      countMap.set(
+        slug,
+        (countMap.get(slug) ?? 0) + 1
       );
-    });
+
+      if (
+        !metadataMap.has(slug)
+      ) {
+        metadataMap.set(slug, {
+          name:
+            resolveCategoryName(
+              article,
+              categories
+            ),
+          slug,
+        });
+      }
+    }
+  );
+
+  return Array.from(
+    countMap.entries()
+  )
+    .map(
+      ([key, count]) => {
+        const metadata =
+          metadataMap.get(key);
+
+        return {
+          key,
+          name:
+            metadata?.name ||
+            key,
+          slug:
+            metadata?.slug ||
+            key,
+          count,
+          percentage:
+            total > 0
+              ? Math.round(
+                  (count / total) *
+                    100
+                )
+              : 0,
+        };
+      }
+    )
+    .sort(
+      (a, b) => {
+        if (
+          a.count !==
+          b.count
+        ) {
+          return (
+            a.count - b.count
+          );
+        }
+
+        return a.slug.localeCompare(
+          b.slug
+        );
+      }
+    );
 }
 
 // ======================================================
@@ -423,64 +399,90 @@ function buildArticleStats(
   articles: any[],
   categories: CategoryItem[]
 ): ArticleStats {
-  const published = articles.filter(
-    (article) =>
-      article?.status === "published"
-  );
+  const published =
+    articles.filter(
+      (article) =>
+        article?.status === "published"
+    );
 
-  const drafts = articles.filter(
-    (article) =>
-      article?.status !== "published"
-  );
+  const drafts =
+    articles.filter(
+      (article) =>
+        article?.status !==
+        "published"
+    );
 
-  const featured = articles.filter(
-    (article) =>
-      article?.featured === true
-  );
+  const featured =
+    articles.filter(
+      (article) =>
+        article?.featured === true
+    );
 
   const now = new Date();
 
-  const today = published.filter(
-    (article) => {
-      const date =
-        parseArticleDate(article);
+  const today =
+    published.filter(
+      (article) => {
+        const date =
+          parseArticleDate(
+            article
+          );
 
-      return (
-        date !== null &&
-        isSameDay(date, now)
-      );
-    }
-  ).length;
+        return (
+          date !== null &&
+          isSameDay(
+            date,
+            now
+          )
+        );
+      }
+    ).length;
 
-  const last7Days = published.filter(
-    (article) => {
-      const date =
-        parseArticleDate(article);
+  const last7Days =
+    published.filter(
+      (article) => {
+        const date =
+          parseArticleDate(
+            article
+          );
 
-      return (
-        date !== null &&
-        isWithinDays(date, 7)
-      );
-    }
-  ).length;
+        return (
+          date !== null &&
+          isWithinDays(
+            date,
+            7
+          )
+        );
+      }
+    ).length;
 
-  const last30Days = published.filter(
-    (article) => {
-      const date =
-        parseArticleDate(article);
+  const last30Days =
+    published.filter(
+      (article) => {
+        const date =
+          parseArticleDate(
+            article
+          );
 
-      return (
-        date !== null &&
-        isWithinDays(date, 30)
-      );
-    }
-  ).length;
+        return (
+          date !== null &&
+          isWithinDays(
+            date,
+            30
+          )
+        );
+      }
+    ).length;
 
   return {
-    total: articles.length,
-    published: published.length,
-    drafts: drafts.length,
-    featured: featured.length,
+    total:
+      articles.length,
+    published:
+      published.length,
+    drafts:
+      drafts.length,
+    featured:
+      featured.length,
     today,
     last7Days,
     last30Days,
@@ -496,108 +498,12 @@ function buildArticleStats(
 // NUMBER
 // ======================================================
 
-function formatNumber(value: number) {
-  return value.toLocaleString("en-IN");
-}
-
-// ======================================================
-// FIREBASE ARTICLE EXTRACTION
-// ======================================================
-
-function firebaseDocToArticle(
-  doc: QueryDocumentSnapshot<DocumentData>
-): SyncArticle {
-  const data = doc.data();
-
-  return {
-    ...data,
-    id: String(
-      data?.id ??
-        doc.id
-    ),
-  };
-}
-
-// ======================================================
-// JSON MATCHING
-// ======================================================
-
-function findJsonMatch(
-  firebaseArticle: SyncArticle,
-  jsonArticles: SyncArticle[]
-): {
-  found: boolean;
-  matchedBy?: "id" | "slug" | "title";
-} {
-  const firebaseId =
-    normalize(
-      firebaseArticle.id
-    );
-
-  const firebaseSlug =
-    normalizeSlug(
-      firebaseArticle.slug
-    );
-
-  const firebaseTitle =
-    normalizeTitle(
-      firebaseArticle.title
-    );
-
-  if (firebaseId) {
-    const byId =
-      jsonArticles.find(
-        (item) =>
-          normalize(
-            item?.id
-          ) === firebaseId
-      );
-
-    if (byId) {
-      return {
-        found: true,
-        matchedBy: "id",
-      };
-    }
-  }
-
-  if (firebaseSlug) {
-    const bySlug =
-      jsonArticles.find(
-        (item) =>
-          normalizeSlug(
-            item?.slug
-          ) === firebaseSlug
-      );
-
-    if (bySlug) {
-      return {
-        found: true,
-        matchedBy: "slug",
-      };
-    }
-  }
-
-  if (firebaseTitle) {
-    const byTitle =
-      jsonArticles.find(
-        (item) =>
-          normalizeTitle(
-            item?.title
-          ) === firebaseTitle
-      );
-
-    if (byTitle) {
-      return {
-        found: true,
-        matchedBy: "title",
-      };
-    }
-  }
-
-  return {
-    found: false,
-  };
+function formatNumber(
+  value: number
+) {
+  return value.toLocaleString(
+    "en-IN"
+  );
 }
 
 // ======================================================
@@ -617,314 +523,84 @@ function CategoryBarChart({
     );
   }
 
-  const maxCount = Math.max(
-    ...categories.map(
-      (item) => item.count
-    ),
-    1
-  );
+  const maxCount =
+    Math.max(
+      ...categories.map(
+        (item) => item.count
+      ),
+      1
+    );
 
   return (
     <div className="space-y-2.5">
-      {categories.map((item) => {
-        const width =
-          item.count === 0
-            ? 0
-            : Math.max(
-                (item.count /
-                  maxCount) *
-                  100,
-                3
-              );
+      {categories.map(
+        (item) => {
+          const width =
+            item.count === 0
+              ? 0
+              : Math.max(
+                  (item.count /
+                    maxCount) *
+                    100,
+                  3
+                );
 
-        return (
-          <div
-            key={item.key}
-            className="group"
-          >
-            <div className="mb-1 flex min-w-0 items-center justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span
-                    className="truncate text-[11px] font-bold text-zinc-800"
-                    title={item.name}
-                  >
-                    {item.name}
+          return (
+            <div
+              key={item.key}
+              className="group"
+            >
+              <div className="mb-1 flex min-w-0 items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span
+                      className="truncate text-[11px] font-bold text-zinc-800"
+                      title={item.name}
+                    >
+                      {item.name}
+                    </span>
+
+                    <span
+                      className="hidden shrink-0 truncate rounded-md bg-zinc-100 px-1.5 py-0.5 font-mono text-[9px] font-bold text-zinc-500 sm:inline"
+                      title={item.slug}
+                    >
+                      {item.slug}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="text-[9px] font-semibold text-zinc-400">
+                    {item.percentage}%
                   </span>
 
-                  <span
-                    className="hidden shrink-0 truncate rounded-md bg-zinc-100 px-1.5 py-0.5 font-mono text-[9px] font-bold text-zinc-500 sm:inline"
-                    title={item.slug}
-                  >
-                    {item.slug}
+                  <span className="min-w-[24px] text-right text-xs font-black text-zinc-900">
+                    {item.count}
                   </span>
                 </div>
               </div>
 
-              <div className="flex shrink-0 items-center gap-2">
-                <span className="text-[9px] font-semibold text-zinc-400">
-                  {item.percentage}%
-                </span>
-
-                <span className="min-w-[24px] text-right text-xs font-black text-zinc-900">
-                  {item.count}
-                </span>
+              <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    item.count === 0
+                      ? "bg-zinc-200"
+                      : item.count <= 1
+                      ? "bg-red-400"
+                      : item.count <= 2
+                      ? "bg-amber-400"
+                      : "bg-red-600"
+                  }`}
+                  style={{
+                    width: `${width}%`,
+                  }}
+                />
               </div>
             </div>
-
-            <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  item.count === 0
-                    ? "bg-zinc-200"
-                    : item.count <= 1
-                    ? "bg-red-400"
-                    : item.count <= 2
-                    ? "bg-amber-400"
-                    : "bg-red-600"
-                }`}
-                style={{
-                  width: `${width}%`,
-                }}
-              />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ======================================================
-// PENDING SYNCHRONIZATION
-// ======================================================
-
-function PendingSynchronization({
-  pendingArticles,
-  checking,
-  firebaseCount,
-  jsonCount,
-  error,
-  onCheck,
-}: {
-  pendingArticles: PendingArticle[];
-  checking: boolean;
-  firebaseCount: number;
-  jsonCount: number;
-  error: string;
-  onCheck: () => void;
-}) {
-  const pendingCount =
-    pendingArticles.length;
-
-  return (
-    <section className="mt-3 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 px-3 py-3 sm:px-4">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <div
-            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-              pendingCount > 0
-                ? "bg-amber-50"
-                : "bg-green-50"
-            }`}
-          >
-            {pendingCount > 0 ? (
-              <Clock3
-                size={16}
-                className="text-amber-600"
-              />
-            ) : (
-              <CheckCircle2
-                size={16}
-                className="text-green-600"
-              />
-            )}
-          </div>
-
-          <div className="min-w-0">
-            <h2 className="text-xs font-black text-zinc-900">
-              Pending Synchronization
-            </h2>
-
-            <p className="truncate text-[9px] text-zinc-400">
-              Firebase latest articles vs articles.json
-            </p>
-          </div>
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2">
-          <div className="hidden items-center gap-1.5 sm:flex">
-            <span className="rounded-full bg-zinc-100 px-2 py-1 text-[8px] font-black text-zinc-500">
-              Firebase {firebaseCount}
-            </span>
-
-            <span className="rounded-full bg-blue-50 px-2 py-1 text-[8px] font-black text-blue-600">
-              JSON {jsonCount}
-            </span>
-          </div>
-
-          <button
-            type="button"
-            onClick={onCheck}
-            disabled={checking}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 text-[9px] font-black text-zinc-700 shadow-sm transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <RefreshCw
-              size={12}
-              className={
-                checking
-                  ? "animate-spin"
-                  : ""
-              }
-            />
-            Check Now
-          </button>
-        </div>
-      </div>
-
-      {error ? (
-        <div className="border-b border-red-100 bg-red-50 px-3 py-2.5 sm:px-4">
-          <div className="flex items-start gap-2">
-            <AlertCircle
-              size={14}
-              className="mt-0.5 shrink-0 text-red-600"
-            />
-
-            <div className="min-w-0">
-              <p className="text-[10px] font-black text-red-800">
-                Synchronization check failed
-              </p>
-
-              <p className="mt-0.5 text-[9px] text-red-600">
-                {error}
-              </p>
-            </div>
-          </div>
-        </div>
-      ) : checking ? (
-        <div className="flex min-h-[105px] items-center justify-center px-4">
-          <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500">
-            <RefreshCw
-              size={14}
-              className="animate-spin"
-            />
-            Checking latest Firebase articles against articles.json...
-          </div>
-        </div>
-      ) : pendingCount === 0 ? (
-        <div className="flex min-h-[105px] items-center justify-center px-4">
-          <div className="flex flex-col items-center text-center">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-50">
-              <Check
-                size={18}
-                className="text-green-600"
-              />
-            </div>
-
-            <p className="mt-2 text-[11px] font-black text-green-700">
-              Everything is synchronized
-            </p>
-
-            <p className="mt-0.5 text-[9px] text-zinc-400">
-              All checked Firebase articles are available in articles.json.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="p-2.5 sm:p-3">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5">
-              <CircleAlert
-                size={13}
-                className="text-amber-600"
-              />
-
-              <span className="text-[10px] font-black text-zinc-800">
-                {pendingCount} article
-                {pendingCount !== 1
-                  ? "s"
-                  : ""}{" "}
-                pending
-              </span>
-            </div>
-
-            <span className="text-[8px] font-semibold text-zinc-400">
-              Waiting for JSON sync
-            </span>
-          </div>
-
-          <div className="max-h-[170px] space-y-1.5 overflow-y-auto pr-1">
-            {pendingArticles.map(
-              (article) => {
-                const date =
-                  parseArticleDate(
-                    article
-                  );
-
-                return (
-                  <div
-                    key={
-                      article.firebaseId
-                    }
-                    className="flex min-w-0 items-center gap-2 rounded-lg border border-amber-100 bg-amber-50/60 px-2.5 py-2"
-                  >
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-amber-100">
-                      <Cloud
-                        size={12}
-                        className="text-amber-700"
-                      />
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className="truncate text-[10px] font-black text-zinc-800"
-                        title={
-                          article.title
-                        }
-                      >
-                        {article.title ||
-                          "Untitled Article"}
-                      </p>
-
-                      <div className="mt-0.5 flex min-w-0 items-center gap-2">
-                        <span
-                          className="truncate font-mono text-[8px] text-zinc-400"
-                          title={
-                            article.slug ||
-                            article.firebaseId
-                          }
-                        >
-                          {article.slug
-                            ? `/${article.slug}`
-                            : `ID: ${article.firebaseId}`}
-                        </span>
-
-                        {date && (
-                          <span className="hidden shrink-0 text-[8px] text-zinc-400 sm:inline">
-                            {date.toLocaleDateString(
-                              "en-IN",
-                              {
-                                day: "2-digit",
-                                month:
-                                  "short",
-                              }
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <span className="shrink-0 rounded-full bg-amber-100 px-2 py-1 text-[7px] font-black uppercase text-amber-700">
-                      Pending
-                    </span>
-                  </div>
-                );
-              }
-            )}
-          </div>
-        </div>
+          );
+        }
       )}
-    </section>
+    </div>
   );
 }
 
@@ -1062,8 +738,10 @@ function MobileArticleCard({
                   "en-IN",
                   {
                     day: "2-digit",
-                    month: "short",
-                    year: "numeric",
+                    month:
+                      "short",
+                    year:
+                      "numeric",
                   }
                 )
               : "—"}
@@ -1077,7 +755,8 @@ function MobileArticleCard({
             <input
               type="checkbox"
               checked={
-                article.featured === true
+                article.featured ===
+                true
               }
               disabled={
                 !article.featured &&
@@ -1107,7 +786,9 @@ function MobileArticleCard({
                 type="number"
                 min={1}
                 max={5}
-                value={priorityValue}
+                value={
+                  priorityValue
+                }
                 disabled={isSaving}
                 onChange={(event) =>
                   onPriorityInput(
@@ -1126,10 +807,11 @@ function MobileArticleCard({
                 type="button"
                 disabled={isSaving}
                 onClick={() =>
-                  onPrioritySave(article)
+                  onPrioritySave(
+                    article
+                  )
                 }
                 className="inline-flex h-8 min-w-8 items-center justify-center rounded-md bg-green-600 px-2 text-white shadow-sm active:scale-95 disabled:opacity-50"
-                aria-label="Save priority"
               >
                 {isSaving ? (
                   <RefreshCw
@@ -1188,6 +870,12 @@ export default function ArticlesPage() {
     setCategoriesData,
   ] = useState<CategoryItem[]>([]);
 
+  const [pendingArticles, setPendingArticles] =
+    useState<any[]>([]);
+
+  const [pendingLoading, setPendingLoading] =
+    useState(false);
+
   const [loading, setLoading] =
     useState(true);
 
@@ -1230,371 +918,186 @@ export default function ArticlesPage() {
   ] = useState<SavingMap>({});
 
   // ====================================================
-  // SYNC STATE
+  // CHECK LATEST 5 FIREBASE AGAINST JSON
   // ====================================================
 
-  const [
-    pendingArticles,
-    setPendingArticles,
-  ] = useState<PendingArticle[]>(
-    []
-  );
+  const checkPendingArticles =
+    useCallback(
+      async (
+        jsonArticles: any[]
+      ) => {
+        try {
+          setPendingLoading(true);
 
-  const [
-    syncChecking,
-    setSyncChecking,
-  ] = useState(false);
+          // IMPORTANT:
+          // ONLY latest 5 Firebase documents.
+          const firebaseLatest =
+            await getLatestArticles(
+              5
+            );
 
-  const [
-    syncError,
-    setSyncError,
-  ] = useState("");
+          const jsonIds =
+            new Set<string>();
 
-  const [
-    firebaseArticleCount,
-    setFirebaseArticleCount,
-  ] = useState(0);
+          const jsonSlugs =
+            new Set<string>();
 
-  const [
-    jsonArticleCount,
-    setJsonArticleCount,
-  ] = useState(0);
+          jsonArticles.forEach(
+            (article) => {
+              if (article?.id) {
+                jsonIds.add(
+                  normalize(
+                    article.id
+                  )
+                );
+              }
+
+              if (article?.slug) {
+                jsonSlugs.add(
+                  normalizeSlug(
+                    article.slug
+                  )
+                );
+              }
+            }
+          );
+
+          const pending =
+            firebaseLatest.filter(
+              (firebaseArticle) => {
+                const firebaseId =
+                  normalize(
+                    firebaseArticle?.id
+                  );
+
+                const firebaseSlug =
+                  normalizeSlug(
+                    firebaseArticle?.slug
+                  );
+
+                const existsById =
+                  Boolean(
+                    firebaseId &&
+                      jsonIds.has(
+                        firebaseId
+                      )
+                  );
+
+                const existsBySlug =
+                  Boolean(
+                    firebaseSlug &&
+                      jsonSlugs.has(
+                        firebaseSlug
+                      )
+                  );
+
+                return (
+                  !existsById &&
+                  !existsBySlug
+                );
+              }
+            );
+
+          setPendingArticles(
+            pending
+          );
+        } catch (error) {
+          console.error(
+            "PENDING ARTICLES CHECK ERROR:",
+            error
+          );
+
+          setPendingArticles([]);
+        } finally {
+          setPendingLoading(
+            false
+          );
+        }
+      },
+      []
+    );
 
   // ====================================================
   // LOAD ARTICLES JSON
   // ====================================================
 
   const loadArticlesJson =
-    useCallback(
-      async (): Promise<any[]> => {
-        const response =
-          await fetch(
-            "/data/articles.json",
-            {
-              cache: "no-store",
-            }
-          );
-
-        if (!response.ok) {
-          throw new Error(
-            "Unable to load articles.json"
-          );
-        }
-
-        const data: unknown =
-          await response.json();
-
-        const root =
-          data as
-            | {
-                articles?: unknown;
-              }
-            | unknown[];
-
-        let list: unknown[] = [];
-
-        if (Array.isArray(root)) {
-          list = root;
-        } else if (
-          root &&
-          typeof root === "object" &&
-          Array.isArray(
-            root.articles
-          )
-        ) {
-          list = root.articles;
-        }
-
-        const safeList =
-          list.filter(
-            (item) =>
-              item !== null &&
-              typeof item ===
-                "object"
-          );
-
-        setArticles(
-          safeList as any[]
+    useCallback(async () => {
+      const response =
+        await fetch(
+          "/data/articles.json",
+          {
+            cache:
+              "no-store",
+          }
         );
 
-        return safeList as any[];
-      },
-      []
-    );
+      if (!response.ok) {
+        throw new Error(
+          "Unable to load articles.json"
+        );
+      }
+
+      const data =
+        await response.json();
+
+      const list =
+        Array.isArray(data)
+          ? data
+          : Array.isArray(
+              data?.articles
+            )
+          ? data.articles
+          : [];
+
+      setArticles(list);
+
+      // Firebase ONLY latest 5.
+      // Compare against the freshly loaded JSON.
+      await checkPendingArticles(
+        list
+      );
+    }, [
+      checkPendingArticles,
+    ]);
 
   // ====================================================
-  // LOAD CATEGORIES JSON
+  // LOAD CATEGORIES
   // ====================================================
 
   const loadCategoriesJson =
-    useCallback(
-      async (): Promise<
-        CategoryItem[]
-      > => {
-        const response =
-          await fetch(
-            "/data/categories.json",
-            {
-              cache: "no-store",
-            }
-          );
-
-        if (!response.ok) {
-          throw new Error(
-            "Unable to load categories.json"
-          );
-        }
-
-        const data: unknown =
-          await response.json();
-
-        const root =
-          data as
-            | {
-                categories?: unknown;
-              }
-            | unknown[];
-
-        let list: unknown[] = [];
-
-        if (Array.isArray(root)) {
-          list = root;
-        } else if (
-          root &&
-          typeof root === "object" &&
-          Array.isArray(
-            root.categories
-          )
-        ) {
-          list = root.categories;
-        }
-
-        const safeList =
-          list.filter(
-            (item) =>
-              item !== null &&
-              typeof item ===
-                "object"
-          ) as CategoryItem[];
-
-        setCategoriesData(
-          safeList
+    useCallback(async () => {
+      const response =
+        await fetch(
+          "/data/categories.json",
+          {
+            cache:
+              "no-store",
+          }
         );
 
-        return safeList;
-      },
-      []
-    );
+      if (!response.ok) {
+        throw new Error(
+          "Unable to load categories.json"
+        );
+      }
 
-  // ====================================================
-  // FIREBASE → JSON SYNC CHECK
-  // ====================================================
+      const data =
+        await response.json();
 
-  const checkFirebaseSync =
-    useCallback(
-      async (
-        jsonArticlesOverride?: any[]
-      ) => {
-        try {
-          setSyncChecking(true);
-          setSyncError("");
-
-          // --------------------------------------------
-          // ALWAYS FETCH CURRENT JSON
-          // --------------------------------------------
-
-          let jsonArticles =
-            jsonArticlesOverride;
-
-          if (!jsonArticles) {
-            const response =
-              await fetch(
-                "/data/articles.json",
-                {
-                  cache: "no-store",
-                }
-              );
-
-            if (!response.ok) {
-              throw new Error(
-                "Unable to read articles.json."
-              );
-            }
-
-            const data: unknown =
-              await response.json();
-
-            const root =
-              data as
-                | {
-                    articles?: unknown;
-                  }
-                | unknown[];
-
-            if (
-              Array.isArray(root)
-            ) {
-              jsonArticles =
-                root as any[];
-            } else if (
-              root &&
-              typeof root ===
-                "object" &&
-              Array.isArray(
-                root.articles
-              )
-            ) {
-              jsonArticles =
-                root.articles as any[];
-            } else {
-              jsonArticles = [];
-            }
-          }
-
-          const safeJsonArticles =
-            Array.isArray(
-              jsonArticles
+      const list =
+        Array.isArray(data)
+          ? data
+          : Array.isArray(
+              data?.categories
             )
-              ? jsonArticles
-              : [];
+          ? data.categories
+          : [];
 
-          setJsonArticleCount(
-            safeJsonArticles.length
-          );
-
-          // --------------------------------------------
-          // GET LATEST FIREBASE ARTICLES
-          // --------------------------------------------
-
-          const articlesCollection =
-            collection(
-              db,
-              "articles"
-            );
-
-          let snapshot;
-
-          try {
-            const latestQuery =
-              query(
-                articlesCollection,
-                orderBy(
-                  "createdAt",
-                  "desc"
-                ),
-                limit(50)
-              );
-
-            snapshot =
-              await getDocs(
-                latestQuery
-              );
-          } catch (orderError) {
-            console.warn(
-              "Firebase createdAt ordering failed. Falling back to updatedAt:",
-              orderError
-            );
-
-            try {
-              const fallbackQuery =
-                query(
-                  articlesCollection,
-                  orderBy(
-                    "updatedAt",
-                    "desc"
-                  ),
-                  limit(50)
-                );
-
-              snapshot =
-                await getDocs(
-                  fallbackQuery
-                );
-            } catch (fallbackError) {
-              console.warn(
-                "Firebase ordered query failed. Falling back to latest available documents:",
-                fallbackError
-              );
-
-              snapshot =
-                await getDocs(
-                  articlesCollection
-                );
-            }
-          }
-
-          const firebaseArticles =
-            snapshot.docs
-              .map(
-                firebaseDocToArticle
-              )
-              .sort(
-                (a, b) =>
-                  getDateMillis(
-                    b.createdAt ??
-                      b.publishedAt ??
-                      b.updatedAt
-                  ) -
-                  getDateMillis(
-                    a.createdAt ??
-                      a.publishedAt ??
-                      a.updatedAt
-                  )
-              )
-              .slice(0, 50);
-
-          setFirebaseArticleCount(
-            firebaseArticles.length
-          );
-
-          // --------------------------------------------
-          // FIND ARTICLES NOT PRESENT IN JSON
-          // --------------------------------------------
-
-          const pending: PendingArticle[] =
-            [];
-
-          firebaseArticles.forEach(
-            (firebaseArticle) => {
-              const match =
-                findJsonMatch(
-                  firebaseArticle,
-                  safeJsonArticles
-                );
-
-              if (!match.found) {
-                pending.push({
-                  ...firebaseArticle,
-                  firebaseId:
-                    firebaseArticle.id,
-                });
-              }
-            }
-          );
-
-          setPendingArticles(
-            pending
-          );
-        } catch (error: any) {
-          console.error(
-            "FIREBASE JSON SYNC ERROR:",
-            error
-          );
-
-          setPendingArticles(
-            []
-          );
-
-          setSyncError(
-            error?.message ||
-              "Unable to check Firebase synchronization."
-          );
-        } finally {
-          setSyncChecking(false);
-        }
-      },
-      []
-    );
+      setCategoriesData(
+        list
+      );
+    }, []);
 
   // ====================================================
   // INITIAL LOAD
@@ -1606,18 +1109,10 @@ export default function ArticlesPage() {
         setLoading(true);
         setLoadError("");
 
-        const [
-          jsonArticles,
-        ] = await Promise.all([
+        await Promise.all([
           loadArticlesJson(),
           loadCategoriesJson(),
         ]);
-
-        // Check Firebase against the SAME freshly
-        // fetched JSON list.
-        await checkFirebaseSync(
-          jsonArticles
-        );
       } catch (error) {
         console.error(
           "ARTICLES DASHBOARD ERROR:",
@@ -1633,7 +1128,6 @@ export default function ArticlesPage() {
     }, [
       loadArticlesJson,
       loadCategoriesJson,
-      checkFirebaseSync,
     ]);
 
   useEffect(() => {
@@ -1644,34 +1138,32 @@ export default function ArticlesPage() {
   // REFRESH
   // ====================================================
 
-  async function refreshDashboard() {
-    try {
-      setRefreshing(true);
-      setLoadError("");
+  const refreshDashboard =
+    useCallback(async () => {
+      try {
+        setRefreshing(true);
+        setLoadError("");
 
-      const [
-        jsonArticles,
-      ] = await Promise.all([
-        loadArticlesJson(),
-        loadCategoriesJson(),
-      ]);
+        await Promise.all([
+          loadArticlesJson(),
+          loadCategoriesJson(),
+        ]);
+      } catch (error) {
+        console.error(
+          "REFRESH ERROR:",
+          error
+        );
 
-      await checkFirebaseSync(
-        jsonArticles
-      );
-    } catch (error) {
-      console.error(
-        "REFRESH ERROR:",
-        error
-      );
-
-      setLoadError(
-        "Refresh failed. Please try again."
-      );
-    } finally {
-      setRefreshing(false);
-    }
-  }
+        setLoadError(
+          "Refresh failed. Please try again."
+        );
+      } finally {
+        setRefreshing(false);
+      }
+    }, [
+      loadArticlesJson,
+      loadCategoriesJson,
+    ]);
 
   // ====================================================
   // STATS
@@ -1683,7 +1175,10 @@ export default function ArticlesPage() {
         articles,
         categoriesData
       ),
-    [articles, categoriesData]
+    [
+      articles,
+      categoriesData,
+    ]
   );
 
   const categories =
@@ -1741,8 +1236,12 @@ export default function ArticlesPage() {
 
             const matchesSearch =
               !query ||
-              title.includes(query) ||
-              slug.includes(query) ||
+              title.includes(
+                query
+              ) ||
+              slug.includes(
+                query
+              ) ||
               categoryName.includes(
                 query
               ) ||
@@ -1993,7 +1492,8 @@ export default function ArticlesPage() {
     setPendingPriorities(
       (previous) => ({
         ...previous,
-        [articleId]: value,
+        [articleId]:
+          value,
       })
     );
 
@@ -2003,7 +1503,9 @@ export default function ArticlesPage() {
           ...previous,
         };
 
-        delete next[articleId];
+        delete next[
+          articleId
+        ];
 
         return next;
       }
@@ -2088,7 +1590,8 @@ export default function ArticlesPage() {
       setSavingPriority(
         (previous) => ({
           ...previous,
-          [article.id]: true,
+          [article.id]:
+            true,
         })
       );
 
@@ -2147,7 +1650,8 @@ export default function ArticlesPage() {
       setSavingPriority(
         (previous) => ({
           ...previous,
-          [article.id]: false,
+          [article.id]:
+            false,
         })
       );
     }
@@ -2201,8 +1705,10 @@ export default function ArticlesPage() {
 
   const hasFilters =
     Boolean(search) ||
-    statusFilter !== "all" ||
-    categoryFilter !== "all";
+    statusFilter !==
+      "all" ||
+    categoryFilter !==
+      "all";
 
   // ====================================================
   // RENDER
@@ -2212,7 +1718,7 @@ export default function ArticlesPage() {
     <div className="flex h-[calc(100vh-80px)] min-h-0 w-full min-w-0 flex-col overflow-hidden bg-zinc-50">
 
       {/* ==================================================
-          TOP HEADER
+          HEADER
       ================================================== */}
 
       <header className="shrink-0 border-b border-zinc-200 bg-white">
@@ -2224,7 +1730,8 @@ export default function ArticlesPage() {
               </h1>
 
               <p className="hidden text-[10px] font-medium text-zinc-400 sm:block">
-                Manage, synchronize and organize your articles
+                Manage, search and organize
+                your articles
               </p>
             </div>
 
@@ -2234,7 +1741,9 @@ export default function ArticlesPage() {
                 onClick={
                   refreshDashboard
                 }
-                disabled={refreshing}
+                disabled={
+                  refreshing
+                }
                 className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 text-[10px] font-black text-zinc-700 shadow-sm transition hover:bg-zinc-50 disabled:opacity-50"
               >
                 <RefreshCw
@@ -2307,27 +1816,151 @@ export default function ArticlesPage() {
           <>
 
             {/* ==================================================
-                PENDING SYNC
+                PENDING ARTICLES
+                Firebase latest 5 vs articles.json
             ================================================== */}
 
-            <PendingSynchronization
-              pendingArticles={
-                pendingArticles
-              }
-              checking={
-                syncChecking
-              }
-              firebaseCount={
-                firebaseArticleCount
-              }
-              jsonCount={
-                jsonArticleCount
-              }
-              error={syncError}
-              onCheck={() =>
-                checkFirebaseSync()
-              }
-            />
+            <section className="mt-3 overflow-hidden rounded-xl border border-amber-200 bg-white shadow-sm">
+
+              <div className="flex items-center justify-between border-b border-amber-100 bg-amber-50/60 px-3 py-2.5">
+                <div className="flex min-w-0 items-center gap-2">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-100">
+                    <Clock3
+                      size={14}
+                      className="text-amber-600"
+                    />
+                  </div>
+
+                  <div className="min-w-0">
+                    <h2 className="text-xs font-black text-zinc-900">
+                      Pending Articles
+                    </h2>
+
+                    <p className="truncate text-[9px] text-zinc-400">
+                      Latest 5 Firebase articles not found in articles.json
+                    </p>
+                  </div>
+                </div>
+
+                <span
+                  className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-black ${
+                    pendingArticles.length >
+                    0
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-green-100 text-green-700"
+                  }`}
+                >
+                  {pendingLoading
+                    ? "Checking..."
+                    : `${pendingArticles.length} Pending`}
+                </span>
+              </div>
+
+              {pendingLoading ? (
+                <div className="flex min-h-[100px] items-center justify-center gap-2 text-[10px] font-bold text-zinc-400">
+                  <RefreshCw
+                    size={14}
+                    className="animate-spin"
+                  />
+                  Checking latest Firebase articles...
+                </div>
+              ) : pendingArticles.length ===
+                0 ? (
+                <div className="flex min-h-[100px] items-center justify-center px-4 text-center">
+                  <div>
+                    <CheckCircle2
+                      size={20}
+                      className="mx-auto text-green-500"
+                    />
+
+                    <p className="mt-1.5 text-xs font-black text-zinc-700">
+                      Everything is synced
+                    </p>
+
+                    <p className="mt-0.5 text-[9px] text-zinc-400">
+                      Latest Firebase articles are already present in articles.json.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="divide-y divide-amber-100">
+                  {pendingArticles.map(
+                    (
+                      article,
+                      index
+                    ) => {
+                      const date =
+                        parseArticleDate(
+                          article
+                        );
+
+                      return (
+                        <div
+                          key={
+                            article.id ??
+                            article.slug ??
+                            index
+                          }
+                          className="flex min-w-0 items-center gap-3 px-3 py-2.5 transition hover:bg-amber-50/30"
+                        >
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-100 text-[9px] font-black text-amber-700">
+                            {index +
+                              1}
+                          </span>
+
+                          <div className="min-w-0 flex-1">
+                            <p
+                              className="truncate text-[11px] font-black text-zinc-900"
+                              title={
+                                article.title
+                              }
+                            >
+                              {article.title ||
+                                "Untitled Article"}
+                            </p>
+
+                            <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-2">
+                              {article.slug && (
+                                <span
+                                  className="max-w-[60%] truncate font-mono text-[8px] text-zinc-400"
+                                  title={
+                                    article.slug
+                                  }
+                                >
+                                  /
+                                  {
+                                    article.slug
+                                  }
+                                </span>
+                              )}
+
+                              {date && (
+                                <span className="shrink-0 text-[8px] font-semibold text-zinc-400">
+                                  {date.toLocaleDateString(
+                                    "en-IN",
+                                    {
+                                      day: "2-digit",
+                                      month:
+                                        "short",
+                                      year:
+                                        "numeric",
+                                    }
+                                  )}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <span className="shrink-0 rounded-full bg-amber-100 px-2 py-1 text-[8px] font-black uppercase text-amber-700">
+                            Pending
+                          </span>
+                        </div>
+                      );
+                    }
+                  )}
+                </div>
+              )}
+            </section>
 
             {/* ==================================================
                 DASHBOARD SUMMARY
@@ -2485,7 +2118,7 @@ export default function ArticlesPage() {
                 </div>
               </div>
 
-              {/* CATEGORY BAR CHART */}
+              {/* CATEGORY DISTRIBUTION */}
 
               <div className="rounded-xl border border-zinc-200 bg-white p-3.5 shadow-sm">
                 <div className="mb-3 flex items-center justify-between gap-3">
@@ -2509,7 +2142,9 @@ export default function ArticlesPage() {
                   </div>
 
                   <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-1 text-[8px] font-black text-zinc-500">
-                    {categories.length}{" "}
+                    {
+                      categories.length
+                    }{" "}
                     categories
                   </span>
                 </div>
@@ -2525,6 +2160,161 @@ export default function ArticlesPage() {
             </section>
 
             {/* ==================================================
+                SEARCH + FILTERS
+                NOW BELOW DASHBOARD
+            ================================================== */}
+
+            <section className="mt-3 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-3.5">
+              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_150px_190px]">
+
+                {/* SEARCH */}
+
+                <div className="relative min-w-0">
+                  <Search
+                    size={15}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+                  />
+
+                  <input
+                    type="search"
+                    value={search}
+                    onChange={(
+                      event
+                    ) =>
+                      setSearch(
+                        event.target
+                          .value
+                      )
+                    }
+                    placeholder="Search title, article slug, category name or slug..."
+                    className="h-9 w-full rounded-lg border border-zinc-200 bg-zinc-50 pl-9 pr-3 text-[11px] font-medium text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-100"
+                  />
+                </div>
+
+                {/* STATUS */}
+
+                <div className="relative">
+                  <select
+                    value={
+                      statusFilter
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setStatusFilter(
+                        event.target
+                          .value as
+                          | "all"
+                          | "published"
+                          | "draft"
+                      )
+                    }
+                    className="h-9 w-full appearance-none rounded-lg border border-zinc-200 bg-zinc-50 px-3 pr-8 text-[10px] font-black text-zinc-700 outline-none focus:border-red-500"
+                  >
+                    <option value="all">
+                      All Status
+                    </option>
+
+                    <option value="published">
+                      Published
+                    </option>
+
+                    <option value="draft">
+                      Drafts
+                    </option>
+                  </select>
+
+                  <ChevronDown
+                    size={13}
+                    className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400"
+                  />
+                </div>
+
+                {/* CATEGORY */}
+
+                <div className="relative">
+                  <select
+                    value={
+                      categoryFilter
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setCategoryFilter(
+                        event.target
+                          .value
+                      )
+                    }
+                    className="h-9 w-full appearance-none rounded-lg border border-zinc-200 bg-zinc-50 px-3 pr-8 text-[10px] font-black text-zinc-700 outline-none focus:border-red-500"
+                  >
+                    <option value="all">
+                      All Categories
+                    </option>
+
+                    {categories.map(
+                      (
+                        category
+                      ) => (
+                        <option
+                          key={
+                            category.key
+                          }
+                          value={
+                            category.key
+                          }
+                        >
+                          {
+                            category.slug
+                          }{" "}
+                          (
+                          {
+                            category.count
+                          }
+                          )
+                        </option>
+                      )
+                    )}
+                  </select>
+
+                  <ChevronDown
+                    size={13}
+                    className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-1.5 flex min-h-[17px] items-center justify-between gap-2">
+                <span className="text-[9px] font-semibold text-zinc-400">
+                  Showing{" "}
+                  <strong className="text-zinc-700">
+                    {
+                      filteredArticles.length
+                    }
+                  </strong>{" "}
+                  of{" "}
+                  <strong className="text-zinc-700">
+                    {
+                      articles.length
+                    }
+                  </strong>
+                </span>
+
+                {hasFilters && (
+                  <button
+                    type="button"
+                    onClick={
+                      clearFilters
+                    }
+                    className="inline-flex items-center gap-1 text-[9px] font-black text-red-600 hover:text-red-700"
+                  >
+                    <X size={11} />
+                    Clear filters
+                  </button>
+                )}
+              </div>
+            </section>
+
+            {/* ==================================================
                 ARTICLE LIST
             ================================================== */}
 
@@ -2532,174 +2322,22 @@ export default function ArticlesPage() {
 
               {/* SECTION HEADER */}
 
-              <div className="border-b border-zinc-100 px-3 py-2.5">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-xs font-black text-zinc-900">
-                      Article List
-                    </h2>
+              <div className="flex items-center justify-between border-b border-zinc-100 px-3 py-2.5">
+                <div>
+                  <h2 className="text-xs font-black text-zinc-900">
+                    Article List
+                  </h2>
 
-                    <p className="text-[9px] text-zinc-400">
-                      Featured first · Priority · Latest
-                    </p>
-                  </div>
-
-                  <span className="rounded-full bg-zinc-100 px-2 py-1 text-[9px] font-black text-zinc-600">
-                    {filteredArticles.length}
-                  </span>
+                  <p className="text-[9px] text-zinc-400">
+                    Featured first · Priority · Latest
+                  </p>
                 </div>
 
-                {/* ==================================================
-                    SEARCH / FILTERS — NOW ABOVE ARTICLE LIST
-                ================================================== */}
-
-                <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_150px_190px]">
-
-                  {/* SEARCH */}
-
-                  <div className="relative min-w-0">
-                    <Search
-                      size={15}
-                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
-                    />
-
-                    <input
-                      type="search"
-                      value={search}
-                      onChange={(
-                        event
-                      ) =>
-                        setSearch(
-                          event.target
-                            .value
-                        )
-                      }
-                      placeholder="Search title, article slug, category name or slug..."
-                      className="h-9 w-full rounded-lg border border-zinc-200 bg-zinc-50 pl-9 pr-3 text-[11px] font-medium text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-red-500 focus:bg-white focus:ring-2 focus:ring-red-100"
-                    />
-                  </div>
-
-                  {/* STATUS */}
-
-                  <div className="relative">
-                    <select
-                      value={
-                        statusFilter
-                      }
-                      onChange={(
-                        event
-                      ) =>
-                        setStatusFilter(
-                          event.target
-                            .value as
-                            | "all"
-                            | "published"
-                            | "draft"
-                        )
-                      }
-                      className="h-9 w-full appearance-none rounded-lg border border-zinc-200 bg-zinc-50 px-3 pr-8 text-[10px] font-black text-zinc-700 outline-none focus:border-red-500"
-                    >
-                      <option value="all">
-                        All Status
-                      </option>
-
-                      <option value="published">
-                        Published
-                      </option>
-
-                      <option value="draft">
-                        Drafts
-                      </option>
-                    </select>
-
-                    <ChevronDown
-                      size={13}
-                      className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400"
-                    />
-                  </div>
-
-                  {/* CATEGORY */}
-
-                  <div className="relative">
-                    <select
-                      value={
-                        categoryFilter
-                      }
-                      onChange={(
-                        event
-                      ) =>
-                        setCategoryFilter(
-                          event.target
-                            .value
-                        )
-                      }
-                      className="h-9 w-full appearance-none rounded-lg border border-zinc-200 bg-zinc-50 px-3 pr-8 text-[10px] font-black text-zinc-700 outline-none focus:border-red-500"
-                    >
-                      <option value="all">
-                        All Categories
-                      </option>
-
-                      {categories.map(
-                        (
-                          category
-                        ) => (
-                          <option
-                            key={
-                              category.key
-                            }
-                            value={
-                              category.key
-                            }
-                          >
-                            {
-                              category.slug
-                            }{" "}
-                            (
-                            {
-                              category.count
-                            }
-                            )
-                          </option>
-                        )
-                      )}
-                    </select>
-
-                    <ChevronDown
-                      size={13}
-                      className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400"
-                    />
-                  </div>
-                </div>
-
-                {/* RESULT META */}
-
-                <div className="mt-1.5 flex min-h-[17px] items-center justify-between gap-2">
-                  <span className="text-[9px] font-semibold text-zinc-400">
-                    Showing{" "}
-                    <strong className="text-zinc-700">
-                      {
-                        filteredArticles.length
-                      }
-                    </strong>{" "}
-                    of{" "}
-                    <strong className="text-zinc-700">
-                      {articles.length}
-                    </strong>
-                  </span>
-
-                  {hasFilters && (
-                    <button
-                      type="button"
-                      onClick={
-                        clearFilters
-                      }
-                      className="inline-flex items-center gap-1 text-[9px] font-black text-red-600 hover:text-red-700"
-                    >
-                      <X size={11} />
-                      Clear filters
-                    </button>
-                  )}
-                </div>
+                <span className="rounded-full bg-zinc-100 px-2 py-1 text-[9px] font-black text-zinc-600">
+                  {
+                    filteredArticles.length
+                  }
+                </span>
               </div>
 
               {filteredArticles.length ===
@@ -2736,7 +2374,7 @@ export default function ArticlesPage() {
               ) : (
                 <>
                   {/* ==================================================
-                      MOBILE CARDS
+                      MOBILE
                   ================================================== */}
 
                   <div className="space-y-2.5 bg-zinc-50 p-2.5 md:hidden">
@@ -2886,6 +2524,7 @@ export default function ArticlesPage() {
                                     : ""
                                 }`}
                               >
+
                                 {/* ARTICLE */}
 
                                 <td className="sticky left-0 z-10 max-w-[420px] bg-white px-3 py-2.5">
@@ -3148,27 +2787,12 @@ export default function ArticlesPage() {
                 Article Management
               </span>
 
-              <div className="flex items-center gap-2">
-                {pendingArticles.length >
-                  0 && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[8px] font-black text-amber-700">
-                    <Database
-                      size={9}
-                    />
-                    {
-                      pendingArticles.length
-                    }{" "}
-                    pending sync
-                  </span>
-                )}
-
-                <span className="text-[9px] font-black text-zinc-500">
-                  {
-                    filteredArticles.length
-                  }{" "}
-                  visible
-                </span>
-              </div>
+              <span className="text-[9px] font-black text-zinc-500">
+                {
+                  filteredArticles.length
+                }{" "}
+                visible
+              </span>
             </div>
           </>
         )}

@@ -3,6 +3,9 @@ import {
   getDocs,
   getDoc,
   doc,
+  query,
+  orderBy,
+  limit,
 } from "firebase/firestore";
 
 import { auth, db } from "@/lib/firebase/firebase";
@@ -52,6 +55,42 @@ export async function getArticles() {
   const snapshot = await getDocs(
     collection(db, "articles")
   );
+
+  return snapshot.docs.map((item) => ({
+    id: item.id,
+    ...item.data(),
+  })) as (ArticleData & {
+    id: string;
+  })[];
+}
+// ======================================================
+// GET LATEST 5 ARTICLES
+//
+// IMPORTANT:
+// This intentionally reads ONLY 5 Firebase documents.
+// It is used by the admin dashboard to detect articles
+// that have not yet reached articles.json.
+// ======================================================
+
+export async function getLatestArticles(
+  count: number = 5
+) {
+  const safeCount = Math.max(
+    1,
+    Math.min(count, 5)
+  );
+
+  const articlesRef =
+    collection(db, "articles");
+
+  const latestQuery = query(
+    articlesRef,
+    orderBy("createdAt", "desc"),
+    limit(safeCount)
+  );
+
+  const snapshot =
+    await getDocs(latestQuery);
 
   return snapshot.docs.map((item) => ({
     id: item.id,
