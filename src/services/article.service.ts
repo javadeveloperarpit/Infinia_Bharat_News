@@ -64,12 +64,79 @@ export async function getArticles() {
   })[];
 }
 // ======================================================
-// GET LATEST 5 ARTICLES
+// GET LATEST 5 CHANGED ARTICLES
+//
+// Reads ONLY:
+// - latest 5 by updatedAt
+// - latest 5 by createdAt
+//
+// Then merges them and returns only the latest 5.
 //
 // IMPORTANT:
-// This intentionally reads ONLY 5 Firebase documents.
-// It is used by the admin dashboard to detect articles
-// that have not yet reached articles.json.
+// This does NOT read the complete articles collection.
+// ======================================================
+
+function timestampToMillis(
+  value: any
+): number {
+  if (!value) return 0;
+
+  if (
+    typeof value === "object" &&
+    typeof value?.toMillis === "function"
+  ) {
+    return value.toMillis();
+  }
+
+  if (
+    typeof value === "object" &&
+    typeof value?.toDate === "function"
+  ) {
+    return value.toDate().getTime();
+  }
+
+  if (typeof value === "number") {
+    return value;
+  }
+
+  const parsed =
+    new Date(value).getTime();
+
+  return Number.isFinite(parsed)
+    ? parsed
+    : 0;
+}
+
+function latestArticleTime(
+  article: any
+): number {
+  return Math.max(
+    timestampToMillis(
+      article?.createdAt
+    ),
+    timestampToMillis(
+      article?.updatedAt
+    )
+  );
+}
+
+// ======================================================
+// GET LATEST CHANGED ARTICLES
+//
+// Reads ONLY latest 5 Firebase articles.
+//
+// "Latest" means:
+// max(createdAt, updatedAt)
+//
+// So:
+// - newly created article
+// - recently edited article
+// - featured changed
+// - priority changed
+// - status changed
+// etc.
+// all get picked up.
+//
 // ======================================================
 
 export async function getLatestArticles(
@@ -83,23 +150,121 @@ export async function getLatestArticles(
   const articlesRef =
     collection(db, "articles");
 
-  const latestQuery = query(
+  // We cannot directly order by max(createdAt, updatedAt)
+  // in Firestore, so we fetch the latest by updatedAt
+  // and separately latest by createdAt.
+  //
+  // Then merge them client-side and keep only latest 5.
+
+  const updatedQuery = query(
+    articlesRef,
+    orderBy("updatedAt", "desc"),
+    limit(safeCount)
+  );
+
+  const createdQuery = query(
     articlesRef,
     orderBy("createdAt", "desc"),
     limit(safeCount)
   );
 
-  const snapshot =
-    await getDocs(latestQuery);
+  const [
+    updatedSnapshot,
+    createdSnapshot,
+  ] = await Promise.all([
+    getDocs(updatedQuery),
+    getDocs(createdQuery),
+  ]);
 
-  return snapshot.docs.map((item) => ({
-    id: item.id,
-    ...item.data(),
-  })) as (ArticleData & {
-    id: string;
-  })[];
+  const map = new Map<
+    string,
+    ArticleData & { id: string }
+  >();
+
+  updatedSnapshot.docs.forEach(
+    (item) => {
+      map.set(item.id, {
+        id: item.id,
+        ...item.data(),
+      } as ArticleData & {
+        id: string;
+      });
+    }
+  );
+
+  createdSnapshot.docs.forEach(
+    (item) => {
+      map.set(item.id, {
+        id: item.id,
+        ...item.data(),
+      } as ArticleData & {
+        id: string;
+      });
+    }
+  );
+
+  const getTime = (
+    value: any
+  ): number => {
+    if (!value) return 0;
+
+    if (
+      typeof value?.toDate ===
+      "function"
+    ) {
+      return value
+        .toDate()
+        .getTime();
+    }
+
+    const time =
+      new Date(value).getTime();
+
+    return Number.isFinite(time)
+      ? time
+      : 0;
+  };
+
+  return Array.from(map.values())
+    .sort((a, b) => {
+      const aCreated =
+        getTime(
+          (a as any).createdAt
+        );
+
+      const aUpdated =
+        getTime(
+          (a as any).updatedAt
+        );
+
+      const bCreated =
+        getTime(
+          (b as any).createdAt
+        );
+
+      const bUpdated =
+        getTime(
+          (b as any).updatedAt
+        );
+
+      const aLatest =
+        Math.max(
+          aCreated,
+          aUpdated
+        );
+
+      const bLatest =
+        Math.max(
+          bCreated,
+          bUpdated
+        );
+
+      return (
+        bLatest - aLatest
+      );
+    })
+    .slice(0, safeCount);
 }
-
 // ======================================================
 // GET SINGLE ARTICLE
 // ======================================================

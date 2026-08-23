@@ -145,6 +145,121 @@ function normalize(
     .toLowerCase();
 }
 
+// ======================================================
+// SAFE VALUE COMPARISON
+//
+// Prevents false pending caused by:
+// undefined vs null
+// Firestore Timestamp vs JSON string
+// object key ordering
+// ======================================================
+
+function normalizeCompareValue(
+  value: any
+): any {
+  if (
+    value === undefined ||
+    value === null
+  ) {
+    return null;
+  }
+
+  // Firestore Timestamp
+  if (
+    typeof value === "object" &&
+    typeof value?.toMillis ===
+      "function"
+  ) {
+    return value.toMillis();
+  }
+
+  if (
+    typeof value === "object" &&
+    typeof value?.toDate ===
+      "function"
+  ) {
+    return value
+      .toDate()
+      .getTime();
+  }
+
+  // Arrays
+  if (Array.isArray(value)) {
+    return value.map(
+      normalizeCompareValue
+    );
+  }
+
+  // Objects
+  if (
+    typeof value === "object"
+  ) {
+    const result: Record<
+      string,
+      any
+    > = {};
+
+    Object.keys(value)
+      .sort()
+      .forEach((key) => {
+        result[key] =
+          normalizeCompareValue(
+            value[key]
+          );
+      });
+
+    return result;
+  }
+
+  return value;
+}
+
+function getLatestArticleTime(
+  article: any
+): number {
+  return Math.max(
+    timestampToMillis(
+      article?.createdAt
+    ),
+    timestampToMillis(
+      article?.updatedAt
+    )
+  );
+}
+
+function timestampToMillis(
+  value: any
+): number {
+  if (!value) return 0;
+
+  if (
+    typeof value === "object" &&
+    typeof value?.toMillis ===
+      "function"
+  ) {
+    return value.toMillis();
+  }
+
+  if (
+    typeof value === "object" &&
+    typeof value?.toDate ===
+      "function"
+  ) {
+    return value.toDate().getTime();
+  }
+
+  if (typeof value === "number") {
+    return value;
+  }
+
+  const parsed =
+    new Date(value).getTime();
+
+  return Number.isFinite(parsed)
+    ? parsed
+    : 0;
+}
+
 function normalizeSlug(
   value: any
 ): string {
@@ -917,106 +1032,342 @@ export default function ArticlesPage() {
     setSavingPriority,
   ] = useState<SavingMap>({});
 
-  // ====================================================
-  // CHECK LATEST 5 FIREBASE AGAINST JSON
-  // ====================================================
+  // ======================================================
+// PENDING SYNC CHECK
+//
+// ONLY latest 5 changed Firebase articles.
+//
+// Firebase:
+//     article data
+//
+// VS
+//
+// GitHub:
+//     /data/articles.json
+//
+// If relevant data differs => Pending
+//
+// ======================================================
 
-  const checkPendingArticles =
-    useCallback(
-      async (
-        jsonArticles: any[]
-      ) => {
-        try {
-          setPendingLoading(true);
+const checkPendingArticles =
+  useCallback(
+    async (
+      jsonArticles: any[]
+    ) => {
+      try {
+        setPendingLoading(true);
 
-          // IMPORTANT:
-          // ONLY latest 5 Firebase documents.
-          const firebaseLatest =
-            await getLatestArticles(
-              5
-            );
+        const firebaseLatest =
+          await getLatestArticles(5);
 
-          const jsonIds =
-            new Set<string>();
+        // ----------------------------------------------
+        // JSON LOOKUP
+        // ----------------------------------------------
 
-          const jsonSlugs =
-            new Set<string>();
+        const jsonMap =
+          new Map<string, any>();
 
-          jsonArticles.forEach(
-            (article) => {
-              if (article?.id) {
-                jsonIds.add(
-                  normalize(
-                    article.id
-                  )
+        jsonArticles.forEach(
+          (article) => {
+            if (!article) return;
+
+            if (article.id) {
+              jsonMap.set(
+                normalize(
+                  article.id
+                ),
+                article
+              );
+            }
+
+            if (article.slug) {
+              jsonMap.set(
+                `slug:${normalizeSlug(
+                  article.slug
+                )}`,
+                article
+              );
+            }
+          }
+        );
+
+        // ----------------------------------------------
+        // FIREBASE TIMESTAMP NORMALIZER
+        // ----------------------------------------------
+
+        const normalizeTimestamp =
+          (value: any): string => {
+            if (!value) {
+              return "";
+            }
+
+            if (
+              typeof value?.toDate ===
+              "function"
+            ) {
+              return value
+                .toDate()
+                .toISOString();
+            }
+
+            if (
+              typeof value ===
+              "object" &&
+              typeof value?.seconds ===
+                "number"
+            ) {
+              return new Date(
+                value.seconds * 1000
+              ).toISOString();
+            }
+
+            const date =
+              new Date(value);
+
+            if (
+              !Number.isNaN(
+                date.getTime()
+              )
+            ) {
+              return date.toISOString();
+            }
+
+            return String(value);
+          };
+
+        // ----------------------------------------------
+        // NORMALIZE VALUE
+        // ----------------------------------------------
+
+        const normalizeValue =
+          (value: any): any => {
+            if (
+              value === null ||
+              value === undefined
+            ) {
+              return null;
+            }
+
+            if (
+              typeof value?.toDate ===
+              "function"
+            ) {
+              return normalizeTimestamp(
+                value
+              );
+            }
+
+            if (
+              typeof value ===
+                "object" &&
+              typeof value?.seconds ===
+                "number"
+            ) {
+              return normalizeTimestamp(
+                value
+              );
+            }
+
+            if (
+              Array.isArray(value)
+            ) {
+              return value.map(
+                normalizeValue
+              );
+            }
+
+            if (
+              typeof value ===
+              "object"
+            ) {
+              const result: Record<
+                string,
+                any
+              > = {};
+
+              Object.keys(value)
+                .sort()
+                .forEach(
+                  (key) => {
+                    result[key] =
+                      normalizeValue(
+                        value[key]
+                      );
+                  }
                 );
+
+              return result;
+            }
+
+            return value;
+          };
+
+        // ----------------------------------------------
+        // REMOVE FIREBASE-ONLY / NON-SYNC FIELDS
+        //
+        // These fields should NOT make an article
+        // appear pending.
+        // ----------------------------------------------
+
+        const buildComparable =
+          (
+            article: any
+          ) => {
+            if (!article) {
+              return null;
+            }
+
+            const ignoredFields =
+              new Set([
+                "id",
+
+                // Firebase/internal timestamps
+                "createdAt",
+                "updatedAt",
+
+                // Firebase/internal fields
+                "author",
+
+                // Anything else that is not
+                // actually stored in articles.json
+                "syncStatus",
+                "syncError",
+              ]);
+
+            const result: Record<
+              string,
+              any
+            > = {};
+
+            Object.keys(article)
+              .filter(
+                (key) =>
+                  !ignoredFields.has(
+                    key
+                  )
+              )
+              .sort()
+              .forEach(
+                (key) => {
+                  result[key] =
+                    normalizeValue(
+                      article[key]
+                    );
+                }
+              );
+
+            return result;
+          };
+
+        // ----------------------------------------------
+        // FIND JSON ARTICLE
+        // ----------------------------------------------
+
+        const findJsonArticle =
+          (
+            firebaseArticle: any
+          ) => {
+            const id =
+              normalize(
+                firebaseArticle?.id
+              );
+
+            if (id) {
+              const byId =
+                jsonMap.get(id);
+
+              if (byId) {
+                return byId;
+              }
+            }
+
+            const slug =
+              normalizeSlug(
+                firebaseArticle?.slug
+              );
+
+            if (slug) {
+              return jsonMap.get(
+                `slug:${slug}`
+              );
+            }
+
+            return undefined;
+          };
+
+        // ----------------------------------------------
+        // COMPARE ONLY LATEST 5
+        // ----------------------------------------------
+
+        const pending =
+          firebaseLatest.filter(
+            (
+              firebaseArticle
+            ) => {
+              const jsonArticle =
+                findJsonArticle(
+                  firebaseArticle
+                );
+
+              // ----------------------------------------
+              // Article not present in JSON
+              // ----------------------------------------
+
+              if (
+                !jsonArticle
+              ) {
+                return true;
               }
 
-              if (article?.slug) {
-                jsonSlugs.add(
-                  normalizeSlug(
-                    article.slug
-                  )
+              // ----------------------------------------
+              // Compare actual synced data
+              // ----------------------------------------
+
+              const firebaseComparable =
+                buildComparable(
+                  firebaseArticle
                 );
-              }
+
+              const jsonComparable =
+                buildComparable(
+                  jsonArticle
+                );
+
+              const firebaseString =
+                JSON.stringify(
+                  firebaseComparable
+                );
+
+              const jsonString =
+                JSON.stringify(
+                  jsonComparable
+                );
+
+              return (
+                firebaseString !==
+                jsonString
+              );
             }
           );
 
-          const pending =
-            firebaseLatest.filter(
-              (firebaseArticle) => {
-                const firebaseId =
-                  normalize(
-                    firebaseArticle?.id
-                  );
+        setPendingArticles(
+          pending
+        );
+      } catch (error) {
+        console.error(
+          "PENDING ARTICLES CHECK ERROR:",
+          error
+        );
 
-                const firebaseSlug =
-                  normalizeSlug(
-                    firebaseArticle?.slug
-                  );
-
-                const existsById =
-                  Boolean(
-                    firebaseId &&
-                      jsonIds.has(
-                        firebaseId
-                      )
-                  );
-
-                const existsBySlug =
-                  Boolean(
-                    firebaseSlug &&
-                      jsonSlugs.has(
-                        firebaseSlug
-                      )
-                  );
-
-                return (
-                  !existsById &&
-                  !existsBySlug
-                );
-              }
-            );
-
-          setPendingArticles(
-            pending
-          );
-        } catch (error) {
-          console.error(
-            "PENDING ARTICLES CHECK ERROR:",
-            error
-          );
-
-          setPendingArticles([]);
-        } finally {
-          setPendingLoading(
-            false
-          );
-        }
-      },
-      []
-    );
-
+        setPendingArticles([]);
+      } finally {
+        setPendingLoading(
+          false
+        );
+      }
+    },
+    []
+  );
   // ====================================================
   // LOAD ARTICLES JSON
   // ====================================================
@@ -1919,6 +2270,22 @@ export default function ArticlesPage() {
                                 "Untitled Article"}
                             </p>
 
+                            {article.changedFields?.length >
+  0 && (
+  <div className="mt-1 flex flex-wrap gap-1">
+    {article.changedFields.map(
+      (field: string) => (
+        <span
+          key={field}
+          className="rounded bg-zinc-100 px-1.5 py-0.5 text-[7px] font-bold text-zinc-500"
+        >
+          {field}
+        </span>
+      )
+    )}
+  </div>
+)}
+
                             <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-2">
                               {article.slug && (
                                 <span
@@ -1951,9 +2318,31 @@ export default function ArticlesPage() {
                             </div>
                           </div>
 
-                          <span className="shrink-0 rounded-full bg-amber-100 px-2 py-1 text-[8px] font-black uppercase text-amber-700">
-                            Pending
-                          </span>
+                          <span
+  className={`shrink-0 rounded-full px-2 py-1 text-[8px] font-black uppercase ${
+    article.pendingType ===
+    "featured"
+      ? "bg-purple-100 text-purple-700"
+      : article.pendingType ===
+        "priority"
+      ? "bg-blue-100 text-blue-700"
+      : article.pendingType ===
+        "created"
+      ? "bg-amber-100 text-amber-700"
+      : "bg-orange-100 text-orange-700"
+  }`}
+>
+  {article.pendingType ===
+  "featured"
+    ? "Featured Pending"
+    : article.pendingType ===
+      "priority"
+    ? "Priority Pending"
+    : article.pendingType ===
+      "created"
+    ? "New Article Pending"
+    : "Update Pending"}
+</span>
                         </div>
                       );
                     }
