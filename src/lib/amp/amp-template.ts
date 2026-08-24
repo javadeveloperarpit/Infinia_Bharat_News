@@ -2464,6 +2464,31 @@ h1.title {
 
 }
 
+.author-profile-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.meta-text .author-name.author-profile-link {
+  display: inline-block;
+}
+
+.meta-text .author-name.author-profile-link:hover {
+  color: ${PRIMARY};
+  text-decoration: underline;
+}
+
+.author-box-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.author-box-link:hover .author-box-name {
+  color: ${PRIMARY};
+  text-decoration: underline;
+}
+
 </style>
 
 </head>
@@ -2697,15 +2722,40 @@ h1.title {
 
         <div class="meta-row">
 
+  ${
+    authorUrl
+      ? `
+        <a
+          class="author-profile-link"
+          href="${escapeAttr(authorUrl)}"
+          aria-label="${escapeAttr(authorName)} की प्रोफाइल देखें"
+        >
           ${authorAvatarHtml}
+        </a>
+      `
+      : authorAvatarHtml
+  }
 
-          <div class="meta-text">
+  <div class="meta-text">
 
-            <div class="author-name">
-              ${escapeAttr(authorName)}
-            </div>
+    ${
+      authorUrl
+        ? `
+          <a
+            class="author-name author-profile-link"
+            href="${escapeAttr(authorUrl)}"
+          >
+            ${escapeAttr(authorName)}
+          </a>
+        `
+        : `
+          <div class="author-name">
+            ${escapeAttr(authorName)}
+          </div>
+        `
+    }
 
-            <div class="meta-sub">
+    <div class="meta-sub">
 
               ${publishedDate}
 
@@ -2796,7 +2846,16 @@ h1.title {
 
         <!-- AUTHOR -->
 
-        <section class="author-box">
+       <section class="author-box">
+
+  ${
+    authorUrl
+      ? `
+        <a
+          class="author-box-link"
+          href="${escapeAttr(authorUrl)}"
+          aria-label="${escapeAttr(authorName)} की प्रोफाइल देखें"
+        >
 
           <div class="author-box-head">
 
@@ -2822,9 +2881,38 @@ h1.title {
 
           </div>
 
-          ${authorBioHtml}
+        </a>
+      `
+      : `
+        <div class="author-box-head">
 
-        </section>
+          ${authorAvatarHtml}
+
+          <div>
+
+            <div class="author-box-name">
+              ${escapeAttr(authorName)}
+            </div>
+
+            <div class="author-box-role">
+
+              ${escapeAttr(
+                article.author?.role || "Editor"
+              )},
+
+              ${escapeAttr(siteConfig.name)}
+
+            </div>
+
+          </div>
+
+        </div>
+      `
+  }
+
+  ${authorBioHtml}
+
+</section>
 
       </div>
 
