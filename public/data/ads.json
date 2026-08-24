@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-24T07:19:37.486Z",
+  "updatedAt": "2026-08-24T07:24:09.918Z",
   "ads": [
     {
       "id": "fdqn8ijw6UBIADFKK4AK",
@@ -31,6 +31,7 @@
       "rotationSpeed": 8,
       "cubeSameImage": true,
       "width": 320,
+      "createdAt": "2026-08-24T07:19:28.191Z",
       "layout": {
         "desktop": {
           "width": 1366,
@@ -42,13 +43,12 @@
         "mobile": {
           "width": 440,
           "height": 956,
-          "x": 150,
-          "y": -250,
-          "scale": 0.25
+          "x": 130,
+          "y": -280,
+          "scale": 0.35
         }
       },
-      "createdAt": "2026-08-24T07:19:28.191Z",
-      "updatedAt": "2026-08-24T07:19:28.191Z"
+      "updatedAt": "2026-08-24T07:24:01.597Z"
     }
   ]
 }
