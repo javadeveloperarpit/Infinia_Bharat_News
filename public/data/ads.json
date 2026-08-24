@@ -1,4 +1,54 @@
 {
-  "updatedAt": "2026-08-13T10:08:49.931Z",
-  "ads": []
+  "updatedAt": "2026-08-24T07:19:37.486Z",
+  "ads": [
+    {
+      "id": "fdqn8ijw6UBIADFKK4AK",
+      "title": "advertisement demo",
+      "type": "cube",
+      "active": true,
+      "priority": 1,
+      "mobileEnabled": true,
+      "desktopEnabled": true,
+      "openInNewTab": true,
+      "cubeFaces": [
+        {
+          "image": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgl0USJmP5U94AACxc-to-5TfnxAyRJqp-JvF-NfP_XuLSuacnd8SGPFQGo-HyiOZRqqUwfFuyo154fD98RyA_9DyexpdD3Ec9cavRXnFKyIrr5wrAfEnRrNPXg-Qtdsj9Z7ZAkhlL6tTEY5PtmO3YlRvu_SLoReTkS1qDQeiTsi11mmV36MSrAP1cxwMdl/s320/advertisement.webp",
+          "link": "https://infiniabharatnews.vercel.app/advertise"
+        },
+        {
+          "image": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgl0USJmP5U94AACxc-to-5TfnxAyRJqp-JvF-NfP_XuLSuacnd8SGPFQGo-HyiOZRqqUwfFuyo154fD98RyA_9DyexpdD3Ec9cavRXnFKyIrr5wrAfEnRrNPXg-Qtdsj9Z7ZAkhlL6tTEY5PtmO3YlRvu_SLoReTkS1qDQeiTsi11mmV36MSrAP1cxwMdl/s320/advertisement.webp",
+          "link": "https://infiniabharatnews.vercel.app/advertise"
+        },
+        {
+          "image": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgl0USJmP5U94AACxc-to-5TfnxAyRJqp-JvF-NfP_XuLSuacnd8SGPFQGo-HyiOZRqqUwfFuyo154fD98RyA_9DyexpdD3Ec9cavRXnFKyIrr5wrAfEnRrNPXg-Qtdsj9Z7ZAkhlL6tTEY5PtmO3YlRvu_SLoReTkS1qDQeiTsi11mmV36MSrAP1cxwMdl/s320/advertisement.webp",
+          "link": "https://infiniabharatnews.vercel.app/advertise"
+        },
+        {
+          "image": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgl0USJmP5U94AACxc-to-5TfnxAyRJqp-JvF-NfP_XuLSuacnd8SGPFQGo-HyiOZRqqUwfFuyo154fD98RyA_9DyexpdD3Ec9cavRXnFKyIrr5wrAfEnRrNPXg-Qtdsj9Z7ZAkhlL6tTEY5PtmO3YlRvu_SLoReTkS1qDQeiTsi11mmV36MSrAP1cxwMdl/s320/advertisement.webp",
+          "link": "https://infiniabharatnews.vercel.app/advertise"
+        }
+      ],
+      "rotationSpeed": 8,
+      "cubeSameImage": true,
+      "width": 320,
+      "layout": {
+        "desktop": {
+          "width": 1366,
+          "height": 768,
+          "x": 550,
+          "y": -175,
+          "scale": 0.4
+        },
+        "mobile": {
+          "width": 440,
+          "height": 956,
+          "x": 150,
+          "y": -250,
+          "scale": 0.25
+        }
+      },
+      "createdAt": "2026-08-24T07:19:28.191Z",
+      "updatedAt": "2026-08-24T07:19:28.191Z"
+    }
+  ]
 }
