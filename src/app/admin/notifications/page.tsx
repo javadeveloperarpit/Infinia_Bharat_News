@@ -9,15 +9,12 @@ import {
   GoogleAuthProvider,
   onAuthStateChanged,
   signInWithPopup,
+  User,
 } from "firebase/auth";
 
 import {
   commentsAuth,
 } from "@/lib/firebase/firebase-comments";
-
-// ======================================================
-// TYPES
-// ======================================================
 
 type NotificationType =
   | "article"
@@ -26,17 +23,13 @@ type NotificationType =
   | "custom"
   | "card";
 
-// ======================================================
-// COMPONENT
-// ======================================================
-
 export default function NotificationsAdminPage() {
-  // ====================================================
+  // ==========================================
   // AUTH
-  // ====================================================
+  // ==========================================
 
   const [user, setUser] =
-    useState<any>(null);
+    useState<User | null>(null);
 
   const [authLoading, setAuthLoading] =
     useState(true);
@@ -44,12 +37,12 @@ export default function NotificationsAdminPage() {
   const [loginLoading, setLoginLoading] =
     useState(false);
 
-  // ====================================================
+  // ==========================================
   // FORM
-  // ====================================================
+  // ==========================================
 
   const [type, setType] =
-    useState<NotificationType>("custom");
+    useState<NotificationType>("article");
 
   const [title, setTitle] =
     useState("");
@@ -66,9 +59,6 @@ export default function NotificationsAdminPage() {
   const [category, setCategory] =
     useState("");
 
-  const [tag, setTag] =
-    useState("");
-
   const [ctaText, setCtaText] =
     useState("");
 
@@ -78,9 +68,9 @@ export default function NotificationsAdminPage() {
   const [description, setDescription] =
     useState("");
 
-  // ====================================================
-  // STATE
-  // ====================================================
+  // ==========================================
+  // STATUS
+  // ==========================================
 
   const [sending, setSending] =
     useState(false);
@@ -91,9 +81,9 @@ export default function NotificationsAdminPage() {
   const [success, setSuccess] =
     useState("");
 
-  // ====================================================
+  // ==========================================
   // AUTH STATE
-  // ====================================================
+  // ==========================================
 
   useEffect(() => {
     const unsubscribe =
@@ -110,9 +100,9 @@ export default function NotificationsAdminPage() {
     };
   }, []);
 
-  // ====================================================
+  // ==========================================
   // GOOGLE LOGIN
-  // ====================================================
+  // ==========================================
 
   async function handleGoogleLogin() {
     try {
@@ -133,7 +123,7 @@ export default function NotificationsAdminPage() {
       );
 
       setSuccess(
-        "Login successful."
+        "Google login successful."
       );
     } catch (error) {
       console.error(
@@ -151,9 +141,9 @@ export default function NotificationsAdminPage() {
     }
   }
 
-  // ====================================================
+  // ==========================================
   // SEND NOTIFICATION
-  // ====================================================
+  // ==========================================
 
   async function handleSend() {
     try {
@@ -161,32 +151,35 @@ export default function NotificationsAdminPage() {
       setError("");
       setSuccess("");
 
-      // -----------------------------------------------
-      // USER CHECK
-      // -----------------------------------------------
+      // ----------------------------------------
+      // CURRENT FIREBASE USER
+      // ----------------------------------------
 
-      if (!user) {
+      const currentUser =
+        commentsAuth.currentUser;
+
+      if (!currentUser) {
         throw new Error(
           "Please login with Google first."
         );
       }
 
-      // -----------------------------------------------
+      // ----------------------------------------
       // FIREBASE ID TOKEN
-      // -----------------------------------------------
+      // ----------------------------------------
 
       const token =
-        await user.getIdToken();
+        await currentUser.getIdToken();
 
       if (!token) {
         throw new Error(
-          "Authentication token could not be obtained."
+          "Authentication token could not be generated."
         );
       }
 
-      // -----------------------------------------------
+      // ----------------------------------------
       // VALIDATION
-      // -----------------------------------------------
+      // ----------------------------------------
 
       if (!title.trim()) {
         throw new Error(
@@ -205,7 +198,7 @@ export default function NotificationsAdminPage() {
         !category.trim()
       ) {
         throw new Error(
-          "Article notification category is required."
+          "Article category is required."
         );
       }
 
@@ -214,17 +207,17 @@ export default function NotificationsAdminPage() {
         !ctaText.trim()
       ) {
         throw new Error(
-          "Card notification CTA text is required."
+          "Card CTA text is required."
         );
       }
 
-      // -----------------------------------------------
-      // API
-      // -----------------------------------------------
+      // ----------------------------------------
+      // API REQUEST
+      // ----------------------------------------
 
       const response =
         await fetch(
-          "/api/admin/notifications/send",
+          "/api/admin/notifications",
           {
             method: "POST",
 
@@ -254,29 +247,50 @@ export default function NotificationsAdminPage() {
               category:
                 category.trim(),
 
-              tag:
-                tag.trim(),
-
               ctaText:
                 ctaText.trim(),
 
               heading:
-                heading.trim(),
+                heading.trim() ||
+                title.trim(),
 
               description:
-                description.trim(),
+                description.trim() ||
+                message.trim(),
             }),
 
             cache: "no-store",
           }
         );
 
-      // -----------------------------------------------
+      // ----------------------------------------
       // RESPONSE
-      // -----------------------------------------------
+      // ----------------------------------------
 
-      const result =
-        await response.json();
+      const contentType =
+        response.headers.get(
+          "content-type"
+        ) || "";
+
+      let result: any;
+
+      if (
+        contentType.includes(
+          "application/json"
+        )
+      ) {
+        result =
+          await response.json();
+      } else {
+        const text =
+          await response.text();
+
+        throw new Error(
+          `Server returned ${response.status}: ${
+            text.slice(0, 150)
+          }`
+        );
+      }
 
       if (
         !response.ok ||
@@ -288,16 +302,32 @@ export default function NotificationsAdminPage() {
         );
       }
 
-      // -----------------------------------------------
+      // ----------------------------------------
       // SUCCESS
-      // -----------------------------------------------
+      // ----------------------------------------
 
       setSuccess(
         `Notification sent successfully. ${
           result.sent ?? 0
-        } users notified.`
+        } sent${
+          result.failed
+            ? ` • ${result.failed} failed`
+            : ""
+        }.`
       );
 
+      // ----------------------------------------
+      // CLEAR FORM
+      // ----------------------------------------
+
+      setTitle("");
+      setMessage("");
+      setUrl("");
+      setImage("");
+      setCategory("");
+      setCtaText("");
+      setHeading("");
+      setDescription("");
     } catch (error) {
       console.error(
         "SEND NOTIFICATION ERROR:",
@@ -307,59 +337,53 @@ export default function NotificationsAdminPage() {
       setError(
         error instanceof Error
           ? error.message
-          : "Notification send nahi ho paayi."
+          : "Notification sending failed."
       );
     } finally {
       setSending(false);
     }
   }
 
-  // ====================================================
+  // ==========================================
   // AUTH LOADING
-  // ====================================================
+  // ==========================================
 
   if (authLoading) {
     return (
-      <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-        <div className="h-[500px] animate-pulse rounded-xl bg-zinc-100" />
+      <div className="flex min-h-[500px] items-center justify-center rounded-2xl border border-zinc-200 bg-white">
+        <div className="text-sm font-medium text-zinc-500">
+          Checking authentication...
+        </div>
       </div>
     );
   }
 
-  // ====================================================
-  // LOGIN SCREEN
-  // ====================================================
+  // ==========================================
+  // GOOGLE LOGIN SCREEN
+  // ==========================================
 
   if (!user) {
     return (
-      <div className="flex min-h-[500px] items-center justify-center rounded-2xl border border-zinc-200 bg-white p-6">
+      <div className="flex min-h-[600px] items-center justify-center rounded-2xl border border-zinc-200 bg-white p-6">
 
         <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-8 text-center shadow-xl">
 
-          {/* LOGO */}
-
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-
             <img
               src="/loader.webp"
               alt="Infinia Bharat News"
               className="h-full w-full object-contain p-2"
             />
-
           </div>
 
-          {/* HEADING */}
-
           <h2 className="text-2xl font-bold text-zinc-900">
-            Notification Manager
+            Notifications Manager
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-zinc-500">
             Notifications send karne ke liye
-            Google account se continue karein.
+            pehle Google account se login karein.
           </p>
-
-          {/* ERROR */}
 
           {error && (
             <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-left text-sm text-red-700">
@@ -367,11 +391,11 @@ export default function NotificationsAdminPage() {
             </div>
           )}
 
-          {/* LOGIN */}
-
           <button
             type="button"
-            onClick={handleGoogleLogin}
+            onClick={
+              handleGoogleLogin
+            }
             disabled={loginLoading}
             className="
               mt-6
@@ -398,7 +422,6 @@ export default function NotificationsAdminPage() {
               disabled:opacity-60
             "
           >
-
             {!loginLoading && (
               <svg
                 width="20"
@@ -431,21 +454,19 @@ export default function NotificationsAdminPage() {
             {loginLoading
               ? "Google se login ho raha hai..."
               : "Continue with Google"}
-
           </button>
 
           <p className="mt-5 text-xs text-zinc-400">
             Secure Google authentication
           </p>
-
         </div>
       </div>
     );
   }
 
-  // ====================================================
+  // ==========================================
   // MAIN UI
-  // ====================================================
+  // ==========================================
 
   return (
     <div className="space-y-5">
@@ -454,24 +475,46 @@ export default function NotificationsAdminPage() {
 
       <div className="rounded-2xl border border-zinc-200 bg-white p-5">
 
-        <div>
-          <h1 className="text-xl font-bold text-zinc-900">
-            Push Notifications
-          </h1>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
 
-          <p className="mt-1 text-sm text-zinc-500">
-            INFINIA BHARAT NEWS subscribers ko
-            notification bhejein.
-          </p>
+          <div>
+            <h1 className="text-xl font-bold text-zinc-900">
+              Push Notifications
+            </h1>
+
+            <p className="mt-1 text-sm text-zinc-500">
+              INFINIA BHARAT NEWS subscribers ko notification bhejein.
+            </p>
+          </div>
+
+          <div className="rounded-xl bg-green-50 px-4 py-2 text-xs font-semibold text-green-700">
+            ● Google authenticated
+          </div>
+
         </div>
-
       </div>
+
+      {/* SUCCESS */}
+
+      {success && (
+        <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+          {success}
+        </div>
+      )}
+
+      {/* ERROR */}
+
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          {error}
+        </div>
+      )}
 
       {/* FORM */}
 
-      <div className="rounded-2xl border border-zinc-200 bg-white p-5">
+      <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
 
-        <div className="grid gap-5 lg:grid-cols-2">
+        <div className="grid gap-5">
 
           {/* TYPE */}
 
@@ -482,31 +525,44 @@ export default function NotificationsAdminPage() {
 
             <select
               value={type}
-              onChange={(e) =>
+              onChange={(e) => {
                 setType(
                   e.target.value as NotificationType
-                )
-              }
-              className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-red-500"
+                );
+                setError("");
+                setSuccess("");
+              }}
+              className="
+                w-full
+                rounded-xl
+                border
+                border-zinc-300
+                bg-white
+                px-4
+                py-3
+                text-sm
+                outline-none
+                focus:border-red-500
+              "
             >
-              <option value="custom">
-                Custom
-              </option>
-
               <option value="article">
-                Article
+                📰 Article
               </option>
 
               <option value="breaking">
-                Breaking News
+                🔴 Breaking News
               </option>
 
               <option value="video">
-                Video
+                ▶️ Video
+              </option>
+
+              <option value="custom">
+                📢 Custom
               </option>
 
               <option value="card">
-                Card
+                🎨 Custom Card
               </option>
             </select>
           </div>
@@ -515,7 +571,7 @@ export default function NotificationsAdminPage() {
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-zinc-800">
-              Title *
+              Notification Title *
             </label>
 
             <input
@@ -523,15 +579,24 @@ export default function NotificationsAdminPage() {
               onChange={(e) =>
                 setTitle(e.target.value)
               }
-              placeholder="Notification title"
-              className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-red-500"
+              placeholder="Example: बड़ी खबर सामने आई"
+              className="
+                w-full
+                rounded-xl
+                border
+                border-zinc-300
+                px-4
+                py-3
+                text-sm
+                outline-none
+                focus:border-red-500
+              "
             />
           </div>
 
           {/* MESSAGE */}
 
-          <div className="lg:col-span-2">
-
+          <div>
             <label className="mb-2 block text-sm font-semibold text-zinc-800">
               Message *
             </label>
@@ -542,18 +607,56 @@ export default function NotificationsAdminPage() {
                 setMessage(e.target.value)
               }
               rows={4}
-              placeholder="Notification message"
-              className="w-full resize-y rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-red-500"
+              placeholder="Notification ka message..."
+              className="
+                w-full
+                resize-y
+                rounded-xl
+                border
+                border-zinc-300
+                px-4
+                py-3
+                text-sm
+                outline-none
+                focus:border-red-500
+              "
             />
-
           </div>
+
+          {/* ARTICLE CATEGORY */}
+
+          {type === "article" && (
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-zinc-800">
+                Category *
+              </label>
+
+              <input
+                value={category}
+                onChange={(e) =>
+                  setCategory(e.target.value)
+                }
+                placeholder="Example: Politics"
+                className="
+                  w-full
+                  rounded-xl
+                  border
+                  border-zinc-300
+                  px-4
+                  py-3
+                  text-sm
+                  outline-none
+                  focus:border-red-500
+                "
+              />
+            </div>
+          )}
 
           {/* URL */}
 
           <div>
-
             <label className="mb-2 block text-sm font-semibold text-zinc-800">
-              URL
+              Target URL
             </label>
 
             <input
@@ -562,15 +665,23 @@ export default function NotificationsAdminPage() {
                 setUrl(e.target.value)
               }
               placeholder="https://infiniabharatnews.vercel.app/..."
-              className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-red-500"
+              className="
+                w-full
+                rounded-xl
+                border
+                border-zinc-300
+                px-4
+                py-3
+                text-sm
+                outline-none
+                focus:border-red-500
+              "
             />
-
           </div>
 
           {/* IMAGE */}
 
           <div>
-
             <label className="mb-2 block text-sm font-semibold text-zinc-800">
               Image URL
             </label>
@@ -581,157 +692,155 @@ export default function NotificationsAdminPage() {
                 setImage(e.target.value)
               }
               placeholder="https://..."
-              className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-red-500"
+              className="
+                w-full
+                rounded-xl
+                border
+                border-zinc-300
+                px-4
+                py-3
+                text-sm
+                outline-none
+                focus:border-red-500
+              "
             />
-
           </div>
 
-          {/* CATEGORY */}
+          {/* CARD OPTIONS */}
 
-          <div>
+          {type === "card" && (
+            <>
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-zinc-800">
+                  CTA Text *
+                </label>
 
-            <label className="mb-2 block text-sm font-semibold text-zinc-800">
-              Category
-              {type === "article" && " *"}
-            </label>
+                <input
+                  value={ctaText}
+                  onChange={(e) =>
+                    setCtaText(e.target.value)
+                  }
+                  placeholder="View Details"
+                  className="
+                    w-full
+                    rounded-xl
+                    border
+                    border-zinc-300
+                    px-4
+                    py-3
+                    text-sm
+                    outline-none
+                    focus:border-red-500
+                  "
+                />
+              </div>
 
-            <input
-              value={category}
-              onChange={(e) =>
-                setCategory(e.target.value)
-              }
-              placeholder="Politics, Sports, World..."
-              className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-red-500"
-            />
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-zinc-800">
+                  Card Heading
+                </label>
 
-          </div>
+                <input
+                  value={heading}
+                  onChange={(e) =>
+                    setHeading(e.target.value)
+                  }
+                  placeholder="Card heading"
+                  className="
+                    w-full
+                    rounded-xl
+                    border
+                    border-zinc-300
+                    px-4
+                    py-3
+                    text-sm
+                    outline-none
+                    focus:border-red-500
+                  "
+                />
+              </div>
 
-          {/* TAG */}
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-zinc-800">
+                  Card Description
+                </label>
 
-          <div>
+                <textarea
+                  value={description}
+                  onChange={(e) =>
+                    setDescription(e.target.value)
+                  }
+                  rows={3}
+                  placeholder="Card description"
+                  className="
+                    w-full
+                    resize-y
+                    rounded-xl
+                    border
+                    border-zinc-300
+                    px-4
+                    py-3
+                    text-sm
+                    outline-none
+                    focus:border-red-500
+                  "
+                />
+              </div>
+            </>
+          )}
 
-            <label className="mb-2 block text-sm font-semibold text-zinc-800">
-              Tag
-            </label>
+          {/* SEND */}
 
-            <input
-              value={tag}
-              onChange={(e) =>
-                setTag(e.target.value)
-              }
-              placeholder="Optional notification tag"
-              className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-red-500"
-            />
+          <div className="flex justify-end border-t border-zinc-100 pt-5">
 
-          </div>
-
-          {/* CTA */}
-
-          <div>
-
-            <label className="mb-2 block text-sm font-semibold text-zinc-800">
-              CTA Text
-              {type === "card" && " *"}
-            </label>
-
-            <input
-              value={ctaText}
-              onChange={(e) =>
-                setCtaText(e.target.value)
-              }
-              placeholder="Read Story / Watch Video / Open"
-              className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-red-500"
-            />
-
-          </div>
-
-          {/* HEADING */}
-
-          <div>
-
-            <label className="mb-2 block text-sm font-semibold text-zinc-800">
-              Card Heading
-            </label>
-
-            <input
-              value={heading}
-              onChange={(e) =>
-                setHeading(e.target.value)
-              }
-              placeholder="Optional"
-              className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-red-500"
-            />
-
-          </div>
-
-          {/* DESCRIPTION */}
-
-          <div className="lg:col-span-2">
-
-            <label className="mb-2 block text-sm font-semibold text-zinc-800">
-              Card Description
-            </label>
-
-            <textarea
-              value={description}
-              onChange={(e) =>
-                setDescription(e.target.value)
-              }
-              rows={3}
-              placeholder="Optional card description"
-              className="w-full resize-y rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-red-500"
-            />
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={sending}
+              className="
+                rounded-xl
+                bg-red-600
+                px-7
+                py-3
+                text-sm
+                font-bold
+                text-white
+                shadow-sm
+                transition
+                hover:bg-red-700
+                active:scale-[0.98]
+                disabled:cursor-not-allowed
+                disabled:opacity-60
+              "
+            >
+              {sending
+                ? "Sending..."
+                : "Send Notification"}
+            </button>
 
           </div>
 
         </div>
-
       </div>
 
-      {/* ERROR */}
+      {/* INFO */}
 
-      {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-          {error}
-        </div>
-      )}
+      <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-xs leading-6 text-zinc-500">
 
-      {/* SUCCESS */}
+        <p>
+          <strong className="text-zinc-700">
+            Logged in as:
+          </strong>{" "}
+          {user.email}
+        </p>
 
-      {success && (
-        <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
-          {success}
-        </div>
-      )}
-
-      {/* SEND */}
-
-      <div className="flex justify-end">
-
-        <button
-          type="button"
-          onClick={handleSend}
-          disabled={sending}
-          className="
-            rounded-xl
-            bg-red-600
-            px-6
-            py-3
-            text-sm
-            font-bold
-            text-white
-            shadow-sm
-            transition
-            hover:bg-red-700
-            active:scale-[0.98]
-            disabled:cursor-not-allowed
-            disabled:opacity-50
-          "
-        >
-          {sending
-            ? "Sending..."
-            : "Send Notification"}
-        </button>
+        <p>
+          Notification API:
+          {" "}
+          <code>
+            /api/admin/notifications
+          </code>
+        </p>
 
       </div>
 
