@@ -24,6 +24,12 @@ const menu = [
   },
 
   {
+  name: "Notifications",
+  href: "/admin/notifications",
+  icon: Bell,
+},
+
+  {
     name: "Articles",
     href: "/admin/articles",
     icon: FileText,

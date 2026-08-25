@@ -1,18 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
+import {
+  ArrowRight,
+  BellRing,
+  ShieldCheck,
+  X,
+} from "lucide-react";
 
 const PUSH_API =
   "https://infinia-push.infiniabharatnews.workers.dev";
 
+/*
+ * ============================================
+ * TEST MODE
+ * ============================================
+ *
+ * true  = popup दिखेगा even if already subscribed
+ * false = production behavior
+ */
+const TEST_MODE = false;
+
 const DISMISS_KEY =
   "infinia-push-dismissed";
 
-const DISMISS_DAYS = 7;
+const DISMISS_MINUTES = 10;
 
 function urlBase64ToUint8Array(
   base64String: string
-) {
+): Uint8Array {
   const padding =
     "=".repeat(
       (4 - (base64String.length % 4)) % 4
@@ -23,13 +40,22 @@ function urlBase64ToUint8Array(
       .replace(/-/g, "+")
       .replace(/_/g, "/") + padding;
 
-  const rawData = window.atob(base64);
+  const rawData =
+    window.atob(base64);
 
-  return Uint8Array.from(
-    Array.from(rawData).map((char) =>
-      char.charCodeAt(0)
-    )
-  );
+  const output =
+    new Uint8Array(rawData.length);
+
+  for (
+    let i = 0;
+    i < rawData.length;
+    i++
+  ) {
+    output[i] =
+      rawData.charCodeAt(i);
+  }
+
+  return output;
 }
 
 export default function PushNotificationPopup() {
@@ -42,12 +68,35 @@ export default function PushNotificationPopup() {
   const [message, setMessage] =
     useState("");
 
+  const timerRef =
+    useRef<number | null>(null);
+
   useEffect(() => {
+    let cancelled = false;
+
+    const schedulePopup = (
+      delay: number
+    ) => {
+      if (timerRef.current !== null) {
+        window.clearTimeout(
+          timerRef.current
+        );
+      }
+
+      timerRef.current =
+        window.setTimeout(() => {
+          if (!cancelled) {
+            setVisible(true);
+          }
+        }, delay);
+    };
+
     const checkNotificationStatus =
       async () => {
         try {
           if (
-            typeof window === "undefined" ||
+            typeof window ===
+              "undefined" ||
             !("Notification" in window) ||
             !("serviceWorker" in navigator) ||
             !("PushManager" in window)
@@ -55,31 +104,43 @@ export default function PushNotificationPopup() {
             return;
           }
 
-          // Already denied — don't keep annoying the user.
-          if (
-            Notification.permission ===
-            "denied"
-          ) {
-            return;
-          }
-
-          // Already allowed — check subscription.
-          if (
-            Notification.permission ===
-            "granted"
-          ) {
-            const registration =
-              await navigator.serviceWorker.ready;
-
-            const subscription =
-              await registration.pushManager.getSubscription();
-
-            if (subscription) {
+          /*
+           * ==========================================
+           * PRODUCTION SUBSCRIPTION CHECK
+           * ==========================================
+           *
+           * TEST_MODE=true होने पर इसे skip करेंगे
+           * ताकि UI testing के लिए popup आता रहे।
+           */
+          if (!TEST_MODE) {
+            if (
+              Notification.permission ===
+              "denied"
+            ) {
               return;
+            }
+
+            if (
+              Notification.permission ===
+              "granted"
+            ) {
+              const registration =
+                await navigator.serviceWorker.ready;
+
+              const subscription =
+                await registration.pushManager.getSubscription();
+
+              if (subscription) {
+                return;
+              }
             }
           }
 
-          // Check dismiss cooldown.
+          /*
+           * ==========================================
+           * DISMISS COOLDOWN
+           * ==========================================
+           */
           const dismissed =
             localStorage.getItem(
               DISMISS_KEY
@@ -89,13 +150,23 @@ export default function PushNotificationPopup() {
             const dismissedAt =
               Number(dismissed);
 
-            const daysPassed =
-              (Date.now() - dismissedAt) /
-              (1000 * 60 * 60 * 24);
+            const minutesPassed =
+              (Date.now() -
+                dismissedAt) /
+              (1000 * 60);
 
             if (
-              daysPassed < DISMISS_DAYS
+              minutesPassed <
+              DISMISS_MINUTES
             ) {
+              const remaining =
+                DISMISS_MINUTES -
+                minutesPassed;
+
+              schedulePopup(
+                remaining * 60 * 1000
+              );
+
               return;
             }
 
@@ -104,16 +175,11 @@ export default function PushNotificationPopup() {
             );
           }
 
-          // Small delay so popup doesn't appear immediately.
-          const timer = window.setTimeout(
-            () => {
-              setVisible(true);
-            },
-            7000
-          );
-
-          return () =>
-            window.clearTimeout(timer);
+          /*
+           * First appearance:
+           * 7 seconds after page load.
+           */
+          schedulePopup(7000);
         } catch (error) {
           console.error(
             "Notification popup check failed:",
@@ -123,8 +189,25 @@ export default function PushNotificationPopup() {
       };
 
     checkNotificationStatus();
+
+    return () => {
+      cancelled = true;
+
+      if (
+        timerRef.current !== null
+      ) {
+        window.clearTimeout(
+          timerRef.current
+        );
+      }
+    };
   }, []);
 
+  /*
+   * ============================================
+   * CLOSE / NOT NOW
+   * ============================================
+   */
   const closePopup = () => {
     localStorage.setItem(
       DISMISS_KEY,
@@ -132,8 +215,14 @@ export default function PushNotificationPopup() {
     );
 
     setVisible(false);
+    setMessage("");
   };
 
+  /*
+   * ============================================
+   * ENABLE NOTIFICATIONS
+   * ============================================
+   */
   const enableNotifications =
     async () => {
       try {
@@ -144,7 +233,7 @@ export default function PushNotificationPopup() {
           !("Notification" in window)
         ) {
           setMessage(
-            "आपका browser notifications support नहीं करता।"
+            "यह browser notifications support नहीं करता।"
           );
           return;
         }
@@ -167,27 +256,64 @@ export default function PushNotificationPopup() {
           return;
         }
 
-        let permission =
+        /*
+         * IMPORTANT:
+         *
+         * सीधे Notification.permission को
+         * comparison में use कर रहे हैं।
+         *
+         * इससे TypeScript का
+         * TS2367 error नहीं आएगा।
+         */
+        const browserPermission =
           Notification.permission;
 
-        if (permission !== "granted") {
-          permission =
-            await Notification.requestPermission();
-        }
-
-        if (permission !== "granted") {
+        if (
+          browserPermission ===
+          "denied"
+        ) {
           setMessage(
-            "Notifications enable नहीं हुईं। आप बाद में फिर कोशिश कर सकते हैं।"
+            "Notifications blocked हैं। Browser settings में जाकर INFINIA BHARAT NEWS के लिए notifications Allow करें।"
           );
           return;
         }
 
+        /*
+         * Request browser permission.
+         */
+        if (
+          browserPermission !==
+          "granted"
+        ) {
+          const requestedPermission =
+            await Notification.requestPermission();
+
+          if (
+            requestedPermission !==
+            "granted"
+          ) {
+            setMessage(
+              "Notifications enable नहीं हुईं।"
+            );
+            return;
+          }
+        }
+
+        /*
+         * Wait for service worker.
+         */
         const registration =
           await navigator.serviceWorker.ready;
 
+        /*
+         * Get VAPID public key.
+         */
         const keyResponse =
           await fetch(
-            `${PUSH_API}/vapid-public-key`
+            `${PUSH_API}/vapid-public-key`,
+            {
+              cache: "no-store",
+            }
           );
 
         if (!keyResponse.ok) {
@@ -213,19 +339,44 @@ export default function PushNotificationPopup() {
             keyData.publicKey
           );
 
+        /*
+         * Make a real ArrayBuffer.
+         *
+         * This fixes:
+         *
+         * ArrayBuffer |
+         * SharedArrayBuffer
+         *
+         * TypeScript error.
+         */
+        const applicationServerBuffer =
+          new Uint8Array(
+            applicationServerKey
+          ).slice().buffer as ArrayBuffer;
+
+        /*
+         * Existing subscription?
+         */
         let subscription =
           await registration.pushManager.getSubscription();
 
+        /*
+         * Create subscription if needed.
+         */
         if (!subscription) {
           subscription =
             await registration.pushManager.subscribe(
               {
                 userVisibleOnly: true,
-                applicationServerKey,
+                applicationServerKey:
+                  applicationServerBuffer,
               }
             );
         }
 
+        /*
+         * Send subscription to worker.
+         */
         const subscriptionJson =
           subscription.toJSON();
 
@@ -259,6 +410,9 @@ export default function PushNotificationPopup() {
           );
         }
 
+        /*
+         * Success.
+         */
         localStorage.removeItem(
           DISMISS_KEY
         );
@@ -286,211 +440,341 @@ export default function PushNotificationPopup() {
     <div
       className="
         fixed
-        bottom-5
-        right-5
+        inset-x-0
+        top-4
         z-[9999]
-        w-[calc(100%-2rem)]
-        max-w-[390px]
+        flex
+        justify-center
+        px-3
+        pointer-events-none
+        sm:top-5
       "
+      role="dialog"
+      aria-modal="false"
+      aria-labelledby="infinia-notification-title"
+      aria-describedby="infinia-notification-description"
     >
       <div
         className="
+          pointer-events-auto
           relative
+          w-full
+          max-w-[430px]
           overflow-hidden
-          rounded-2xl
+          rounded-[18px]
           border
           border-zinc-200
           bg-white
-          shadow-[0_12px_45px_rgba(0,0,0,0.18)]
-          dark:border-zinc-800
-          dark:bg-zinc-950
+          shadow-[0_10px_35px_rgba(0,0,0,0.16)]
+          ring-1
+          ring-black/[0.03]
         "
       >
-        {/* Top accent */}
+        {/* Red premium accent */}
         <div
           className="
-            h-1
-            w-full
+            absolute
+            inset-x-0
+            top-0
+            h-[3px]
             bg-[#C8102E]
           "
         />
 
+        {/* Close button */}
         <button
           type="button"
           onClick={closePopup}
-          aria-label="Close notification popup"
+          aria-label="Close notification prompt"
+          title="Close"
           className="
             absolute
             right-3
             top-3
+            z-10
             flex
             h-8
             w-8
             items-center
             justify-center
             rounded-full
-            text-zinc-400
+            text-zinc-500
             transition
             hover:bg-zinc-100
-            hover:text-zinc-700
-            dark:hover:bg-zinc-900
+            hover:text-zinc-900
+            focus:outline-none
+            focus:ring-2
+            focus:ring-[#C8102E]/30
+            active:scale-95
           "
         >
-          ×
+          <X
+            size={18}
+            strokeWidth={2}
+            aria-hidden="true"
+          />
         </button>
 
-        <div className="p-5">
-          <div className="mb-4 flex items-center gap-3">
+        <div
+          className="
+            px-4
+            pb-4
+            pt-4
+            sm:px-5
+            sm:pb-5
+            sm:pt-5
+          "
+        >
+          {/* =================================
+              BRAND
+          ================================= */}
+          <div
+            className="
+              flex
+              items-center
+              gap-3
+              pr-8
+            "
+          >
             <div
               className="
-                flex
+                relative
                 h-11
                 w-11
                 shrink-0
-                items-center
-                justify-center
-                rounded-full
-                bg-red-50
-                text-xl
-                dark:bg-red-950/40
+                overflow-hidden
+                rounded-xl
+                border
+                border-zinc-200
+                bg-white
+                shadow-sm
               "
             >
-              🔔
+              <Image
+                src="/icons/favicon-192x192.webp"
+                alt="INFINIA BHARAT NEWS"
+                fill
+                sizes="44px"
+                className="object-cover"
+                priority
+              />
             </div>
 
-            <div>
-              <p
+            <div className="min-w-0">
+              <div
                 className="
-                  text-[11px]
-                  font-bold
-                  uppercase
-                  tracking-[0.12em]
-                  text-[#C8102E]
+                  text-[13px]
+                  font-extrabold
+                  tracking-[-0.01em]
+                  text-zinc-950
                 "
               >
                 INFINIA BHARAT NEWS
-              </p>
+              </div>
 
-              <p
+              <div
                 className="
                   mt-0.5
-                  text-xs
+                  flex
+                  items-center
+                  gap-1.5
+                  text-[11px]
+                  font-medium
                   text-zinc-500
-                  dark:text-zinc-400
                 "
               >
-                News alerts
-              </p>
+                <span
+                  className="
+                    inline-block
+                    h-1.5
+                    w-1.5
+                    rounded-full
+                    bg-[#C8102E]
+                  "
+                  aria-hidden="true"
+                />
+
+                Breaking News Alerts
+              </div>
             </div>
           </div>
 
-          <h3
-            className="
-              pr-8
-              text-[19px]
-              font-bold
-              leading-7
-              text-zinc-900
-              dark:text-white
-            "
-          >
-            बड़ी खबरें आते ही जानिए
-          </h3>
+          {/* =================================
+              CONTENT
+          ================================= */}
+          <div className="mt-4">
+            <h2
+              id="infinia-notification-title"
+              className="
+                pr-7
+                text-[17px]
+                font-extrabold
+                leading-[1.35]
+                tracking-[-0.02em]
+                text-zinc-950
+                sm:text-[18px]
+              "
+            >
+              जरूरी खबरें सबसे पहले पाएं
+            </h2>
 
-          <p
-            className="
-              mt-2
-              text-sm
-              leading-6
-              text-zinc-600
-              dark:text-zinc-400
-            "
-          >
-            Breaking News और जरूरी
-            अपडेट सीधे आपके browser पर।
-            कोई खबर मिस न करें।
-          </p>
+            <p
+              id="infinia-notification-description"
+              className="
+                mt-1.5
+                max-w-[380px]
+                text-[13px]
+                leading-[1.55]
+                text-zinc-600
+              "
+            >
+              Breaking News, बड़ी खबरें और
+              महत्वपूर्ण अपडेट सीधे आपके
+              device पर।
+            </p>
+          </div>
 
+          {/* Trust */}
           <div
+            className="
+              mt-3
+              flex
+              items-center
+              gap-2
+              text-[11px]
+              font-medium
+              text-zinc-500
+            "
+          >
+            <ShieldCheck
+              size={15}
+              strokeWidth={2}
+              className="
+                shrink-0
+                text-[#C8102E]
+              "
+              aria-hidden="true"
+            />
+
+            <span>
+              आप कभी भी notifications बंद कर सकते हैं।
+            </span>
+          </div>
+
+          {/* Error */}
+          {message && (
+            <div
+              className="
+                mt-3
+                rounded-lg
+                border
+                border-red-100
+                bg-red-50
+                px-3
+                py-2
+                text-[11px]
+                font-medium
+                leading-5
+                text-red-700
+              "
+              role="alert"
+            >
+              {message}
+            </div>
+          )}
+
+          {/* =================================
+              PRIMARY ACTION
+          ================================= */}
+          <button
+            type="button"
+            onClick={
+              enableNotifications
+            }
+            disabled={loading}
             className="
               mt-4
               flex
-              flex-wrap
-              gap-x-4
-              gap-y-2
-              text-xs
-              font-medium
-              text-zinc-600
-              dark:text-zinc-400
-            "
-          >
-            <span>• Breaking News</span>
-            <span>• Top Headlines</span>
-            <span>• जरूरी Updates</span>
-          </div>
-
-          {message && (
-            <p
-              className="
-                mt-3
-                text-xs
-                leading-5
-                text-red-600
-              "
-            >
-              {message}
-            </p>
-          )}
-
-          <button
-            type="button"
-            onClick={enableNotifications}
-            disabled={loading}
-            className="
-              mt-5
-              flex
+              h-11
               w-full
               items-center
               justify-center
               gap-2
-              rounded-xl
+              rounded-[11px]
               bg-[#C8102E]
               px-4
-              py-3
-              text-sm
+              text-[13px]
               font-bold
               text-white
-              shadow-sm
+              shadow-[0_4px_12px_rgba(200,16,46,0.22)]
               transition
-              hover:bg-[#a90d27]
+              hover:bg-[#B20E29]
+              hover:shadow-[0_6px_16px_rgba(200,16,46,0.28)]
+              focus:outline-none
+              focus:ring-2
+              focus:ring-[#C8102E]/30
+              focus:ring-offset-2
               active:scale-[0.99]
               disabled:cursor-not-allowed
               disabled:opacity-70
             "
           >
             {loading ? (
-              "Notifications enable हो रही हैं..."
+              <>
+                <span
+                  className="
+                    h-4
+                    w-4
+                    animate-spin
+                    rounded-full
+                    border-2
+                    border-white/40
+                    border-t-white
+                  "
+                  aria-hidden="true"
+                />
+
+                Enable हो रहा है...
+              </>
             ) : (
               <>
-                <span>🔔</span>
+                <BellRing
+                  size={17}
+                  strokeWidth={2.2}
+                  aria-hidden="true"
+                />
+
                 Notifications ON करें
+
+                <ArrowRight
+                  size={16}
+                  strokeWidth={2.2}
+                  aria-hidden="true"
+                />
               </>
             )}
           </button>
 
+          {/* Secondary */}
           <button
             type="button"
             onClick={closePopup}
             className="
-              mt-3
+              mt-2
+              flex
+              h-8
               w-full
-              text-center
-              text-xs
-              font-medium
+              items-center
+              justify-center
+              rounded-lg
+              text-[11px]
+              font-semibold
               text-zinc-500
               transition
-              hover:text-zinc-800
-              dark:hover:text-zinc-200
+              hover:text-zinc-900
+              focus:outline-none
+              focus:ring-2
+              focus:ring-zinc-300
             "
           >
             अभी नहीं
