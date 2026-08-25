@@ -6,6 +6,7 @@ import "./globals.css";
 import { siteConfig } from "@/config/site";
 import PageLoadingBar from "@/components/navigation/PageLoadingBar";
 import ServiceWorkerRegister from "@/components/pwa/service-worker-register";
+import PushNotificationPopup from "@/components/notifications/PushNotificationPopup";
 
 
 export const metadata: Metadata = {
@@ -196,6 +197,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen antialiased overflow-x-hidden">
         <ServiceWorkerRegister />
+        <PushNotificationPopup />
 
 <script
     type="application/ld+json"
