@@ -1,4 +1,4 @@
-const CACHE_NAME = "infinia-bharat-news-v4";
+const CACHE_NAME = "infinia-bharat-news-v5";
 
 const STATIC_CACHE = [
   "/",
@@ -231,35 +231,55 @@ self.addEventListener("push", (event) => {
 // NOTIFICATION CLICK
 // ======================================================
 
-self.addEventListener(
-  "notificationclick",
-  (event) => {
-    event.notification.close();
+self.addEventListener("push", (event) => {
+  console.log("🔔 PUSH EVENT RECEIVED", event);
 
-    const targetUrl =
-      event.notification?.data?.url ||
-      "https://infiniabharatnews.vercel.app/";
+  event.waitUntil(
+    (async () => {
+      let data = {};
 
-    event.waitUntil(
-      clients
-        .matchAll({
-          type: "window",
-          includeUncontrolled: true,
-        })
-        .then((clientList) => {
-          for (const client of clientList) {
-            if (
-              client.url.startsWith(
-                "https://infiniabharatnews.vercel.app"
-              )
-            ) {
-              client.navigate(targetUrl);
-              return client.focus();
-            }
-          }
+      try {
+        if (event.data) {
+          const text = event.data.text();
 
-          return clients.openWindow(targetUrl);
-        })
-    );
-  }
-);
+          console.log("📩 PUSH RAW DATA:", text);
+
+          data = JSON.parse(text);
+        }
+      } catch (error) {
+        console.error("❌ PUSH DATA ERROR:", error);
+      }
+
+      await self.registration.showNotification(
+        data.title || "🔴 INFINIA BHARAT NEWS",
+        {
+          body:
+            data.body ||
+            "नई खबर उपलब्ध है। पढ़ने के लिए टैप करें।",
+
+          icon:
+            data.icon ||
+            "/icons/favicon-192x192.webp",
+
+          badge:
+            data.badge ||
+            "/icons/favicon-192x192.webp",
+
+          tag:
+            data.tag ||
+            `infinia-${Date.now()}`,
+
+          renotify: true,
+
+          data: {
+            url:
+              data.url ||
+              "https://infiniabharatnews.vercel.app/",
+          },
+        }
+      );
+
+      console.log("✅ PUSH NOTIFICATION DISPLAYED");
+    })()
+  );
+});
