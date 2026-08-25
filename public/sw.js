@@ -226,3 +226,111 @@ self.addEventListener("fetch", (event) => {
   // LET BROWSER HANDLE IT
   // ====================================================
 });
+
+
+
+// ======================================================
+// PUSH NOTIFICATIONS
+// ======================================================
+
+self.addEventListener("push", (event) => {
+  let data = {};
+
+  try {
+    if (event.data) {
+      data = event.data.json();
+    }
+  } catch (error) {
+    console.error(
+      "Push notification data parse failed:",
+      error
+    );
+
+    data = {
+      title: "INFINIA BHARAT NEWS",
+      body: event.data
+        ? event.data.text()
+        : "नई खबर उपलब्ध है",
+    };
+  }
+
+  const title =
+    data.title ||
+    "INFINIA BHARAT NEWS";
+
+  const options = {
+    body:
+      data.body ||
+      "नई खबर पढ़ने के लिए क्लिक करें।",
+
+    icon:
+      data.icon ||
+      "/icons/favicon-192x192.png",
+
+    badge:
+      data.badge ||
+      "/icons/favicon-192x192.png",
+
+    tag:
+      data.tag ||
+      "infinia-news",
+
+    renotify: true,
+
+    data: {
+      url:
+        data.url ||
+        "https://infiniabharatnews.vercel.app/",
+    },
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(
+      title,
+      options
+    )
+  );
+});
+
+
+// ======================================================
+// NOTIFICATION CLICK
+// ======================================================
+
+self.addEventListener(
+  "notificationclick",
+  (event) => {
+    event.notification.close();
+
+    const targetUrl =
+      event.notification?.data?.url ||
+      "https://infiniabharatnews.vercel.app/";
+
+    event.waitUntil(
+      clients
+        .matchAll({
+          type: "window",
+          includeUncontrolled: true,
+        })
+        .then((clientList) => {
+
+          for (const client of clientList) {
+            if (
+              client.url.startsWith(
+                "https://infiniabharatnews.vercel.app"
+              )
+            ) {
+              client.navigate(targetUrl);
+              return client.focus();
+            }
+          }
+
+          if (clients.openWindow) {
+            return clients.openWindow(
+              targetUrl
+            );
+          }
+        })
+    );
+  }
+);
