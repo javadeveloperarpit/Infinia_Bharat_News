@@ -1,28 +1,19 @@
 "use client";
 
 import {
-  FormEvent,
-  useMemo,
+  useEffect,
   useState,
 } from "react";
 
 import {
-  Bell,
-  BellRing,
-  Image as ImageIcon,
-  Link2,
-  Send,
-  Newspaper,
-  Radio,
-  Video,
-  Megaphone,
-  CreditCard,
-  CheckCircle2,
-  XCircle,
-  Loader2,
-  ExternalLink,
-  RotateCcw,
-} from "lucide-react";
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signInWithPopup,
+} from "firebase/auth";
+
+import {
+  commentsAuth,
+} from "@/lib/firebase/firebase-comments";
 
 // ======================================================
 // TYPES
@@ -35,140 +26,30 @@ type NotificationType =
   | "custom"
   | "card";
 
-type SendResult = {
-  success: boolean;
-  message?: string;
-  type?: NotificationType;
-  total?: number;
-  sent?: number;
-  failed?: number;
-  removed?: number;
-};
-
 // ======================================================
-// CONFIG
+// COMPONENT
 // ======================================================
 
-const API_ENDPOINT = "/api/admin/notifications";
-
-const SITE_URL =
-  "https://infiniabharatnews.vercel.app/";
-
-const DEFAULT_ICON =
-  "https://infiniabharatnews.vercel.app/loader.webp";
-
-const DEFAULT_BADGE =
-  "https://infiniabharatnews.vercel.app/loader.webp";
-
-// ======================================================
-// TYPE CONFIG
-// ======================================================
-
-const notificationTypes: {
-  value: NotificationType;
-  label: string;
-  description: string;
-  icon: React.ElementType;
-}[] = [
-  {
-    value: "article",
-    label: "Article",
-    description: "News article notification",
-    icon: Newspaper,
-  },
-  {
-    value: "breaking",
-    label: "Breaking News",
-    description: "Urgent breaking news",
-    icon: Radio,
-  },
-  {
-    value: "video",
-    label: "Video",
-    description: "Video / reel notification",
-    icon: Video,
-  },
-  {
-    value: "custom",
-    label: "Custom",
-    description: "General notification",
-    icon: Megaphone,
-  },
-  {
-    value: "card",
-    label: "Custom Card",
-    description: "Rich card notification",
-    icon: CreditCard,
-  },
-];
-
-// ======================================================
-// DEFAULT CTA
-// ======================================================
-
-function getDefaultCta(
-  type: NotificationType
-) {
-  switch (type) {
-    case "article":
-      return "Read Story";
-
-    case "breaking":
-      return "Read Now";
-
-    case "video":
-      return "Watch Video";
-
-    case "card":
-      return "Open";
-
-    default:
-      return "Open";
-  }
-}
-
-// ======================================================
-// TOKEN HELPER
-// ======================================================
-
-function getAdminToken() {
-  if (typeof window === "undefined") {
-    return "";
-  }
-
-  const possibleKeys = [
-    "adminToken",
-    "admin_token",
-    "authToken",
-    "auth_token",
-    "token",
-    "accessToken",
-    "access_token",
-  ];
-
-  for (const key of possibleKeys) {
-    const value =
-      window.localStorage.getItem(key);
-
-    if (value?.trim()) {
-      return value.trim();
-    }
-  }
-
-  return "";
-}
-
-// ======================================================
-// PAGE
-// ======================================================
-
-export default function NotificationAdminPage() {
+export default function NotificationsAdminPage() {
   // ====================================================
-  // STATE
+  // AUTH
+  // ====================================================
+
+  const [user, setUser] =
+    useState<any>(null);
+
+  const [authLoading, setAuthLoading] =
+    useState(true);
+
+  const [loginLoading, setLoginLoading] =
+    useState(false);
+
+  // ====================================================
+  // FORM
   // ====================================================
 
   const [type, setType] =
-    useState<NotificationType>("article");
+    useState<NotificationType>("custom");
 
   const [title, setTitle] =
     useState("");
@@ -197,251 +78,236 @@ export default function NotificationAdminPage() {
   const [description, setDescription] =
     useState("");
 
-  const [icon, setIcon] =
-    useState(DEFAULT_ICON);
-
-  const [badge, setBadge] =
-    useState(DEFAULT_BADGE);
+  // ====================================================
+  // STATE
+  // ====================================================
 
   const [sending, setSending] =
     useState(false);
 
-  const [result, setResult] =
-    useState<SendResult | null>(null);
-
   const [error, setError] =
     useState("");
 
-  // ====================================================
-  // CURRENT TYPE
-  // ====================================================
-
-  const currentType = useMemo(
-    () =>
-      notificationTypes.find(
-        (item) => item.value === type
-      ),
-    [type]
-  );
+  const [success, setSuccess] =
+    useState("");
 
   // ====================================================
-  // TYPE CHANGE
+  // AUTH STATE
   // ====================================================
 
-  function handleTypeChange(
-    nextType: NotificationType
-  ) {
-    setType(nextType);
-
-    setResult(null);
-    setError("");
-
-    setCtaText(
-      getDefaultCta(nextType)
-    );
-
-    if (nextType !== "article") {
-      setCategory("");
-    }
-
-    if (nextType !== "card") {
-      setHeading("");
-      setDescription("");
-    }
-  }
-
-  // ====================================================
-  // RESET
-  // ====================================================
-
-  function resetForm() {
-    setType("article");
-    setTitle("");
-    setMessage("");
-    setUrl("");
-    setImage("");
-    setCategory("");
-    setTag("");
-    setCtaText("Read Story");
-    setHeading("");
-    setDescription("");
-    setIcon(DEFAULT_ICON);
-    setBadge(DEFAULT_BADGE);
-    setResult(null);
-    setError("");
-  }
-
-  // ====================================================
-  // SUBMIT
-  // ====================================================
-
-  async function handleSubmit(
-    event: FormEvent<HTMLFormElement>
-  ) {
-    event.preventDefault();
-
-    setError("");
-    setResult(null);
-
-    // ----------------------------------------------
-    // BASIC VALIDATION
-    // ----------------------------------------------
-
-    if (!title.trim()) {
-      setError(
-        "Notification title is required."
+  useEffect(() => {
+    const unsubscribe =
+      onAuthStateChanged(
+        commentsAuth,
+        (currentUser) => {
+          setUser(currentUser);
+          setAuthLoading(false);
+        }
       );
-      return;
-    }
 
-    if (!message.trim()) {
-      setError(
-        "Notification message is required."
-      );
-      return;
-    }
-
-    if (
-      type === "article" &&
-      !category.trim()
-    ) {
-      setError(
-        "Category is required for article notifications."
-      );
-      return;
-    }
-
-    if (
-      type === "card" &&
-      !ctaText.trim()
-    ) {
-      setError(
-        "CTA text is required for custom cards."
-      );
-      return;
-    }
-
-    // ----------------------------------------------
-    // TOKEN
-    // ----------------------------------------------
-
-    const token = getAdminToken();
-
-    if (!token) {
-      setError(
-        "Admin authentication token was not found. Please login again."
-      );
-      return;
-    }
-
-    // ----------------------------------------------
-    // PAYLOAD
-    // ----------------------------------------------
-
-    const payload = {
-      type,
-
-      title: title.trim(),
-
-      body: message.trim(),
-
-      url:
-        url.trim() ||
-        SITE_URL,
-
-      image:
-        image.trim() ||
-        "",
-
-      category:
-        category.trim(),
-
-      tag:
-        tag.trim() ||
-        `infinia-${type}-${Date.now()}`,
-
-      ctaText:
-        ctaText.trim() ||
-        getDefaultCta(type),
-
-      heading:
-        heading.trim() ||
-        title.trim(),
-
-      description:
-        description.trim() ||
-        message.trim(),
-
-      icon:
-        icon.trim() ||
-        DEFAULT_ICON,
-
-      badge:
-        badge.trim() ||
-        DEFAULT_BADGE,
+    return () => {
+      unsubscribe();
     };
+  }, []);
 
-    // ----------------------------------------------
-    // SEND
-    // ----------------------------------------------
+  // ====================================================
+  // GOOGLE LOGIN
+  // ====================================================
 
+  async function handleGoogleLogin() {
+    try {
+      setLoginLoading(true);
+      setError("");
+      setSuccess("");
+
+      const provider =
+        new GoogleAuthProvider();
+
+      provider.setCustomParameters({
+        prompt: "select_account",
+      });
+
+      await signInWithPopup(
+        commentsAuth,
+        provider
+      );
+
+      setSuccess(
+        "Login successful."
+      );
+    } catch (error) {
+      console.error(
+        "GOOGLE LOGIN ERROR:",
+        error
+      );
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Google login nahi ho paaya."
+      );
+    } finally {
+      setLoginLoading(false);
+    }
+  }
+
+  // ====================================================
+  // SEND NOTIFICATION
+  // ====================================================
+
+  async function handleSend() {
     try {
       setSending(true);
+      setError("");
+      setSuccess("");
 
-      const response =
-        await fetch(API_ENDPOINT, {
-          method: "POST",
+      // -----------------------------------------------
+      // USER CHECK
+      // -----------------------------------------------
 
-          headers: {
-            "Content-Type":
-              "application/json",
+      if (!user) {
+        throw new Error(
+          "Please login with Google first."
+        );
+      }
 
-            Authorization:
-              `Bearer ${token}`,
-          },
+      // -----------------------------------------------
+      // FIREBASE ID TOKEN
+      // -----------------------------------------------
 
-          body:
-            JSON.stringify(payload),
+      const token =
+        await user.getIdToken();
 
-          cache: "no-store",
-        });
+      if (!token) {
+        throw new Error(
+          "Authentication token could not be obtained."
+        );
+      }
 
-      let data: SendResult;
+      // -----------------------------------------------
+      // VALIDATION
+      // -----------------------------------------------
 
-      try {
-        data =
-          await response.json();
-      } catch {
-        data = {
-          success: false,
-          message:
-            "Invalid response from server.",
-        };
+      if (!title.trim()) {
+        throw new Error(
+          "Notification title is required."
+        );
+      }
+
+      if (!message.trim()) {
+        throw new Error(
+          "Notification message is required."
+        );
       }
 
       if (
-        !response.ok ||
-        !data.success
+        type === "article" &&
+        !category.trim()
       ) {
-        setError(
-          data.message ||
-            "Notification sending failed."
+        throw new Error(
+          "Article notification category is required."
         );
-        return;
       }
 
-      setResult(data);
+      if (
+        type === "card" &&
+        !ctaText.trim()
+      ) {
+        throw new Error(
+          "Card notification CTA text is required."
+        );
+      }
 
-    } catch (err) {
+      // -----------------------------------------------
+      // API
+      // -----------------------------------------------
+
+      const response =
+        await fetch(
+          "/api/admin/notifications/send",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+
+              Authorization:
+                `Bearer ${token}`,
+            },
+
+            body: JSON.stringify({
+              type,
+
+              title:
+                title.trim(),
+
+              body:
+                message.trim(),
+
+              url:
+                url.trim(),
+
+              image:
+                image.trim(),
+
+              category:
+                category.trim(),
+
+              tag:
+                tag.trim(),
+
+              ctaText:
+                ctaText.trim(),
+
+              heading:
+                heading.trim(),
+
+              description:
+                description.trim(),
+            }),
+
+            cache: "no-store",
+          }
+        );
+
+      // -----------------------------------------------
+      // RESPONSE
+      // -----------------------------------------------
+
+      const result =
+        await response.json();
+
+      if (
+        !response.ok ||
+        !result?.success
+      ) {
+        throw new Error(
+          result?.message ||
+            "Notification sending failed."
+        );
+      }
+
+      // -----------------------------------------------
+      // SUCCESS
+      // -----------------------------------------------
+
+      setSuccess(
+        `Notification sent successfully. ${
+          result.sent ?? 0
+        } users notified.`
+      );
+
+    } catch (error) {
       console.error(
-        "Notification send error:",
-        err
+        "SEND NOTIFICATION ERROR:",
+        error
       );
 
       setError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong while sending notification."
+        error instanceof Error
+          ? error.message
+          : "Notification send nahi ho paayi."
       );
     } finally {
       setSending(false);
@@ -449,878 +315,426 @@ export default function NotificationAdminPage() {
   }
 
   // ====================================================
-  // UI
+  // AUTH LOADING
   // ====================================================
 
-  return (
-    <main className="min-h-screen bg-zinc-950 text-white p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto max-w-7xl">
+  if (authLoading) {
+    return (
+      <div className="rounded-2xl border border-zinc-200 bg-white p-5">
+        <div className="h-[500px] animate-pulse rounded-xl bg-zinc-100" />
+      </div>
+    );
+  }
 
-        {/* =================================================
-            HEADER
-        ================================================= */}
+  // ====================================================
+  // LOGIN SCREEN
+  // ====================================================
 
-        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+  if (!user) {
+    return (
+      <div className="flex min-h-[500px] items-center justify-center rounded-2xl border border-zinc-200 bg-white p-6">
 
-          <div>
-            <div className="mb-2 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-600 shadow-lg shadow-red-600/20">
-                <BellRing
-                  size={22}
-                />
-              </div>
+        <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-8 text-center shadow-xl">
 
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                  Push Notifications
-                </h1>
+          {/* LOGO */}
 
-                <p className="text-sm text-zinc-400">
-                  INFINIA BHARAT NEWS Admin
-                </p>
-              </div>
-            </div>
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
 
-            <p className="max-w-2xl text-sm text-zinc-400">
-              Send instant push notifications to
-              subscribed INFINIA BHARAT NEWS readers.
-            </p>
+            <img
+              src="/loader.webp"
+              alt="Infinia Bharat News"
+              className="h-full w-full object-contain p-2"
+            />
+
           </div>
+
+          {/* HEADING */}
+
+          <h2 className="text-2xl font-bold text-zinc-900">
+            Notification Manager
+          </h2>
+
+          <p className="mt-2 text-sm leading-6 text-zinc-500">
+            Notifications send karne ke liye
+            Google account se continue karein.
+          </p>
+
+          {/* ERROR */}
+
+          {error && (
+            <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-left text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          {/* LOGIN */}
 
           <button
             type="button"
-            onClick={resetForm}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:border-zinc-600 hover:bg-zinc-800"
+            onClick={handleGoogleLogin}
+            disabled={loginLoading}
+            className="
+              mt-6
+              flex
+              w-full
+              items-center
+              justify-center
+              gap-3
+              rounded-xl
+              border
+              border-zinc-300
+              bg-white
+              px-5
+              py-3.5
+              text-sm
+              font-bold
+              text-zinc-800
+              shadow-sm
+              transition
+              hover:bg-zinc-50
+              hover:shadow-md
+              active:scale-[0.98]
+              disabled:cursor-not-allowed
+              disabled:opacity-60
+            "
           >
-            <RotateCcw size={16} />
-            Reset
-          </button>
-        </div>
 
-        {/* =================================================
-            STATUS
-        ================================================= */}
+            {!loginLoading && (
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  fill="#4285F4"
+                  d="M21.35 12.27c0-.78-.07-1.53-.22-2.27H12v4.3h5.24a4.48 4.48 0 0 1-1.94 2.94v2.45h3.14c1.84-1.69 2.91-4.18 2.91-7.42Z"
+                />
 
-        {error && (
-          <div className="mb-6 flex items-start gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-red-300">
-            <XCircle
-              size={20}
-              className="mt-0.5 shrink-0"
-            />
+                <path
+                  fill="#34A853"
+                  d="M12 21.75c2.63 0 4.84-.87 6.45-2.36l-3.14-2.45c-.87.58-1.98.93-3.31.93-2.54 0-4.69-1.72-5.46-4.03H3.3v2.53A9.75 9.75 0 0 0 12 21.75Z"
+                />
 
-            <div>
-              <p className="font-semibold">
-                Sending failed
-              </p>
+                <path
+                  fill="#FBBC05"
+                  d="M6.54 13.84A5.86 5.86 0 0 1 6.23 12c0-.64.11-1.26.31-1.84V7.63H3.3A9.75 9.75 0 0 0 2.25 12c0 1.57.38 3.06 1.05 4.37l3.24-2.53Z"
+                />
 
-              <p className="mt-1 text-sm text-red-300/80">
-                {error}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {result?.success && (
-          <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5">
-
-            <div className="flex items-start gap-3">
-              <CheckCircle2
-                size={22}
-                className="mt-0.5 shrink-0 text-emerald-400"
-              />
-
-              <div className="flex-1">
-                <p className="font-semibold text-emerald-300">
-                  Notification sent successfully
-                </p>
-
-                <p className="mt-1 text-sm text-emerald-300/70">
-                  Push delivery process completed.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-
-              <Stat
-                label="Subscribers"
-                value={
-                  result.total ?? 0
-                }
-              />
-
-              <Stat
-                label="Sent"
-                value={
-                  result.sent ?? 0
-                }
-              />
-
-              <Stat
-                label="Failed"
-                value={
-                  result.failed ?? 0
-                }
-              />
-
-              <Stat
-                label="Removed"
-                value={
-                  result.removed ?? 0
-                }
-              />
-
-            </div>
-          </div>
-        )}
-
-        {/* =================================================
-            TYPE SELECTOR
-        ================================================= */}
-
-        <section className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-900/70 p-4 sm:p-6">
-
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold">
-              Notification Type
-            </h2>
-
-            <p className="text-sm text-zinc-500">
-              Choose what kind of notification you want to send.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-
-            {notificationTypes.map(
-              (item) => {
-                const Icon =
-                  item.icon;
-
-                const active =
-                  type ===
-                  item.value;
-
-                return (
-                  <button
-                    key={item.value}
-                    type="button"
-                    onClick={() =>
-                      handleTypeChange(
-                        item.value
-                      )
-                    }
-                    className={[
-                      "rounded-2xl border p-4 text-left transition",
-                      active
-                        ? "border-red-500 bg-red-500/10 shadow-lg shadow-red-500/5"
-                        : "border-zinc-800 bg-zinc-950 hover:border-zinc-700 hover:bg-zinc-900",
-                    ].join(" ")}
-                  >
-                    <div className="flex items-center gap-3">
-
-                      <div
-                        className={[
-                          "flex h-10 w-10 items-center justify-center rounded-xl",
-                          active
-                            ? "bg-red-600 text-white"
-                            : "bg-zinc-800 text-zinc-400",
-                        ].join(" ")}
-                      >
-                        <Icon size={19} />
-                      </div>
-
-                      <div className="min-w-0">
-                        <p className="font-semibold">
-                          {item.label}
-                        </p>
-
-                        <p className="mt-0.5 text-xs text-zinc-500">
-                          {item.description}
-                        </p>
-                      </div>
-
-                    </div>
-                  </button>
-                );
-              }
+                <path
+                  fill="#EA4335"
+                  d="M12 6.13c1.43 0 2.72.49 3.73 1.45l2.8-2.8C16.84 3.18 14.63 2.25 12 2.25a9.75 9.75 0 0 0-8.7 5.38l3.24 2.53C7.31 7.85 9.46 6.13 12 6.13Z"
+                />
+              </svg>
             )}
 
-          </div>
-        </section>
+            {loginLoading
+              ? "Google se login ho raha hai..."
+              : "Continue with Google"}
 
-        {/* =================================================
-            MAIN GRID
-        ================================================= */}
+          </button>
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
+          <p className="mt-5 text-xs text-zinc-400">
+            Secure Google authentication
+          </p>
 
-          {/* =================================================
-              FORM
-          ================================================= */}
-
-          <form
-            onSubmit={handleSubmit}
-            className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5 sm:p-6"
-          >
-
-            {/* FORM HEADER */}
-
-            <div className="mb-6 flex items-center gap-3">
-              {currentType && (
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-600/15 text-red-400">
-                  <currentType.icon
-                    size={20}
-                  />
-                </div>
-              )}
-
-              <div>
-                <h2 className="text-xl font-bold">
-                  {currentType?.label ||
-                    "Notification"}
-                </h2>
-
-                <p className="text-sm text-zinc-500">
-                  Configure your notification
-                </p>
-              </div>
-            </div>
-
-            {/* =================================================
-                BASIC
-            ================================================= */}
-
-            <div className="space-y-5">
-
-              <Field
-                label="Notification Title"
-                required
-                value={title}
-                onChange={setTitle}
-                placeholder="INFINIA BHARAT NEWS"
-                maxLength={120}
-              />
-
-              <TextArea
-                label="Message"
-                required
-                value={message}
-                onChange={setMessage}
-                placeholder="नई खबर उपलब्ध है..."
-                rows={4}
-                maxLength={300}
-              />
-
-              {/* =================================================
-                  ARTICLE CATEGORY
-              ================================================= */}
-
-              {type === "article" && (
-                <Field
-                  label="Category"
-                  required
-                  value={category}
-                  onChange={setCategory}
-                  placeholder="जैसे: राजनीति, खेल, उत्तर प्रदेश"
-                />
-              )}
-
-              {/* =================================================
-                  URL
-              ================================================= */}
-
-              <Field
-                label="Target URL"
-                value={url}
-                onChange={setUrl}
-                placeholder={SITE_URL}
-                icon={
-                  <Link2 size={16} />
-                }
-              />
-
-              {/* =================================================
-                  IMAGE
-              ================================================= */}
-
-              <Field
-                label="Rich Image URL"
-                value={image}
-                onChange={setImage}
-                placeholder="https://example.com/news-image.webp"
-                icon={
-                  <ImageIcon size={16} />
-                }
-              />
-
-              {/* =================================================
-                  CTA
-              ================================================= */}
-
-              <Field
-                label="CTA Text"
-                value={ctaText}
-                onChange={setCtaText}
-                placeholder={getDefaultCta(type)}
-              />
-
-              {/* =================================================
-                  TAG
-              ================================================= */}
-
-              <Field
-                label="Notification Tag"
-                value={tag}
-                onChange={setTag}
-                placeholder={`infinia-${type}-${Date.now()}`}
-              />
-
-              {/* =================================================
-                  CARD FIELDS
-              ================================================= */}
-
-              {type === "card" && (
-                <div className="space-y-5 rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
-
-                  <div>
-                    <p className="font-semibold text-red-300">
-                      Custom Card Content
-                    </p>
-
-                    <p className="mt-1 text-xs text-zinc-500">
-                      These fields are used for structured rich-card data.
-                    </p>
-                  </div>
-
-                  <Field
-                    label="Card Heading"
-                    value={heading}
-                    onChange={setHeading}
-                    placeholder={title || "Card heading"}
-                  />
-
-                  <TextArea
-                    label="Card Description"
-                    value={description}
-                    onChange={setDescription}
-                    placeholder={
-                      message ||
-                      "Card description..."
-                    }
-                    rows={4}
-                  />
-
-                </div>
-              )}
-
-              {/* =================================================
-                  ADVANCED ASSETS
-              ================================================= */}
-
-              <details className="rounded-2xl border border-zinc-800 bg-zinc-950">
-
-                <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-zinc-300">
-                  Advanced Notification Assets
-                </summary>
-
-                <div className="space-y-5 border-t border-zinc-800 p-4">
-
-                  <Field
-                    label="Icon URL"
-                    value={icon}
-                    onChange={setIcon}
-                    placeholder={DEFAULT_ICON}
-                  />
-
-                  <Field
-                    label="Badge URL"
-                    value={badge}
-                    onChange={setBadge}
-                    placeholder={DEFAULT_BADGE}
-                  />
-
-                </div>
-              </details>
-
-              {/* =================================================
-                  SEND BUTTON
-              ================================================= */}
-
-              <button
-                type="submit"
-                disabled={sending}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-3.5 font-semibold text-white shadow-lg shadow-red-600/20 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {sending ? (
-                  <>
-                    <Loader2
-                      size={19}
-                      className="animate-spin"
-                    />
-
-                    Sending notification...
-                  </>
-                ) : (
-                  <>
-                    <Send size={19} />
-
-                    Send Notification
-                  </>
-                )}
-              </button>
-
-            </div>
-          </form>
-
-          {/* =================================================
-              PREVIEW
-          ================================================= */}
-
-          <aside className="space-y-6">
-
-            {/* PREVIEW CARD */}
-
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5">
-
-              <div className="mb-5">
-                <h2 className="text-lg font-bold">
-                  Live Preview
-                </h2>
-
-                <p className="text-sm text-zinc-500">
-                  Approximate browser notification preview
-                </p>
-              </div>
-
-              <div className="overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-950 shadow-2xl">
-
-                {/* Browser notification */}
-
-                <div className="flex items-center gap-3 border-b border-zinc-800 px-4 py-3">
-
-                  <img
-                    src={
-                      icon ||
-                      DEFAULT_ICON
-                    }
-                    alt=""
-                    className="h-9 w-9 rounded-lg object-cover"
-                    onError={(event) => {
-                      event.currentTarget.src =
-                        DEFAULT_ICON;
-                    }}
-                  />
-
-                  <div className="min-w-0 flex-1">
-
-                    <div className="flex items-center justify-between gap-2">
-
-                      <p className="truncate text-xs font-semibold text-zinc-300">
-                        INFINIA BHARAT NEWS
-                      </p>
-
-                      <span className="text-[10px] text-zinc-600">
-                        now
-                      </span>
-
-                    </div>
-
-                    <p className="mt-1 truncate text-[10px] text-zinc-600">
-                      Push Notification
-                    </p>
-
-                  </div>
-
-                </div>
-
-                <div className="p-4">
-
-                  <p className="text-sm font-bold text-white">
-                    {title ||
-                      "Notification Title"}
-                  </p>
-
-                  <p className="mt-2 text-sm leading-5 text-zinc-400">
-                    {getPreviewBody(
-                      type,
-                      category,
-                      message
-                    )}
-                  </p>
-
-                  {image && (
-                    <div className="mt-4 overflow-hidden rounded-xl border border-zinc-800">
-
-                      <img
-                        src={image}
-                        alt=""
-                        className="aspect-video w-full object-cover"
-                        onError={(event) => {
-                          event.currentTarget.style.display =
-                            "none";
-                        }}
-                      />
-
-                    </div>
-                  )}
-
-                  <div className="mt-4 flex items-center gap-2">
-
-                    <div className="rounded-lg bg-red-600/10 px-3 py-2 text-xs font-semibold text-red-400">
-                      {ctaText ||
-                        getDefaultCta(type)}
-                    </div>
-
-                    <div className="rounded-lg bg-zinc-800 px-3 py-2 text-xs text-zinc-500">
-                      Open
-                    </div>
-
-                  </div>
-
-                </div>
-              </div>
-            </div>
-
-            {/* =================================================
-                SUMMARY
-            ================================================= */}
-
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5">
-
-              <h3 className="mb-4 font-bold">
-                Notification Summary
-              </h3>
-
-              <div className="space-y-3 text-sm">
-
-                <SummaryRow
-                  label="Type"
-                  value={type}
-                />
-
-                <SummaryRow
-                  label="Title"
-                  value={
-                    title ||
-                    "Not set"
-                  }
-                />
-
-                <SummaryRow
-                  label="Category"
-                  value={
-                    category ||
-                    "—"
-                  }
-                />
-
-                <SummaryRow
-                  label="CTA"
-                  value={
-                    ctaText ||
-                    getDefaultCta(type)
-                  }
-                />
-
-                <SummaryRow
-                  label="Target"
-                  value={
-                    url ||
-                    SITE_URL
-                  }
-                />
-
-              </div>
-            </div>
-
-            {/* =================================================
-                WORKFLOW
-            ================================================= */}
-
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5">
-
-              <h3 className="mb-4 font-bold">
-                Delivery Flow
-              </h3>
-
-              <div className="space-y-4">
-
-                <FlowStep
-                  number="1"
-                  text="Admin authentication"
-                />
-
-                <FlowStep
-                  number="2"
-                  text="Next.js API validates payload"
-                />
-
-                <FlowStep
-                  number="3"
-                  text="Cloudflare Push Worker receives request"
-                />
-
-                <FlowStep
-                  number="4"
-                  text="D1 subscriptions are processed"
-                />
-
-                <FlowStep
-                  number="5"
-                  text="Expired subscriptions are removed"
-                />
-
-              </div>
-            </div>
-
-          </aside>
         </div>
       </div>
-    </main>
-  );
-}
+    );
+  }
 
-// ======================================================
-// FIELD
-// ======================================================
+  // ====================================================
+  // MAIN UI
+  // ====================================================
 
-function Field({
-  label,
-  value,
-  onChange,
-  placeholder,
-  required = false,
-  maxLength,
-  icon,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  required?: boolean;
-  maxLength?: number;
-  icon?: React.ReactNode;
-}) {
   return (
-    <label className="block">
+    <div className="space-y-5">
 
-      <div className="mb-2 flex items-center justify-between gap-2">
+      {/* HEADER */}
 
-        <span className="text-sm font-medium text-zinc-300">
-          {label}
+      <div className="rounded-2xl border border-zinc-200 bg-white p-5">
 
-          {required && (
-            <span className="ml-1 text-red-500">
-              *
-            </span>
-          )}
-        </span>
+        <div>
+          <h1 className="text-xl font-bold text-zinc-900">
+            Push Notifications
+          </h1>
 
-        {maxLength && (
-          <span className="text-[11px] text-zinc-600">
-            {value.length}/{maxLength}
-          </span>
-        )}
+          <p className="mt-1 text-sm text-zinc-500">
+            INFINIA BHARAT NEWS subscribers ko
+            notification bhejein.
+          </p>
+        </div>
 
       </div>
 
-      <div className="relative">
+      {/* FORM */}
 
-        {icon && (
-          <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600">
-            {icon}
+      <div className="rounded-2xl border border-zinc-200 bg-white p-5">
+
+        <div className="grid gap-5 lg:grid-cols-2">
+
+          {/* TYPE */}
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-zinc-800">
+              Notification Type
+            </label>
+
+            <select
+              value={type}
+              onChange={(e) =>
+                setType(
+                  e.target.value as NotificationType
+                )
+              }
+              className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-red-500"
+            >
+              <option value="custom">
+                Custom
+              </option>
+
+              <option value="article">
+                Article
+              </option>
+
+              <option value="breaking">
+                Breaking News
+              </option>
+
+              <option value="video">
+                Video
+              </option>
+
+              <option value="card">
+                Card
+              </option>
+            </select>
           </div>
-        )}
 
-        <input
-          type="text"
-          value={value}
-          onChange={(event) =>
-            onChange(
-              event.target.value
-            )
-          }
-          placeholder={placeholder}
-          required={required}
-          maxLength={maxLength}
-          className={[
-            "w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-700 focus:border-red-500",
-            icon
-              ? "pl-10"
-              : "",
-          ].join(" ")}
-        />
+          {/* TITLE */}
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-zinc-800">
+              Title *
+            </label>
+
+            <input
+              value={title}
+              onChange={(e) =>
+                setTitle(e.target.value)
+              }
+              placeholder="Notification title"
+              className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-red-500"
+            />
+          </div>
+
+          {/* MESSAGE */}
+
+          <div className="lg:col-span-2">
+
+            <label className="mb-2 block text-sm font-semibold text-zinc-800">
+              Message *
+            </label>
+
+            <textarea
+              value={message}
+              onChange={(e) =>
+                setMessage(e.target.value)
+              }
+              rows={4}
+              placeholder="Notification message"
+              className="w-full resize-y rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-red-500"
+            />
+
+          </div>
+
+          {/* URL */}
+
+          <div>
+
+            <label className="mb-2 block text-sm font-semibold text-zinc-800">
+              URL
+            </label>
+
+            <input
+              value={url}
+              onChange={(e) =>
+                setUrl(e.target.value)
+              }
+              placeholder="https://infiniabharatnews.vercel.app/..."
+              className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-red-500"
+            />
+
+          </div>
+
+          {/* IMAGE */}
+
+          <div>
+
+            <label className="mb-2 block text-sm font-semibold text-zinc-800">
+              Image URL
+            </label>
+
+            <input
+              value={image}
+              onChange={(e) =>
+                setImage(e.target.value)
+              }
+              placeholder="https://..."
+              className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-red-500"
+            />
+
+          </div>
+
+          {/* CATEGORY */}
+
+          <div>
+
+            <label className="mb-2 block text-sm font-semibold text-zinc-800">
+              Category
+              {type === "article" && " *"}
+            </label>
+
+            <input
+              value={category}
+              onChange={(e) =>
+                setCategory(e.target.value)
+              }
+              placeholder="Politics, Sports, World..."
+              className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-red-500"
+            />
+
+          </div>
+
+          {/* TAG */}
+
+          <div>
+
+            <label className="mb-2 block text-sm font-semibold text-zinc-800">
+              Tag
+            </label>
+
+            <input
+              value={tag}
+              onChange={(e) =>
+                setTag(e.target.value)
+              }
+              placeholder="Optional notification tag"
+              className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-red-500"
+            />
+
+          </div>
+
+          {/* CTA */}
+
+          <div>
+
+            <label className="mb-2 block text-sm font-semibold text-zinc-800">
+              CTA Text
+              {type === "card" && " *"}
+            </label>
+
+            <input
+              value={ctaText}
+              onChange={(e) =>
+                setCtaText(e.target.value)
+              }
+              placeholder="Read Story / Watch Video / Open"
+              className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-red-500"
+            />
+
+          </div>
+
+          {/* HEADING */}
+
+          <div>
+
+            <label className="mb-2 block text-sm font-semibold text-zinc-800">
+              Card Heading
+            </label>
+
+            <input
+              value={heading}
+              onChange={(e) =>
+                setHeading(e.target.value)
+              }
+              placeholder="Optional"
+              className="w-full rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-red-500"
+            />
+
+          </div>
+
+          {/* DESCRIPTION */}
+
+          <div className="lg:col-span-2">
+
+            <label className="mb-2 block text-sm font-semibold text-zinc-800">
+              Card Description
+            </label>
+
+            <textarea
+              value={description}
+              onChange={(e) =>
+                setDescription(e.target.value)
+              }
+              rows={3}
+              placeholder="Optional card description"
+              className="w-full resize-y rounded-xl border border-zinc-300 px-4 py-3 text-sm outline-none focus:border-red-500"
+            />
+
+          </div>
+
+        </div>
 
       </div>
-    </label>
-  );
-}
 
-// ======================================================
-// TEXTAREA
-// ======================================================
+      {/* ERROR */}
 
-function TextArea({
-  label,
-  value,
-  onChange,
-  placeholder,
-  required = false,
-  rows = 4,
-  maxLength,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  required?: boolean;
-  rows?: number;
-  maxLength?: number;
-}) {
-  return (
-    <label className="block">
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          {error}
+        </div>
+      )}
 
-      <div className="mb-2 flex items-center justify-between gap-2">
+      {/* SUCCESS */}
 
-        <span className="text-sm font-medium text-zinc-300">
-          {label}
+      {success && (
+        <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+          {success}
+        </div>
+      )}
 
-          {required && (
-            <span className="ml-1 text-red-500">
-              *
-            </span>
-          )}
-        </span>
+      {/* SEND */}
 
-        {maxLength && (
-          <span className="text-[11px] text-zinc-600">
-            {value.length}/{maxLength}
-          </span>
-        )}
+      <div className="flex justify-end">
+
+        <button
+          type="button"
+          onClick={handleSend}
+          disabled={sending}
+          className="
+            rounded-xl
+            bg-red-600
+            px-6
+            py-3
+            text-sm
+            font-bold
+            text-white
+            shadow-sm
+            transition
+            hover:bg-red-700
+            active:scale-[0.98]
+            disabled:cursor-not-allowed
+            disabled:opacity-50
+          "
+        >
+          {sending
+            ? "Sending..."
+            : "Send Notification"}
+        </button>
 
       </div>
 
-      <textarea
-        value={value}
-        onChange={(event) =>
-          onChange(
-            event.target.value
-          )
-        }
-        placeholder={placeholder}
-        required={required}
-        rows={rows}
-        maxLength={maxLength}
-        className="w-full resize-y rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-zinc-700 focus:border-red-500"
-      />
-
-    </label>
-  );
-}
-
-// ======================================================
-// STAT
-// ======================================================
-
-function Stat({
-  label,
-  value,
-}: {
-  label: string;
-  value: number;
-}) {
-  return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-3">
-      <p className="text-xs text-zinc-600">
-        {label}
-      </p>
-
-      <p className="mt-1 text-xl font-bold text-white">
-        {value}
-      </p>
     </div>
   );
-}
-
-// ======================================================
-// SUMMARY ROW
-// ======================================================
-
-function SummaryRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-zinc-800/70 pb-3 last:border-0 last:pb-0">
-
-      <span className="shrink-0 text-zinc-600">
-        {label}
-      </span>
-
-      <span className="max-w-[230px] truncate text-right font-medium text-zinc-300">
-        {value}
-      </span>
-
-    </div>
-  );
-}
-
-// ======================================================
-// FLOW STEP
-// ======================================================
-
-function FlowStep({
-  number,
-  text,
-}: {
-  number: string;
-  text: string;
-}) {
-  return (
-    <div className="flex items-center gap-3">
-
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-600/15 text-xs font-bold text-red-400">
-        {number}
-      </div>
-
-      <p className="text-sm text-zinc-400">
-        {text}
-      </p>
-
-    </div>
-  );
-}
-
-// ======================================================
-// PREVIEW BODY
-// ======================================================
-
-function getPreviewBody(
-  type: NotificationType,
-  category: string,
-  message: string
-) {
-  const clean =
-    message ||
-    "नई खबर उपलब्ध है।";
-
-  if (type === "article") {
-    return category
-      ? `📰 ${category} • ${clean}`
-      : clean;
-  }
-
-  if (type === "breaking") {
-    return `🔴 BREAKING NEWS • ${clean}`;
-  }
-
-  if (type === "video") {
-    return `▶️ ${clean}`;
-  }
-
-  return clean;
 }
