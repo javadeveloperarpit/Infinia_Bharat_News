@@ -323,7 +323,7 @@ export default function TopBar() {
               hover:text-[#ECCA6D]
               transition
             "
-            href="https://www.facebook.com/share/1jBhdb8phJ/"
+            href="https://www.facebook.com/InfiniaBharatNews"
             aria-label="Facebook"
             target="_blank"
             rel="noopener noreferrer"

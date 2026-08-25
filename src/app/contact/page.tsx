@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   },
 };
 
-const contactEmail = "arpitmishraqq1801@gmail.com";
+const contactEmail = "contact.infiniabharatnews@gmail.com";
 
 const quickLinks = [
   { title: "Home", href: "/" },

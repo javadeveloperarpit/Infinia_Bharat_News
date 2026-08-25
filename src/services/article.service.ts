@@ -360,6 +360,60 @@ export async function updateArticle(
 }
 
 // ======================================================
+// BATCH FEATURED / PRIORITY UPDATE
+// ======================================================
+
+export async function updateFeaturedArticlesBatch(
+  updates: Array<{
+    id: string;
+    featured: boolean;
+    priority?: number | null;
+  }>
+) {
+  if (!updates.length) {
+    throw new Error(
+      "No featured updates supplied"
+    );
+  }
+
+  const token =
+    await getAuthToken();
+
+  const response =
+    await fetch(
+      "/api/admin/articles/featured-batch",
+      {
+        method: "PUT",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+
+          Authorization:
+            `Bearer ${token}`,
+        },
+
+        body:
+          JSON.stringify({
+            updates,
+          }),
+      }
+    );
+
+  const result =
+    await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result?.message ||
+      "Featured settings update failed"
+    );
+  }
+
+  return result;
+}
+
+// ======================================================
 // DELETE ARTICLE
 //
 // IMPORTANT:

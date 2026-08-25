@@ -13,6 +13,7 @@ import {
   deleteArticle,
   getLatestArticles,
   updateArticle,
+  updateFeaturedArticlesBatch,
 } from "@/services/article.service";
 
 import {
@@ -37,7 +38,6 @@ import {
 // ======================================================
 
 type PriorityErrors = Record<string, string>;
-type SavingMap = Record<string, boolean>;
 
 interface CategoryItem {
   id?: string;
@@ -729,10 +729,10 @@ function MobileArticleCard({
   featuredCount,
   priorityValue,
   priorityError,
+  isFeatured,
   isSaving,
   onFeaturedChange,
   onPriorityInput,
-  onPrioritySave,
   onDelete,
 }: {
   article: any;
@@ -740,6 +740,7 @@ function MobileArticleCard({
   featuredCount: number;
   priorityValue: string;
   priorityError?: string;
+  isFeatured: boolean;
   isSaving: boolean;
   onFeaturedChange: (
     article: any,
@@ -748,9 +749,6 @@ function MobileArticleCard({
   onPriorityInput: (
     id: string,
     value: string
-  ) => void;
-  onPrioritySave: (
-    article: any
   ) => void;
   onDelete: (
     id: string
@@ -782,7 +780,7 @@ function MobileArticleCard({
       <div className="flex min-w-0 items-start gap-2.5">
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex flex-wrap items-center gap-1.5">
-            {article.featured && (
+            {isFeatured && (
               <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[9px] font-black text-red-700">
                 <Star
                   size={9}
@@ -869,12 +867,9 @@ function MobileArticleCard({
           <label className="flex min-w-0 cursor-pointer items-center gap-2">
             <input
               type="checkbox"
-              checked={
-                article.featured ===
-                true
-              }
+              checked={isFeatured}
               disabled={
-                !article.featured &&
+                !isFeatured &&
                 featuredCount >= 5
               }
               onChange={(event) =>
@@ -895,15 +890,13 @@ function MobileArticleCard({
             </span>
           </label>
 
-          {article.featured && (
+          {isFeatured && (
             <div className="flex shrink-0 items-center gap-1.5">
               <input
                 type="number"
                 min={1}
                 max={5}
-                value={
-                  priorityValue
-                }
+                value={priorityValue}
                 disabled={isSaving}
                 onChange={(event) =>
                   onPriorityInput(
@@ -917,26 +910,6 @@ function MobileArticleCard({
                     : "border-zinc-200"
                 }`}
               />
-
-              <button
-                type="button"
-                disabled={isSaving}
-                onClick={() =>
-                  onPrioritySave(
-                    article
-                  )
-                }
-                className="inline-flex h-8 min-w-8 items-center justify-center rounded-md bg-green-600 px-2 text-white shadow-sm active:scale-95 disabled:opacity-50"
-              >
-                {isSaving ? (
-                  <RefreshCw
-                    size={13}
-                    className="animate-spin"
-                  />
-                ) : (
-                  <Save size={13} />
-                )}
-              </button>
             </div>
           )}
         </div>
@@ -1023,14 +996,19 @@ export default function ArticlesPage() {
   >({});
 
   const [
+    pendingFeatured,
+    setPendingFeatured,
+  ] = useState<Record<string, boolean>>({});
+
+  const [
     priorityErrors,
     setPriorityErrors,
   ] = useState<PriorityErrors>({});
 
   const [
-    savingPriority,
-    setSavingPriority,
-  ] = useState<SavingMap>({});
+    savingFeaturedSettings,
+    setSavingFeaturedSettings,
+  ] = useState(false);
 
   // ======================================================
 // PENDING SYNC CHECK
@@ -1711,300 +1689,298 @@ const checkPendingArticles =
     ]);
 
   // ====================================================
-  // FEATURED CHANGE
+  // FEATURED / PRIORITY DRAFT
+  //
+  // Changes stay local until the single "Save Featured
+  // Settings" button is clicked. Validation is performed
+  // against the complete final state, so swaps such as
+  // 1 -> 2 and 2 -> 1 work in one save.
   // ====================================================
 
-  async function handleFeaturedChange(
+  const getDraftFeatured = useCallback(
+    (article: any) =>
+      pendingFeatured[article.id] ??
+      (article?.featured === true),
+    [pendingFeatured]
+  );
+
+  const draftFeaturedCount = useMemo(
+    () =>
+      articles.filter((article) =>
+        getDraftFeatured(article)
+      ).length,
+    [articles, getDraftFeatured]
+  );
+
+  function handleFeaturedChange(
     article: any,
     checked: boolean
   ) {
-    try {
-      setPriorityErrors(
-        (previous) => {
-          const next = {
-            ...previous,
-          };
+    setPriorityErrors((previous) => {
+      const next = { ...previous };
+      delete next[article.id];
+      delete next._global;
+      return next;
+    });
 
-          delete next[
-            article.id
-          ];
+    setPendingFeatured((previous) => ({
+      ...previous,
+      [article.id]: checked,
+    }));
 
-          return next;
-        }
+    // Give a newly featured article a temporary
+    // available priority. Admin can change it freely
+    // before pressing the final Save button.
+    if (checked) {
+      const currentlyDraftFeatured = articles.filter(
+        (item) =>
+          item.id !== article.id &&
+          (pendingFeatured[item.id] ??
+            (item.featured === true))
       );
 
-      if (!checked) {
-        await updateArticle(
-          article.id,
-          {
-            featured: false,
-          }
-        );
-
-        await refreshDashboard();
-
-        return;
-      }
-
-      if (
-        featuredCount >= 5
-      ) {
-        setPriorityErrors(
-          (previous) => ({
-            ...previous,
-            [article.id]:
-              "Maximum 5 featured articles allowed.",
-          })
-        );
-
-        return;
-      }
-
-      const usedPriorities =
-        articles
-          .filter(
-            (item) =>
-              item.featured ===
-                true &&
-              item.id !==
-                article.id
-          )
-          .map((item) =>
-            Number(
+      const used = currentlyDraftFeatured
+        .map((item) =>
+          Number(
+            pendingPriorities[item.id] ??
               item.priority
-            )
           )
-          .filter(
-            (priority) =>
-              Number.isInteger(
-                priority
-              ) &&
-              priority >= 1 &&
-              priority <= 5
-          );
-
-      const availablePriority =
-        [1, 2, 3, 4, 5].find(
+        )
+        .filter(
           (priority) =>
-            !usedPriorities.includes(
-              priority
-            )
+            Number.isInteger(priority) &&
+            priority >= 1 &&
+            priority <= 5
         );
+
+      const currentValue = Number(
+        pendingPriorities[article.id] ??
+          article.priority
+      );
 
       if (
-        !availablePriority
+        !(
+          Number.isInteger(currentValue) &&
+          currentValue >= 1 &&
+          currentValue <= 5 &&
+          !used.includes(currentValue)
+        )
       ) {
-        setPriorityErrors(
-          (previous) => ({
-            ...previous,
-            [article.id]:
-              "All priorities 1–5 are occupied.",
-          })
+        const available = [1, 2, 3, 4, 5].find(
+          (priority) => !used.includes(priority)
         );
 
-        return;
-      }
-
-      await updateArticle(
-        article.id,
-        {
-          featured: true,
-          priority:
-            availablePriority,
+        if (available) {
+          setPendingPriorities((previous) => ({
+            ...previous,
+            [article.id]: String(available),
+          }));
         }
-      );
-
-      await refreshDashboard();
-    } catch (error: any) {
-      console.error(
-        "FEATURE UPDATE ERROR:",
-        error
-      );
-
-      setPriorityErrors(
-        (previous) => ({
-          ...previous,
-          [article.id]:
-            error?.message ||
-            "Featured update failed.",
-        })
-      );
+      }
     }
   }
-
-  // ====================================================
-  // PRIORITY INPUT
-  // ====================================================
 
   function handlePriorityInput(
     articleId: string,
     value: string
   ) {
-    setPendingPriorities(
-      (previous) => ({
-        ...previous,
-        [articleId]:
-          value,
-      })
-    );
+    setPendingPriorities((previous) => ({
+      ...previous,
+      [articleId]: value,
+    }));
 
-    setPriorityErrors(
-      (previous) => {
-        const next = {
-          ...previous,
-        };
-
-        delete next[
-          articleId
-        ];
-
-        return next;
-      }
-    );
+    setPriorityErrors((previous) => {
+      const next = { ...previous };
+      delete next[articleId];
+      delete next._global;
+      return next;
+    });
   }
 
-  // ====================================================
-  // PRIORITY SAVE
-  // ====================================================
+  async function handleSaveFeaturedSettings() {
+    const finalFeatured = new Map<string, boolean>();
+    const finalPriority = new Map<string, number>();
 
-  async function handlePrioritySave(
-    article: any
-  ) {
-    const rawValue =
-      pendingPriorities[
+    articles.forEach((article) => {
+      const featured =
+        pendingFeatured[article.id] ??
+        (article.featured === true);
+
+      finalFeatured.set(article.id, featured);
+
+      if (featured) {
+        const raw =
+          pendingPriorities[article.id] ??
+          String(article.priority ?? "");
+
+        finalPriority.set(
+          article.id,
+          Number(raw)
+        );
+      }
+    });
+
+    // ----------------------------------------------
+    // VALIDATE FINAL STATE ONLY
+    // ----------------------------------------------
+
+    const featuredArticles = articles.filter(
+      (article) =>
+        finalFeatured.get(article.id) === true
+    );
+
+    if (featuredArticles.length > 5) {
+      setPriorityErrors({
+        _global:
+          "Maximum 5 featured articles are allowed. Please keep only 5 selected articles.",
+      });
+      return;
+    }
+
+    const errors: PriorityErrors = {};
+    const priorityOwners = new Map<number, string>();
+
+    featuredArticles.forEach((article) => {
+      const raw =
+        pendingPriorities[article.id] ??
+        String(article.priority ?? "");
+
+      if (raw.trim() === "") {
+        errors[article.id] =
+          "Priority is required.";
+        return;
+      }
+
+      const priority = Number(raw);
+
+      if (
+        !Number.isInteger(priority) ||
+        priority < 1 ||
+        priority > 5
+      ) {
+        errors[article.id] =
+          "Priority must be between 1 and 5.";
+        return;
+      }
+
+      const owner =
+        priorityOwners.get(priority);
+
+      if (owner && owner !== article.id) {
+        errors[article.id] =
+          `Priority ${priority} is also assigned to another featured article.`;
+        errors[owner] =
+          `Priority ${priority} is also assigned to another featured article.`;
+        return;
+      }
+
+      priorityOwners.set(
+        priority,
         article.id
-      ] ??
-      String(
-        article.priority ?? ""
       );
-
-    if (
-      rawValue.trim() === ""
-    ) {
-      setPriorityErrors(
-        (previous) => ({
-          ...previous,
-          [article.id]:
-            "Priority is required.",
-        })
-      );
-
-      return;
-    }
-
-    const priority =
-      Number(rawValue);
-
-    if (
-      !Number.isInteger(
+      finalPriority.set(
+        article.id,
         priority
-      ) ||
-      priority < 1 ||
-      priority > 5
-    ) {
-      setPriorityErrors(
-        (previous) => ({
-          ...previous,
-          [article.id]:
-            "Priority must be between 1 and 5.",
-        })
       );
+    });
 
+    if (Object.keys(errors).length > 0) {
+      setPriorityErrors(errors);
       return;
     }
 
-    const occupied =
-      articles.some(
-        (item) =>
-          item.id !==
-            article.id &&
-          item.featured ===
-            true &&
+    // If there are no actual changes, do nothing.
+    const changedArticles = articles.filter(
+      (article) => {
+        const nextFeatured =
+          finalFeatured.get(article.id) === true;
+
+        const oldFeatured =
+          article.featured === true;
+
+        if (nextFeatured !== oldFeatured) {
+          return true;
+        }
+
+        if (!nextFeatured) {
+          return false;
+        }
+
+        return (
           Number(
-            item.priority
-          ) === priority
-      );
+            finalPriority.get(article.id)
+          ) !==
+          Number(article.priority)
+        );
+      }
+    );
 
-    if (occupied) {
-      setPriorityErrors(
-        (previous) => ({
-          ...previous,
-          [article.id]:
-            `Priority ${priority} is already occupied.`,
-        })
-      );
-
+    if (changedArticles.length === 0) {
+      setPriorityErrors({});
       return;
     }
 
     try {
-      setSavingPriority(
-        (previous) => ({
-          ...previous,
-          [article.id]:
-            true,
-        })
-      );
+      setSavingFeaturedSettings(true);
+      setPriorityErrors({});
 
-      await updateArticle(
-        article.id,
-        {
-          featured: true,
-          priority,
-        }
-      );
+      // IMPORTANT:
+      // Do NOT use Promise.all here.
+      //
+      // updateArticle() also triggers the Firebase -> GitHub
+      // sync. Running multiple updates at the same time can
+      // make two sync requests read the same GitHub file/SHA,
+      // causing one request to overwrite or conflict with the
+      // other. Save sequentially so every update finishes its
+      // Firebase + GitHub sync before the next one starts.
+      const batchUpdates =
+  changedArticles.map(
+    (article) => {
+      const featured =
+        finalFeatured.get(
+          article.id
+        ) === true;
 
-      setPendingPriorities(
-        (previous) => {
-          const next = {
-            ...previous,
-          };
+      return {
+        id: article.id,
 
-          delete next[
-            article.id
-          ];
+        featured,
 
-          return next;
-        }
-      );
+        priority: featured
+          ? finalPriority.get(
+              article.id
+            ) ?? null
+          : null,
+      };
+    }
+  );
 
-      setPriorityErrors(
-        (previous) => {
-          const next = {
-            ...previous,
-          };
+await updateFeaturedArticlesBatch(
+  batchUpdates
+);
 
-          delete next[
-            article.id
-          ];
+      setPendingFeatured({});
+setPendingPriorities({});
+setPriorityErrors({});
 
-          return next;
-        }
-      );
+await refreshDashboard();
 
-      await refreshDashboard();
+window.alert(
+  `Featured settings saved successfully for ${changedArticles.length} article${changedArticles.length === 1 ? "" : "s"}.`
+);
     } catch (error: any) {
       console.error(
-        "PRIORITY SAVE ERROR:",
+        "FEATURED SETTINGS SAVE ERROR:",
         error
       );
 
-      setPriorityErrors(
-        (previous) => ({
-          ...previous,
-          [article.id]:
-            error?.message ||
-            "Priority update failed.",
-        })
-      );
+      setPriorityErrors({
+        _global:
+          error?.message ||
+          "Featured settings could not be saved. Please try again.",
+      });
     } finally {
-      setSavingPriority(
-        (previous) => ({
-          ...previous,
-          [article.id]:
-            false,
-        })
-      );
+      setSavingFeaturedSettings(false);
     }
   }
 
@@ -2711,7 +2687,7 @@ const checkPendingArticles =
 
               {/* SECTION HEADER */}
 
-              <div className="flex items-center justify-between border-b border-zinc-100 px-3 py-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 px-3 py-2.5">
                 <div>
                   <h2 className="text-xs font-black text-zinc-900">
                     Article List
@@ -2722,11 +2698,47 @@ const checkPendingArticles =
                   </p>
                 </div>
 
-                <span className="rounded-full bg-zinc-100 px-2 py-1 text-[9px] font-black text-zinc-600">
-                  {
-                    filteredArticles.length
-                  }
-                </span>
+                <div className="flex items-center gap-2">
+                  {priorityErrors._global && (
+                    <span className="max-w-[360px] text-right text-[9px] font-bold text-red-600">
+                      {priorityErrors._global}
+                    </span>
+                  )}
+
+                  {(Object.keys(pendingFeatured).length > 0 ||
+                    Object.keys(pendingPriorities).length > 0) && (
+                    <span className="rounded-full bg-amber-100 px-2 py-1 text-[9px] font-black text-amber-700">
+                      Unsaved changes
+                    </span>
+                  )}
+
+                  <span className="rounded-full bg-zinc-100 px-2 py-1 text-[9px] font-black text-zinc-600">
+                    {filteredArticles.length}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveFeaturedSettings}
+                    disabled={
+                      savingFeaturedSettings ||
+                      (Object.keys(pendingFeatured).length === 0 &&
+                        Object.keys(pendingPriorities).length === 0)
+                    }
+                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-green-600 px-3 text-[9px] font-black text-white shadow-sm transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {savingFeaturedSettings ? (
+                      <RefreshCw
+                        size={12}
+                        className="animate-spin"
+                      />
+                    ) : (
+                      <Save size={12} />
+                    )}
+                    {savingFeaturedSettings
+                      ? "Saving..."
+                      : "Save Featured Settings"}
+                  </button>
+                </div>
               </div>
 
               {filteredArticles.length ===
@@ -2790,7 +2802,7 @@ const checkPendingArticles =
                               categoriesData
                             }
                             featuredCount={
-                              featuredCount
+                              draftFeaturedCount
                             }
                             priorityValue={
                               priorityValue
@@ -2800,20 +2812,19 @@ const checkPendingArticles =
                                 article.id
                               ]
                             }
+                            isFeatured={
+                              getDraftFeatured(
+                                article
+                              )
+                            }
                             isSaving={
-                              savingPriority[
-                                article.id
-                              ] ===
-                              true
+                              savingFeaturedSettings
                             }
                             onFeaturedChange={
                               handleFeaturedChange
                             }
                             onPriorityInput={
                               handlePriorityInput
-                            }
-                            onPrioritySave={
-                              handlePrioritySave
                             }
                             onDelete={
                               handleDelete
@@ -2880,10 +2891,7 @@ const checkPendingArticles =
                               ];
 
                             const isSaving =
-                              savingPriority[
-                                article.id
-                              ] ===
-                              true;
+                              savingFeaturedSettings;
 
                             const date =
                               parseArticleDate(
@@ -2908,7 +2916,9 @@ const checkPendingArticles =
                                   article.id
                                 }
                                 className={`border-t border-zinc-100 transition hover:bg-zinc-50 ${
-                                  article.featured
+                                  getDraftFeatured(
+                                    article
+                                  )
                                     ? "bg-red-50/40"
                                     : ""
                                 }`}
@@ -2918,7 +2928,9 @@ const checkPendingArticles =
 
                                 <td className="sticky left-0 z-10 max-w-[420px] bg-white px-3 py-2.5">
                                   <div className="flex min-w-0 items-start gap-2">
-                                    {article.featured && (
+                                    {getDraftFeatured(
+                                      article
+                                    ) && (
                                       <Star
                                         size={
                                           13
@@ -2962,12 +2974,15 @@ const checkPendingArticles =
                                   <input
                                     type="checkbox"
                                     checked={
-                                      article.featured ===
-                                      true
+                                      getDraftFeatured(
+                                        article
+                                      )
                                     }
                                     disabled={
-                                      !article.featured &&
-                                      featuredCount >=
+                                      !getDraftFeatured(
+                                        article
+                                      ) &&
+                                      draftFeaturedCount >=
                                         5
                                     }
                                     onChange={(
@@ -2987,7 +3002,9 @@ const checkPendingArticles =
                                 {/* PRIORITY */}
 
                                 <td className="min-w-[150px] px-3 py-2.5">
-                                  {article.featured ? (
+                                  {getDraftFeatured(
+                                    article
+                                  ) ? (
                                     <div>
                                       <div className="flex items-center gap-1.5">
                                         <input
@@ -3017,33 +3034,7 @@ const checkPendingArticles =
                                           }`}
                                         />
 
-                                        <button
-                                          type="button"
-                                          disabled={
-                                            isSaving
-                                          }
-                                          onClick={() =>
-                                            handlePrioritySave(
-                                              article
-                                            )
-                                          }
-                                          className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
-                                        >
-                                          {isSaving ? (
-                                            <RefreshCw
-                                              size={
-                                                12
-                                              }
-                                              className="animate-spin"
-                                            />
-                                          ) : (
-                                            <Save
-                                              size={
-                                                12
-                                              }
-                                            />
-                                          )}
-                                        </button>
+
                                       </div>
 
                                       {priorityError && (
