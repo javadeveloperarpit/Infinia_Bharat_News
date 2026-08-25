@@ -1,11 +1,6 @@
 export const runtime = "nodejs";
 
-import {
-  NextRequest,
-  NextResponse,
-} from "next/server";
-
-import { verifyAdmin } from "@/lib/auth/verify-admin";
+import { NextRequest, NextResponse } from "next/server";
 
 // ======================================================
 // CLOUDFLARE PUSH WORKER
@@ -51,49 +46,10 @@ export async function POST(
 ) {
   try {
     // ==================================================
-    // FIREBASE ADMIN AUTH
-    // ==================================================
-
-    const token =
-      request.headers
-        .get("authorization")
-        ?.replace(/^Bearer\s+/i, "")
-        .trim();
-
-    if (!token) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Unauthorized",
-        },
-        { status: 401 }
-      );
-    }
-
-    try {
-      await verifyAdmin(token);
-    } catch (error) {
-      console.error(
-        "NOTIFICATION ADMIN AUTH ERROR:",
-        error
-      );
-
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Admin access required.",
-        },
-        { status: 403 }
-      );
-    }
-
-    // ==================================================
     // REQUEST BODY
     // ==================================================
 
-    const body =
-      await request.json();
+    const body = await request.json();
 
     // ==================================================
     // TYPE
@@ -104,9 +60,7 @@ export async function POST(
         body?.type || "custom"
       ).trim() as NotificationType;
 
-    if (
-      !ALLOWED_TYPES.includes(type)
-    ) {
+    if (!ALLOWED_TYPES.includes(type)) {
       return NextResponse.json(
         {
           success: false,
@@ -122,29 +76,19 @@ export async function POST(
     // ==================================================
 
     const title =
-      String(
-        body?.title || ""
-      ).trim();
+      String(body?.title || "").trim();
 
     const message =
-      String(
-        body?.body || ""
-      ).trim();
+      String(body?.body || "").trim();
 
     const url =
-      String(
-        body?.url || ""
-      ).trim();
+      String(body?.url || "").trim();
 
     const image =
-      String(
-        body?.image || ""
-      ).trim();
+      String(body?.image || "").trim();
 
     const category =
-      String(
-        body?.category || ""
-      ).trim();
+      String(body?.category || "").trim();
 
     const tag =
       String(
@@ -153,9 +97,7 @@ export async function POST(
       ).trim();
 
     const ctaText =
-      String(
-        body?.ctaText || ""
-      ).trim();
+      String(body?.ctaText || "").trim();
 
     // ==================================================
     // CARD FIELDS
@@ -163,18 +105,16 @@ export async function POST(
 
     const heading =
       String(
-        body?.heading ||
-          title
+        body?.heading || title
       ).trim();
 
     const description =
       String(
-        body?.description ||
-          message
+        body?.description || message
       ).trim();
 
     // ==================================================
-    // REQUIRED TITLE
+    // VALIDATION
     // ==================================================
 
     if (!title) {
@@ -188,10 +128,6 @@ export async function POST(
       );
     }
 
-    // ==================================================
-    // REQUIRED BODY
-    // ==================================================
-
     if (!message) {
       return NextResponse.json(
         {
@@ -202,10 +138,6 @@ export async function POST(
         { status: 400 }
       );
     }
-
-    // ==================================================
-    // TYPE-SPECIFIC VALIDATION
-    // ==================================================
 
     if (
       type === "article" &&
@@ -236,7 +168,7 @@ export async function POST(
     }
 
     // ==================================================
-    // SERVER-SIDE PUSH KEY
+    // ADMIN PUSH KEY
     // ==================================================
 
     const adminPushKey =
@@ -258,7 +190,7 @@ export async function POST(
     }
 
     // ==================================================
-    // BUILD STRUCTURED PAYLOAD
+    // STRUCTURED PAYLOAD
     // ==================================================
 
     const payload = {
@@ -268,17 +200,8 @@ export async function POST(
 
       body: message,
 
-      // ----------------------------------------------
-      // Navigation
-      // ----------------------------------------------
-
       url:
-        url ||
-        DEFAULT_URL,
-
-      // ----------------------------------------------
-      // Browser notification assets
-      // ----------------------------------------------
+        url || DEFAULT_URL,
 
       icon:
         String(
@@ -292,29 +215,14 @@ export async function POST(
         ).trim() ||
         DEFAULT_BADGE,
 
-      // ----------------------------------------------
-      // Rich image
-      // ----------------------------------------------
-
-      image:
-        image || "",
-
-      // ----------------------------------------------
-      // Classification
-      // ----------------------------------------------
+      image: image || "",
 
       category,
 
       tag,
 
-      // ----------------------------------------------
-      // CTA
-      // ----------------------------------------------
-
       ctaText:
-
         ctaText ||
-
         (
           type === "article"
             ? "Read Story"
@@ -324,10 +232,6 @@ export async function POST(
                 ? "Read Now"
                 : "Open"
         ),
-
-      // ----------------------------------------------
-      // Structured Card
-      // ----------------------------------------------
 
       heading,
 
@@ -373,7 +277,6 @@ export async function POST(
     } catch {
       result = {
         success: false,
-
         message:
           "Invalid response from push worker.",
       };
@@ -395,7 +298,6 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-
           message:
             result?.message ||
             "Notification sending failed.",
@@ -434,6 +336,7 @@ export async function POST(
       removed:
         result.removed ?? 0,
     });
+
   } catch (error) {
     console.error(
       "ADMIN NOTIFICATION API ERROR:",
@@ -443,7 +346,6 @@ export async function POST(
     return NextResponse.json(
       {
         success: false,
-
         message:
           error instanceof Error
             ? error.message
