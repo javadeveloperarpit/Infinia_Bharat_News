@@ -1,4 +1,4 @@
-const CACHE_NAME = "infinia-bharat-news-v3";
+const CACHE_NAME = "infinia-bharat-news-v4";
 
 const STATIC_CACHE = [
   "/",
@@ -13,9 +13,7 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => {
-        return cache.addAll(STATIC_CACHE);
-      })
+      .then((cache) => cache.addAll(STATIC_CACHE))
       .catch((error) => {
         console.error(
           "Service Worker cache install failed:",
@@ -40,19 +38,13 @@ self.addEventListener("activate", (event) => {
           cacheNames
             .filter(
               (name) =>
-                name.startsWith(
-                  "infinia-bharat-news-"
-                ) &&
+                name.startsWith("infinia-bharat-news-") &&
                 name !== CACHE_NAME
             )
-            .map((name) =>
-              caches.delete(name)
-            )
+            .map((name) => caches.delete(name))
         );
       })
-      .then(() => {
-        return self.clients.claim();
-      })
+      .then(() => self.clients.claim())
   );
 });
 
@@ -70,93 +62,58 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
 
-  // Only handle same-origin requests
-  if (
-    url.origin !==
-    self.location.origin
-  ) {
+  // Only same-origin requests
+  if (url.origin !== self.location.origin) {
     return;
   }
 
-  // ====================================================
-  // NEVER INTERCEPT API / FIREBASE
-  // ====================================================
-
-  if (
-    url.pathname.startsWith("/api/") ||
-    url.hostname.includes(
-      "firebaseio.com"
-    ) ||
-    url.hostname.includes(
-      "googleapis.com"
-    )
-  ) {
+  // Don't interfere with API routes
+  if (url.pathname.startsWith("/api/")) {
     return;
   }
 
-  // ====================================================
-  // NEVER INTERCEPT NEXT INTERNAL REQUESTS
-  // ====================================================
-
+  // Don't interfere with Next.js internals / RSC
   if (
-    url.pathname.startsWith(
-      "/_next/"
-    ) ||
+    url.pathname.startsWith("/_next/") ||
     url.searchParams.has("_rsc")
   ) {
     return;
   }
 
   // ====================================================
-  // PAGE NAVIGATION
-  // NETWORK FIRST
+  // PAGE NAVIGATION — NETWORK FIRST
   // ====================================================
 
-  if (
-    request.mode === "navigate"
-  ) {
+  if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          if (
-            response &&
-            response.ok
-          ) {
-            const clone =
-              response.clone();
+          if (response && response.ok) {
+            const clone = response.clone();
 
             caches
               .open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(
-                  request,
-                  clone
-                );
-              })
+              .then((cache) => cache.put(request, clone))
               .catch(() => {});
           }
 
           return response;
         })
         .catch(async () => {
-          const cached =
-            await caches.match(
-              request
-            );
+          const cached = await caches.match(request);
 
           if (cached) {
             return cached;
           }
 
-          const home =
-            await caches.match("/");
+          const home = await caches.match("/");
 
           if (home) {
             return home;
           }
 
           return new Response(
-            "Offline",
+            "You are offline. Please check your internet connection.",
             {
               status: 503,
               headers: {
@@ -172,62 +129,40 @@ self.addEventListener("fetch", (event) => {
   }
 
   // ====================================================
-  // STATIC ASSETS
-  // CACHE FIRST
+  // STATIC ASSETS — CACHE FIRST
   // ====================================================
 
   const isStaticAsset =
-    url.pathname.startsWith(
-      "/icons/"
-    ) ||
+    url.pathname.startsWith("/icons/") ||
     /\.(png|jpg|jpeg|webp|svg|gif|ico|woff|woff2)$/i.test(
       url.pathname
     );
 
   if (isStaticAsset) {
     event.respondWith(
-      caches
-        .match(request)
-        .then((cached) => {
-          if (cached) {
-            return cached;
+      caches.match(request).then((cached) => {
+        if (cached) {
+          return cached;
+        }
+
+        return fetch(request).then((response) => {
+          if (response && response.ok) {
+            const clone = response.clone();
+
+            caches
+              .open(CACHE_NAME)
+              .then((cache) => cache.put(request, clone))
+              .catch(() => {});
           }
 
-          return fetch(request)
-            .then((response) => {
-              if (
-                response &&
-                response.ok
-              ) {
-                const clone =
-                  response.clone();
-
-                caches
-                  .open(CACHE_NAME)
-                  .then((cache) => {
-                    cache.put(
-                      request,
-                      clone
-                    );
-                  })
-                  .catch(() => {});
-              }
-
-              return response;
-            });
-        })
+          return response;
+        });
+      })
     );
 
     return;
   }
-
-  // ====================================================
-  // EVERYTHING ELSE
-  // LET BROWSER HANDLE IT
-  // ====================================================
 });
-
-
 
 // ======================================================
 // PUSH NOTIFICATIONS
@@ -255,8 +190,7 @@ self.addEventListener("push", (event) => {
   }
 
   const title =
-    data.title ||
-    "INFINIA BHARAT NEWS";
+    data.title || "INFINIA BHARAT NEWS";
 
   const options = {
     body:
@@ -265,17 +199,18 @@ self.addEventListener("push", (event) => {
 
     icon:
       data.icon ||
-      "/icons/favicon-192x192.png",
+      "/icons/favicon-192x192.webp",
 
     badge:
       data.badge ||
-      "/icons/favicon-192x192.png",
+      "/icons/favicon-192x192.webp",
 
     tag:
-      data.tag ||
-      "infinia-news",
+      data.tag || "infinia-news",
 
     renotify: true,
+
+    requireInteraction: false,
 
     data: {
       url:
@@ -291,7 +226,6 @@ self.addEventListener("push", (event) => {
     )
   );
 });
-
 
 // ======================================================
 // NOTIFICATION CLICK
@@ -313,7 +247,6 @@ self.addEventListener(
           includeUncontrolled: true,
         })
         .then((clientList) => {
-
           for (const client of clientList) {
             if (
               client.url.startsWith(
@@ -325,11 +258,7 @@ self.addEventListener(
             }
           }
 
-          if (clients.openWindow) {
-            return clients.openWindow(
-              targetUrl
-            );
-          }
+          return clients.openWindow(targetUrl);
         })
     );
   }
