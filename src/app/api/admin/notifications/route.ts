@@ -14,10 +14,10 @@ const PUSH_API =
 // ======================================================
 
 const DEFAULT_ICON =
-  "https://infiniabharatnews.vercel.app/loader.webp";
+  "https://infiniabharatnews.vercel.app/notification.webp";
 
 const DEFAULT_BADGE =
-  "https://infiniabharatnews.vercel.app/loader.webp";
+  "https://infiniabharatnews.vercel.app/notification.webp";
 
 const DEFAULT_URL =
   "https://infiniabharatnews.vercel.app/";

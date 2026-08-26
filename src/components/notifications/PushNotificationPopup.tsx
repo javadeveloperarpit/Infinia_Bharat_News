@@ -12,6 +12,26 @@ import {
 const PUSH_API =
   "https://infinia-push.infiniabharatnews.workers.dev";
 
+
+  const DEVICE_ID_KEY = "infinia-device-id";
+
+function getDeviceId(): string {
+  let deviceId = localStorage.getItem(
+    DEVICE_ID_KEY
+  );
+
+  if (!deviceId) {
+    deviceId = crypto.randomUUID();
+
+    localStorage.setItem(
+      DEVICE_ID_KEY,
+      deviceId
+    );
+  }
+
+  return deviceId;
+}
+
 /*
  * ============================================
  * TEST MODE
@@ -378,24 +398,28 @@ export default function PushNotificationPopup() {
          * Send subscription to worker.
          */
         const subscriptionJson =
-          subscription.toJSON();
+  subscription.toJSON();
 
-        const response =
-          await fetch(
-            `${PUSH_API}/subscribe`,
-            {
-              method: "POST",
+const deviceId =
+  getDeviceId();
 
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
+const response =
+  await fetch(
+    `${PUSH_API}/subscribe`,
+    {
+      method: "POST",
 
-              body: JSON.stringify(
-                subscriptionJson
-              ),
-            }
-          );
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
+
+      body: JSON.stringify({
+        ...subscriptionJson,
+        deviceId,
+      }),
+    }
+  );
 
         const result =
           await response.json();
