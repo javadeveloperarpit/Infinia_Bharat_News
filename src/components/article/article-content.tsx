@@ -410,16 +410,6 @@ return `
         referrerpolicy="strict-origin-when-cross-origin"
       ></iframe>
     </div>
-
-    <div class="article-media-fallback">
-      <a
-        href="${escapeHtml(url.href)}"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Open media in browser
-      </a>
-    </div>
   </figure>
 `;
       } catch {

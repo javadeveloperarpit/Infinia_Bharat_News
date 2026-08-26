@@ -178,28 +178,66 @@ export default function PushNotificationPopup() {
            * ताकि UI testing के लिए popup आता रहे।
            */
           if (!TEST_MODE) {
-            if (
-              Notification.permission ===
-              "denied"
-            ) {
-              return;
-            }
 
-            if (
-              Notification.permission ===
-              "granted"
-            ) {
-              const registration =
-                await navigator.serviceWorker.ready;
+  console.log(
+    "[INFINIA] Notification permission:",
+    Notification.permission
+  );
 
-              const subscription =
-                await registration.pushManager.getSubscription();
+  // Browser ne permanently block kiya hua hai
+  if (
+    Notification.permission ===
+    "denied"
+  ) {
+    console.log(
+      "[INFINIA] Notifications are blocked."
+    );
 
-              if (subscription) {
-                return;
-              }
-            }
-          }
+    return;
+  }
+
+  // Current service worker ka wait karo
+  const registration =
+    await navigator.serviceWorker.ready;
+
+  console.log(
+    "[INFINIA] Service worker ready:",
+    registration.scope
+  );
+
+   // Existing push subscription check karo
+  const subscription =
+    await registration.pushManager.getSubscription();
+
+  console.log(
+    "[INFINIA] Existing subscription:",
+    subscription
+  );
+
+  // Active subscription already exists
+  // => popup bilkul mat dikhao
+  if (subscription) {
+
+    console.log(
+      "[INFINIA] User already subscribed. Popup cancelled."
+    );
+
+    return;
+  }
+
+  // Permission granted hai lekin subscription nahi hai.
+  // Is case me user ko dobara subscribe/recover karne ka
+  // option dena chahiye, isliye yahan return nahi karenge.
+  if (
+    Notification.permission ===
+    "granted"
+  ) {
+
+    console.log(
+      "[INFINIA] Permission granted but subscription missing. Recovery popup allowed."
+    );
+  }
+}
 
           /*
            * ==========================================
