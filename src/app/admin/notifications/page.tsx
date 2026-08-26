@@ -377,82 +377,78 @@ export default function NotificationsAdminPage() {
       // ARTICLES
       // -----------------------------------------------
 
-      const articleList =
-        articleSnapshot.docs
-          .map((doc) => {
-            const data =
-              doc.data();
+     const articleList =
+  articleSnapshot.docs
+    .map((doc) => {
+      const data =
+        doc.data();
 
-            if (
-              data?.status !==
-              "published"
-            ) {
-              return null;
-            }
+      if (
+        data?.status !==
+        "published"
+      ) {
+        return null;
+      }
 
-            const slug =
-              String(
-                data?.slug ||
-                  ""
-              ).trim();
+      const slug =
+        String(
+          data?.slug || ""
+        ).trim();
 
-            const category =
-              categoryMap.get(
-                String(
-                  data?.categoryId ||
-                    ""
-                )
-              ) ||
-              String(
-                data?.category ||
-                  ""
-              );
+      // Slug nahi hai to notification me
+      // broken URL nahi bhejna
+      if (!slug) {
+        return null;
+      }
 
-            return {
-  id: doc.id,
+      return {
+        id: doc.id,
 
-  title: String(
-    data?.title || ""
-  ).trim(),
+        title: String(
+          data?.title || ""
+        ).trim(),
 
-  description: String(
-    data?.description ||
-      data?.shortDescription ||
-      ""
-  ).trim(),
+        description: String(
+          data?.description ||
+            data?.shortDescription ||
+            ""
+        ).trim(),
 
-  image: String(
-    data?.thumbnail ||
-      data?.image ||
-      ""
-  ).trim(),
+        image: String(
+          data?.thumbnail ||
+            data?.image ||
+            ""
+        ).trim(),
 
-  category:
-    categoryMap.get(
-      String(
-        data?.categoryId || ""
-      )
-    ) || "",
+        category:
+          categoryMap.get(
+            String(
+              data?.categoryId || ""
+            )
+          ) ||
+          String(
+            data?.category || ""
+          ).trim(),
 
-  url:
-    `${SITE_URL}/news/${doc.id}`,
+        // IMPORTANT: Firestore ID nahi,
+        // actual article slug use hoga
+        url:
+          `${SITE_URL}/news/${slug}`,
 
-  youtubeUrl: String(
-    data?.youtubeUrl ||
-      data?.youtubeURL ||
-      data?.videoUrl ||
-      ""
-  ).trim(),
+        youtubeUrl: String(
+          data?.youtubeUrl ||
+            data?.youtubeURL ||
+            data?.videoUrl ||
+            ""
+        ).trim(),
 
-  createdAt:
-    timestampToNumber(
-      data?.createdAt
-    ),
-};
-          })
-          .filter(
-            Boolean
-          ) as ContentItem[];
+        createdAt:
+          timestampToNumber(
+            data?.createdAt
+          ),
+      };
+    })
+    .filter(Boolean) as ContentItem[];
 
       // -----------------------------------------------
       // VIDEOS
