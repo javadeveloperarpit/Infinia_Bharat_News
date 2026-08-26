@@ -435,7 +435,7 @@ export default function NotificationsAdminPage() {
     ) || "",
 
   url:
-    `${SITE_URL}/video/${doc.id}`,
+    `${SITE_URL}/news/${doc.id}`,
 
   youtubeUrl: String(
     data?.youtubeUrl ||
