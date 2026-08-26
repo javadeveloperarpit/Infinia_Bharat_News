@@ -363,6 +363,55 @@ export default function NewsEditor({
               },
             ],
           },
+          mediaEmbed: {
+  previewsInData: true,
+
+  extraProviders: [
+    {
+      name: "any-url-fallback",
+
+      url: /^https?:\/\/.+/,
+
+      html: (match: RegExpMatchArray) => {
+        const url = match[0];
+
+        return `
+          <div
+            class="infinia-any-media"
+            style="
+              position: relative;
+              width: 100%;
+              aspect-ratio: 16 / 9;
+              overflow: hidden;
+              border-radius: 10px;
+              background: #000;
+            "
+          >
+            <iframe
+              src="${url}"
+              title="Embedded media"
+              width="1280"
+              height="720"
+              style="
+                width: 100%;
+                height: 100%;
+                border: 0;
+                display: block;
+              "
+              allow="
+                autoplay;
+                encrypted-media;
+                fullscreen;
+                picture-in-picture
+              "
+              allowfullscreen
+            ></iframe>
+          </div>
+        `;
+      },
+    },
+  ],
+},
         }}
 
         onReady={handleReady}

@@ -90,6 +90,8 @@ iframe {
 }
 
 
+
+
 /* =========================================================
    GLOBAL SCROLLBAR HIDE
    ========================================================= */
@@ -1694,4 +1696,84 @@ iframe {
   .article-content table {
     font-size: 0.9rem;
   }
+}
+
+
+
+/* =================================================
+   ANY URL / GENERIC EMBED
+================================================= */
+
+.article-content
+  .article-any-url-wrapper {
+  position: relative;
+
+  width: 100%;
+  max-width: 100%;
+
+  aspect-ratio: 16 / 9;
+
+  overflow: hidden;
+
+  background: #000;
+
+  border-radius: 12px;
+}
+
+.article-content
+  .article-any-url-wrapper iframe {
+  position: absolute;
+
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  border: 0;
+
+  display: block;
+}
+
+.article-content
+  .article-media-fallback {
+  margin-top: 0.75rem;
+
+  text-align: center;
+}
+
+.article-content
+  .article-media-fallback a {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  min-height: 40px;
+
+  padding:
+    0.5rem
+    1rem;
+
+  border-radius: 8px;
+
+  background: #f4f4f5;
+
+  color: #18181b;
+
+  font-size: 0.875rem;
+
+  font-weight: 600;
+
+  text-decoration: none;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.article-content
+  .article-media-fallback a:hover {
+  background: #e4e4e7;
+
+  transform: translateY(-1px);
 }

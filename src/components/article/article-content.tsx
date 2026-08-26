@@ -104,6 +104,30 @@ function getVimeoId(url: URL) {
 function convertMediaEmbeds(html: string) {
   if (!html) return "";
 
+  /* ================================================
+   NORMALIZE CKEDITOR SAVED MEDIA PREVIEWS
+================================================ */
+
+html = html.replace(
+  /<figure([^>]*)class=["']([^"']*\bmedia\b[^"']*)["']([^>]*)>\s*<div([^>]*)data-oembed-url=["']([^"']+)["']([^>]*)>([\s\S]*?)<\/div>\s*<\/figure>/gi,
+  (
+    _,
+    beforeClass,
+    className,
+    afterClass,
+    beforeUrl,
+    mediaUrl
+  ) => {
+    return `
+      <figure class="media">
+        <oembed
+          url="${escapeHtml(mediaUrl)}"
+        ></oembed>
+      </figure>
+    `;
+  }
+);
+
   return html.replace(
     /<figure[^>]*class=["'][^"']*\bmedia\b[^"']*["'][^>]*>\s*<oembed[^>]*url=["']([^"']+)["'][^>]*>\s*<\/oembed>\s*<\/figure>/gi,
     (_, rawUrl: string) => {
@@ -354,20 +378,50 @@ function convertMediaEmbeds(html: string) {
         }
 
         /* ================================
-           UNKNOWN
-        ================================= */
+   ANY OTHER URL
+================================= */
 
-        return `
-          <figure class="article-media article-unknown-media">
-            <a
-              href="${escapeHtml(url.href)}"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Open media
-            </a>
-          </figure>
-        `;
+return `
+  <figure class="article-media article-any-url">
+    <div
+      class="article-any-url-wrapper"
+      data-media-url="${escapeHtml(url.href)}"
+    >
+      <iframe
+        src="${escapeHtml(url.href)}"
+        title="Embedded content"
+        loading="lazy"
+        width="1280"
+        height="720"
+        style="
+          width: 100%;
+          height: 100%;
+          border: 0;
+          display: block;
+        "
+        allow="
+          autoplay;
+          encrypted-media;
+          fullscreen;
+          picture-in-picture;
+          clipboard-write
+        "
+        allowfullscreen
+        referrerpolicy="strict-origin-when-cross-origin"
+      ></iframe>
+    </div>
+
+    <div class="article-media-fallback">
+      <a
+        href="${escapeHtml(url.href)}"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Open media in browser
+      </a>
+    </div>
+  </figure>
+`;
       } catch {
         return "";
       }
