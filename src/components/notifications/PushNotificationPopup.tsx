@@ -59,6 +59,43 @@ function urlBase64ToUint8Array(
   return output;
 }
 
+async function getDeviceFingerprint(): Promise<string> {
+  const fingerprintData = [
+    navigator.userAgent,
+    navigator.platform,
+    navigator.language,
+    navigator.languages.join(","),
+    Intl.DateTimeFormat()
+      .resolvedOptions()
+      .timeZone,
+    screen.width,
+    screen.height,
+    screen.colorDepth,
+    navigator.hardwareConcurrency || "",
+    navigator.maxTouchPoints || "",
+  ].join("|");
+
+  const data =
+    new TextEncoder().encode(
+      fingerprintData
+    );
+
+  const hash =
+    await crypto.subtle.digest(
+      "SHA-256",
+      data
+    );
+
+  return Array.from(
+    new Uint8Array(hash)
+  )
+    .map((byte) =>
+      byte
+        .toString(16)
+        .padStart(2, "0")
+    )
+    .join("");
+}
 export default function PushNotificationPopup() {
   const [visible, setVisible] =
     useState(false);
@@ -378,7 +415,7 @@ export default function PushNotificationPopup() {
         /*
          * Send subscription to worker.
          */
-        const subscriptionJson =
+       const subscriptionJson =
   subscription.toJSON();
 
 if (
@@ -390,6 +427,12 @@ if (
     "Invalid push subscription."
   );
 }
+
+/*
+ * Get stable browser/device fingerprint.
+ */
+const deviceFingerprint =
+  await getDeviceFingerprint();
 
 const response =
   await fetch(
@@ -414,10 +457,7 @@ const response =
             subscriptionJson.keys.auth,
         },
 
-        // Use the push endpoint itself as
-        // the subscription identity.
-        deviceId:
-          subscriptionJson.endpoint,
+        deviceFingerprint,
       }),
     }
   );
