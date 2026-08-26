@@ -60,20 +60,39 @@ function urlBase64ToUint8Array(
 }
 
 async function getDeviceFingerprint(): Promise<string> {
-  const fingerprintData = [
-    navigator.userAgent,
-    navigator.platform,
-    navigator.language,
-    navigator.languages.join(","),
+  /*
+   * Only use values intended to describe
+   * the physical device / display environment.
+   *
+   * Do NOT use:
+   * - Google account
+   * - localStorage
+   * - cookies
+   * - Push endpoint
+   * - random UUID
+   */
+
+  const dataParts = [
+    screen.width,
+    screen.height,
+    screen.availWidth,
+    screen.availHeight,
+    screen.colorDepth,
+    screen.pixelDepth,
     Intl.DateTimeFormat()
       .resolvedOptions()
       .timeZone,
-    screen.width,
-    screen.height,
-    screen.colorDepth,
-    navigator.hardwareConcurrency || "",
-    navigator.maxTouchPoints || "",
-  ].join("|");
+    navigator.maxTouchPoints || 0,
+    navigator.hardwareConcurrency || 0,
+  ];
+
+  const fingerprintData =
+    dataParts.join("|");
+
+  console.log(
+    "[INFINIA] Device fingerprint source:",
+    fingerprintData
+  );
 
   const data =
     new TextEncoder().encode(
@@ -86,15 +105,23 @@ async function getDeviceFingerprint(): Promise<string> {
       data
     );
 
-  return Array.from(
-    new Uint8Array(hash)
-  )
-    .map((byte) =>
-      byte
-        .toString(16)
-        .padStart(2, "0")
+  const fingerprint =
+    Array.from(
+      new Uint8Array(hash)
     )
-    .join("");
+      .map((byte) =>
+        byte
+          .toString(16)
+          .padStart(2, "0")
+      )
+      .join("");
+
+  console.log(
+    "[INFINIA] Device fingerprint:",
+    fingerprint
+  );
+
+  return fingerprint;
 }
 export default function PushNotificationPopup() {
   const [visible, setVisible] =
