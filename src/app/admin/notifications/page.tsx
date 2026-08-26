@@ -13,6 +13,8 @@ import {
   User,
 } from "firebase/auth";
 
+import { getYoutubeThumbnail } from "@/utils/youtube";
+
 import {
   collection,
   getDocs,
@@ -60,6 +62,7 @@ type ContentItem = {
   category: string;
   url: string;
   createdAt: number;
+  youtubeUrl?: string;
 };
 
 type CategoryItem = {
@@ -406,39 +409,46 @@ export default function NotificationsAdminPage() {
               );
 
             return {
-              id: doc.id,
+  id: doc.id,
 
-              title:
-                String(
-                  data?.title ||
-                    ""
-                ).trim(),
+  title: String(
+    data?.title || ""
+  ).trim(),
 
-              description:
-                String(
-                  data?.shortDescription ||
-                    data?.seoDescription ||
-                    ""
-                ).trim(),
+  description: String(
+    data?.description ||
+      data?.shortDescription ||
+      ""
+  ).trim(),
 
-              image:
-                String(
-                  data?.thumbnail ||
-                    data?.featuredImage ||
-                    ""
-                ).trim(),
+  image: String(
+    data?.thumbnail ||
+      data?.image ||
+      ""
+  ).trim(),
 
-              category,
+  category:
+    categoryMap.get(
+      String(
+        data?.categoryId || ""
+      )
+    ) || "",
 
-              url: slug
-                ? `${SITE_URL}/news/${slug}`
-                : `${SITE_URL}/`,
+  url:
+    `${SITE_URL}/video/${doc.id}`,
 
-              createdAt:
-                timestampToNumber(
-                  data?.createdAt
-                ),
-            };
+  youtubeUrl: String(
+    data?.youtubeUrl ||
+      data?.youtubeURL ||
+      data?.videoUrl ||
+      ""
+  ).trim(),
+
+  createdAt:
+    timestampToNumber(
+      data?.createdAt
+    ),
+};
           })
           .filter(
             Boolean
@@ -448,63 +458,87 @@ export default function NotificationsAdminPage() {
       // VIDEOS
       // -----------------------------------------------
 
-      const videoList =
-        videoSnapshot.docs
-          .map((doc) => {
-            const data =
-              doc.data();
+      // -----------------------------------------------
+// VIDEOS
+// -----------------------------------------------
 
-            if (
-              data?.status !==
-              "published"
-            ) {
-              return null;
-            }
+const videoList =
+  videoSnapshot.docs
+    .map((doc) => {
+      const data = doc.data();
 
-            return {
-              id: doc.id,
+      if (
+        data?.status !==
+        "published"
+      ) {
+        return null;
+      }
 
-              title:
-                String(
-                  data?.title ||
-                    ""
-                ).trim(),
+      // YouTube URL ko directly Firestore se nikalo
+      const youtubeUrl = String(
+        data?.youtubeUrl ||
+          data?.youtubeURL ||
+          data?.videoUrl ||
+          data?.url ||
+          ""
+      ).trim();
 
-              description:
-                String(
-                  data?.description ||
-                    data?.shortDescription ||
-                    ""
-                ).trim(),
+      // Existing thumbnail ko priority do
+      const storedThumbnail = String(
+        data?.thumbnail ||
+          data?.image ||
+          ""
+      ).trim();
 
-              image:
-                String(
-                  data?.thumbnail ||
-                    data?.image ||
-                    ""
-                ).trim(),
+      // Agar stored thumbnail nahi hai,
+      // to YouTube URL se thumbnail generate hoga
+      const youtubeThumbnail =
+        youtubeUrl
+          ? getYoutubeThumbnail(
+              youtubeUrl
+            )
+          : "";
 
-              category:
-                categoryMap.get(
-                  String(
-                    data?.categoryId ||
-                      ""
-                  )
-                ) || "",
+      return {
+        id: doc.id,
 
-              url:
-                `${SITE_URL}/video/${doc.id}`,
+        title: String(
+          data?.title ||
+            ""
+        ).trim(),
 
-              createdAt:
-                timestampToNumber(
-                  data?.createdAt
-                ),
-            };
-          })
-          .filter(
-            Boolean
-          ) as ContentItem[];
+        description: String(
+          data?.description ||
+            data?.shortDescription ||
+            ""
+        ).trim(),
 
+        image:
+          storedThumbnail ||
+          youtubeThumbnail,
+
+        category:
+          categoryMap.get(
+            String(
+              data?.categoryId ||
+                ""
+            )
+          ) || "",
+
+        url:
+          `${SITE_URL}/video/${doc.id}`,
+
+        youtubeUrl,
+
+        createdAt:
+          timestampToNumber(
+            data?.createdAt
+          ),
+      };
+    })
+    .filter(
+      Boolean
+    ) as ContentItem[];
       // -----------------------------------------------
       // BREAKING NEWS
       // -----------------------------------------------
@@ -888,6 +922,8 @@ export default function NotificationsAdminPage() {
           "Authentication token could not be generated."
         );
       }
+
+      
 
       if (
         !notificationData.title
@@ -1523,11 +1559,13 @@ export default function NotificationsAdminPage() {
                   <div className="space-y-2">
 
                     {filteredItems.map(
-                      (item) => {
-                        const selected =
-                          selectedId ===
-                          item.id;
+  (item) => {
 
+    const selected =
+      selectedId === item.id;
+
+    const itemImage =
+  item.image || "";
                         return (
                           <button
                             key={item.id}
@@ -1556,11 +1594,9 @@ export default function NotificationsAdminPage() {
 
                             <div className="relative h-[72px] w-[100px] shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:h-[78px] sm:w-[115px]">
 
-                              {item.image ? (
+                             {itemImage ? (
                                 <img
-                                  src={
-                                    item.image
-                                  }
+                                  src={itemImage}
                                   alt=""
                                   className="h-full w-full object-cover"
                                 />

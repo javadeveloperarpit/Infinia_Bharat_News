@@ -12,7 +12,79 @@ const PUSH_API =
 // ======================================================
 // DEFAULT ASSETS
 // ======================================================
+// ======================================================
+// YOUTUBE VIDEO ID
+// ======================================================
 
+function getYoutubeVideoId(url: string): string {
+  if (!url) return "";
+
+  try {
+    const parsed = new URL(url);
+
+    // youtube.com/watch?v=VIDEO_ID
+    const queryId = parsed.searchParams.get("v");
+
+    if (queryId) {
+      return queryId.trim();
+    }
+
+    // youtu.be/VIDEO_ID
+    if (
+      parsed.hostname
+        .toLowerCase()
+        .includes("youtu.be")
+    ) {
+      return parsed.pathname
+        .replace(/^\/+/, "")
+        .split("/")[0]
+        .trim();
+    }
+
+    // youtube.com/shorts/VIDEO_ID
+    const shortsMatch =
+      parsed.pathname.match(
+        /\/shorts\/([^/]+)/
+      );
+
+    if (shortsMatch?.[1]) {
+      return shortsMatch[1].trim();
+    }
+
+    // youtube.com/embed/VIDEO_ID
+    const embedMatch =
+      parsed.pathname.match(
+        /\/embed\/([^/]+)/
+      );
+
+    if (embedMatch?.[1]) {
+      return embedMatch[1].trim();
+    }
+
+  } catch {
+    return "";
+  }
+
+  return "";
+}
+
+// ======================================================
+// YOUTUBE THUMBNAIL
+// ======================================================
+
+function getYoutubeThumbnail(
+  youtubeUrl: string
+): string {
+
+  const videoId =
+    getYoutubeVideoId(youtubeUrl);
+
+  if (!videoId) {
+    return "";
+  }
+
+  return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+}
 const DEFAULT_ICON =
   "https://infiniabharatnews.vercel.app/notification.webp";
 
@@ -84,8 +156,21 @@ export async function POST(
     const url =
       String(body?.url || "").trim();
 
-    const image =
-      String(body?.image || "").trim();
+    let image =
+  String(body?.image || "").trim();
+
+  // ======================================================
+// AUTOMATIC VIDEO THUMBNAIL
+// ======================================================
+
+if (
+  type === "video" &&
+  !image &&
+  url
+) {
+  image =
+    getYoutubeThumbnail(url);
+}
 
     const category =
       String(body?.category || "").trim();
@@ -193,50 +278,50 @@ export async function POST(
     // STRUCTURED PAYLOAD
     // ==================================================
 
-    const payload = {
-      type,
+    // ==================================================
+// FINAL PUSH PAYLOAD
+// ==================================================
 
-      title,
+const cta =
+  ctaText ||
+  (
+    type === "article"
+      ? "Read Story"
+      : type === "video"
+        ? "Watch Video"
+        : type === "breaking"
+          ? "Read Now"
+          : "Open"
+  );
 
-      body: message,
+// Keep notification description short and fixed.
+// Full content remains on the website.
+const shortBody = message
+  .replace(/\s+/g, " ")
+  .trim()
+  .slice(0, 180);
 
-      url:
-        url || DEFAULT_URL,
+const payload = {
+  type,
+  title,
+  body: shortBody,
+  url: url || DEFAULT_URL,
 
-      icon:
-        String(
-          body?.icon || ""
-        ).trim() ||
-        DEFAULT_ICON,
+  icon:
+    String(body?.icon || "").trim() ||
+    DEFAULT_ICON,
 
-      badge:
-        String(
-          body?.badge || ""
-        ).trim() ||
-        DEFAULT_BADGE,
+  badge:
+    String(body?.badge || "").trim() ||
+    DEFAULT_BADGE,
 
-      image: image || "",
+  image: image || "",
+  category,
+  tag,
+  ctaText: cta,
+};
 
-      category,
-
-      tag,
-
-      ctaText:
-        ctaText ||
-        (
-          type === "article"
-            ? "Read Story"
-            : type === "video"
-              ? "Watch Video"
-              : type === "breaking"
-                ? "Read Now"
-                : "Open"
-        ),
-
-      heading,
-
-      description,
-    };
+    
 
     // ==================================================
     // SEND TO CLOUDFLARE WORKER
