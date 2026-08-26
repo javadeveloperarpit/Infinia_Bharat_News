@@ -13,25 +13,6 @@ const PUSH_API =
   "https://infinia-push.infiniabharatnews.workers.dev";
 
 
-  const DEVICE_ID_KEY = "infinia-device-id";
-
-function getDeviceId(): string {
-  let deviceId = localStorage.getItem(
-    DEVICE_ID_KEY
-  );
-
-  if (!deviceId) {
-    deviceId = crypto.randomUUID();
-
-    localStorage.setItem(
-      DEVICE_ID_KEY,
-      deviceId
-    );
-  }
-
-  return deviceId;
-}
-
 /*
  * ============================================
  * TEST MODE
@@ -400,8 +381,15 @@ export default function PushNotificationPopup() {
         const subscriptionJson =
   subscription.toJSON();
 
-const deviceId =
-  getDeviceId();
+if (
+  !subscriptionJson.endpoint ||
+  !subscriptionJson.keys?.p256dh ||
+  !subscriptionJson.keys?.auth
+) {
+  throw new Error(
+    "Invalid push subscription."
+  );
+}
 
 const response =
   await fetch(
@@ -415,12 +403,24 @@ const response =
       },
 
       body: JSON.stringify({
-        ...subscriptionJson,
-        deviceId,
+        endpoint:
+          subscriptionJson.endpoint,
+
+        keys: {
+          p256dh:
+            subscriptionJson.keys.p256dh,
+
+          auth:
+            subscriptionJson.keys.auth,
+        },
+
+        // Use the push endpoint itself as
+        // the subscription identity.
+        deviceId:
+          subscriptionJson.endpoint,
       }),
     }
   );
-
         const result =
           await response.json();
 
