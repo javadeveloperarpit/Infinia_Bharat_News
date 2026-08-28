@@ -628,7 +628,7 @@ export default function HeroSection({
                 <article
                   className="
                     flex
-                    h-[100px]
+                    h-[110px]
                     w-full
                     overflow-hidden
                     rounded-xl
