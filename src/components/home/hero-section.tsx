@@ -643,7 +643,7 @@ export default function HeroSection({
                   <div
                     className="
                       relative
-                      w-[50%]
+                      w-[56%]
                       shrink-0
                       overflow-hidden
                       bg-zinc-200
