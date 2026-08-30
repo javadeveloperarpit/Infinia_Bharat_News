@@ -365,7 +365,6 @@
     "content": "<p>देश के राजनीतिक माहौल को लेकर किए गए एक ताजा सर्वे में एनडीए गठबंधन की स्थिति काफी मजबूत दिखाई दे रही है। इंडिया टुडे और सीवोटर के 'मूड ऑफ द नेशन' (MOTN) सर्वे के अनुसार, यदि देश में आज लोकसभा चुनाव आयोजित किए जाते हैं, तो एनडीए को स्पष्ट बहुमत मिलने की पूरी संभावना है।</p><h3>सर्वे के प्रमुख आंकड़े</h3><p>सर्वे के अनुमानों पर गौर करें तो <strong>एनडीए गठबंधन को 326 सीटें</strong> मिलने का अनुमान जताया गया है। यह आंकड़ा स्पष्ट बहुमत के लिए जरूरी संख्या से अधिक है, जो मौजूदा सरकार के प्रति जनता के विश्वास को दर्शाता है।</p><h3>जनता का मूड और राजनीतिक समीकरण</h3><p>सर्वे के निष्कर्ष बताते हैं कि प्रधानमंत्री की लोकप्रियता अभी भी बरकरार है। जनता के बीच सरकार की नीतियों और कामकाज को लेकर सकारात्मक रुझान देखने को मिल रहा है। हालांकि, चुनाव के नतीजे कई स्थानीय और राष्ट्रीय मुद्दों पर निर्भर करते हैं, लेकिन वर्तमान डेटा एनडीए के पक्ष में एक मजबूत लहर की ओर इशारा कर रहा है।</p><h3>सर्वे का महत्व</h3><p>इस तरह के सर्वे जनता की नब्ज टटोलने का एक जरिया होते हैं। 'मूड ऑफ द नेशन' सर्वे अक्सर चुनावी रुझानों को समझने के लिए एक महत्वपूर्ण पैमाना माना जाता है। यह सर्वे ऐसे समय में आया है जब देश में राजनीतिक गतिविधियां तेज हैं और विभिन्न दल अपनी रणनीतियों को अंतिम रूप देने में जुटे हैं।</p><p>आने वाले समय में राजनीतिक समीकरण किस दिशा में बदलते हैं और विपक्षी गठबंधन इन आंकड़ों को किस तरह चुनौती देता है, यह देखना दिलचस्प होगा। फिलहाल, सर्वे के आंकड़े सत्ताधारी गठबंधन के लिए उत्साहजनक संकेत दे रहे हैं।</p>",
     "seoTitle": "nda-likely-to-win-326-seats-survey",
     "seoDescription": "इंडिया टुडे-सीवोटर के लेटेस्ट सर्वे में एनडीए की स्थिति मजबूत नजर आ रही है। अगर आज लोकसभा चुनाव होते हैं, तो एनडीए को 326 सीटें मिलने का अनुमान है।",
-    "featured": false,
     "slug": "nda-likely-to-win-326-seats-survey-20260828-032519013",
     "author": {
       "uid": "kgw8DI6rdEVLRfuGPKqZFVHSHk73",
@@ -380,7 +379,9 @@
     "thumbnail": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEixY9JaL1bJAV4lQ1aBAzwLn6qfrGncW24kTFpr6SBTpZasOupicGP5VKrBtxSGWBAtTse7fNCm_aw7v20cXA-oKDKNFp55EpwfuP03Tiory5Xbd7Mw8M3oSmOMYG8g9oAPYDs20oRSSsRBe8-fsDjqGfKqTW90u_dTfpeaymKUNbECWhnDKA2AKjaaC6k/s1672/file_000000007240822f9dda790a2ac9c3ab.jpg",
     "breaking": true,
     "status": "published",
-    "updatedAt": "2026-08-28T03:41:18.355Z"
+    "featured": true,
+    "priority": 4,
+    "updatedAt": "2026-08-30T16:56:19.070Z"
   },
   {
     "id": "AOeIZOITauvT5jxqGmp8",
@@ -441,7 +442,6 @@
     "shortDescription": "भारत के पांच अतिरिक्त S-400 एयर डिफेंस सिस्टम खरीदने की प्रक्रिया में बड़ा अपडेट सामने आया है। रूस ने भारतीय tender के जवाब में अपना proposal भेज दिया है।",
     "seoTitle": "russia-s400-proposal-india-five-new-air-defence-systems",
     "seoDescription": "भारत के पांच अतिरिक्त S-400 एयर डिफेंस सिस्टम खरीदने की प्रक्रिया में बड़ा अपडेट सामने आया है। रूस ने भारतीय tender के जवाब में अपना proposal भेज दिया है।",
-    "featured": false,
     "breaking": false,
     "status": "published",
     "slug": "russia-s400-proposal-india-five-new-air-defence-systems-20260830-164843747",
@@ -456,7 +456,9 @@
     },
     "createdAt": "2026-08-30T16:48:43.942Z",
     "content": "<p><strong>नई दिल्ली:</strong> भारत की वायु रक्षा क्षमता को और मजबूत करने की दिशा में एक अहम घटनाक्रम सामने आया है। रूस ने भारतीय वायुसेना के लिए अतिरिक्त पांच S-400 एयर डिफेंस स्क्वाड्रन हासिल करने से जुड़े टेंडर के जवाब में अपना प्रस्ताव भारत को सौंप दिया है। अब इस प्रस्ताव की संबंधित स्तरों पर समीक्षा और प्रक्रिया आगे बढ़ाई जा रही है। इस संभावित रक्षा सौदे का अनुमानित मूल्य <strong>₹50,000 करोड़ से अधिक</strong> बताया जा रहा है।</p><h2>पांच और S-400 सिस्टम क्यों महत्वपूर्ण हैं?</h2><p>S-400 Triumf एक लंबी दूरी की सतह से हवा में मार करने वाली वायु रक्षा प्रणाली है, जिसे भारत अपनी बहु-स्तरीय एयर डिफेंस व्यवस्था के महत्वपूर्ण हिस्से के तौर पर इस्तेमाल करता है।</p><p>अतिरिक्त पांच स्क्वाड्रन की खरीद पूरी होने पर भारत के पास इस तरह की प्रणालियों की संख्या में उल्लेखनीय बढ़ोतरी होगी। इसका उद्देश्य देश के महत्वपूर्ण क्षेत्रों और रणनीतिक ठिकानों के आसपास हवाई खतरों से निपटने की क्षमता को और मजबूत करना है।</p><h3>रूस ने क्या प्रस्ताव दिया?</h3><p>रक्षा सूत्रों के हवाले से सामने आई जानकारी के अनुसार, भारत की ओर से जारी किए गए tender के जवाब में रूसी पक्ष का प्रस्ताव प्राप्त हो चुका है। फिलहाल भारतीय अधिकारी इस प्रस्ताव का परीक्षण कर रहे हैं।</p><p>अभी यह कहना जल्दबाजी होगी कि अंतिम कीमत, डिलीवरी शेड्यूल या अनुबंध की अन्य शर्तों पर क्या सहमति बनेगी। ये बातें आगे की बातचीत और सरकारी मंजूरियों की प्रक्रिया में तय होंगी।</p><h3>पहले भी S-400 खरीद चुका है भारत</h3><p>भारत और रूस के बीच S-400 को लेकर रक्षा सहयोग नया नहीं है। भारत ने पहले ही पांच S-400 सिस्टम के लिए रूस के साथ बड़ा समझौता किया था। नई खरीद उसी एयर डिफेंस क्षमता को आगे बढ़ाने की योजना का हिस्सा है।</p><p>भारत द्वारा अतिरिक्त पांच सिस्टम लेने की योजना पर 2026 में रक्षा खरीद प्रक्रिया के विभिन्न चरणों में काम आगे बढ़ा है। अब रूसी proposal मिलने के बाद मामला अगले चरणों की ओर बढ़ रहा है।</p><h3>ऑपरेशन सिंदूर के बाद बढ़ी एयर डिफेंस पर नजर</h3><p>भारत की एयर डिफेंस क्षमता पर हाल के सैन्य घटनाक्रमों के बाद विशेष ध्यान दिया गया है। S-400 की operational capability और इसकी रणनीतिक भूमिका को लेकर भी काफी चर्चा हुई है। इसी व्यापक संदर्भ में अतिरिक्त एयर डिफेंस सिस्टम की जरूरत को भारत की सुरक्षा तैयारियों से जोड़कर देखा जा रहा है।</p><h2>अब आगे क्या होगा?</h2><p>रूस का proposal मिलने के बाद भारतीय पक्ष इसके तकनीकी, वित्तीय और अन्य पहलुओं का मूल्यांकन करेगा। इसके बाद रक्षा खरीद प्रक्रिया के निर्धारित चरणों के अनुसार आगे की कार्रवाई होगी।</p><p>हालांकि, अभी यह सौदा अंतिम रूप से मंजूर नहीं हुआ है| &nbsp;इसलिए फिलहाल इसे संभावित ₹50,000 करोड़ से अधिक की रक्षा खरीद के रूप में देखना उचित होगा, न कि finalized contract के तौर पर।</p><p>&nbsp;</p><blockquote><p>रूस की ओर से प्रस्ताव मिलने से भारत के पांच अतिरिक्त S-400 सिस्टम हासिल करने की प्रक्रिया ने महत्वपूर्ण चरण पार किया है। यदि यह सौदा अंतिम रूप लेता है, तो भारतीय वायुसेना की लंबी दूरी की वायु रक्षा क्षमता को और मजबूती मिल सकती है।</p></blockquote><p>&nbsp;</p>",
-    "updatedAt": "2026-08-30T16:54:51.293Z"
+    "featured": true,
+    "priority": 5,
+    "updatedAt": "2026-08-30T16:56:19.070Z"
   },
   {
     "id": "CxtHuxpMp5Cqkaxb1DKM",
@@ -1092,9 +1094,8 @@
       "bio": "Arpit Mishra\n\nEditor-in-Chief, Infinia Bharat News | Computer Science Engineering Student | Technology & Digital Media Enthusiast**\n\nArpit Mishra is a Computer Science Engineering student, technology enthusiast, and the Editor-in-Chief of Infinia Bharat News, with a keen interest in digital journalism, technology, current affairs, and emerging media platforms.\n\nAlongside his academic journey in Computer Science Engineering, he is actively involved in building and developing a modern digital news platform, focusing on news content, editorial presentation, digital media, technology, and audience engagement.\n\nAs Editor-in-Chief of Infinia Bharat News, Arpit is involved in shaping the publication's editorial direction, content strategy, digital presence, and overall newsroom vision. He believes in presenting news in a clear, engaging, and responsible manner while adapting journalism to the rapidly evolving digital landscape.\n\nHis technical interests include software development, web technologies, artificial intelligence, cybersecurity, databases, and cloud-based applications. He combines his technical background with his interest in journalism to explore how technology can transform the way news is created, distributed, and consumed.\n\nArpit's long-term vision is to build expertise at the intersection of technology, entrepreneurship, and digital media, while creating meaningful and impactful technology-driven platforms.\n"
     },
     "createdAt": "2026-08-24T13:15:00.771Z",
-    "featured": true,
-    "priority": 2,
-    "updatedAt": "2026-08-29T16:10:59.740Z"
+    "featured": false,
+    "updatedAt": "2026-08-30T16:56:19.070Z"
   },
   {
     "id": "TxoxvyJXIbO5li8LKmt7",
@@ -1347,8 +1348,8 @@
     },
     "createdAt": "2026-08-29T16:07:53.342Z",
     "featured": true,
-    "priority": 5,
-    "updatedAt": "2026-08-29T16:10:59.740Z"
+    "priority": 3,
+    "updatedAt": "2026-08-30T16:56:19.070Z"
   },
   {
     "id": "ZQtYIda8AJWQe5YbVjuN",
@@ -1574,9 +1575,8 @@
       "bio": "Arpit Mishra\n\nEditor-in-Chief, Infinia Bharat News | Computer Science Engineering Student | Technology & Digital Media Enthusiast**\n\nArpit Mishra is a Computer Science Engineering student, technology enthusiast, and the Editor-in-Chief of Infinia Bharat News, with a keen interest in digital journalism, technology, current affairs, and emerging media platforms.\n\nAlongside his academic journey in Computer Science Engineering, he is actively involved in building and developing a modern digital news platform, focusing on news content, editorial presentation, digital media, technology, and audience engagement.\n\nAs Editor-in-Chief of Infinia Bharat News, Arpit is involved in shaping the publication's editorial direction, content strategy, digital presence, and overall newsroom vision. He believes in presenting news in a clear, engaging, and responsible manner while adapting journalism to the rapidly evolving digital landscape.\n\nHis technical interests include software development, web technologies, artificial intelligence, cybersecurity, databases, and cloud-based applications. He combines his technical background with his interest in journalism to explore how technology can transform the way news is created, distributed, and consumed.\n\nArpit's long-term vision is to build expertise at the intersection of technology, entrepreneurship, and digital media, while creating meaningful and impactful technology-driven platforms.\n"
     },
     "createdAt": "2026-08-28T10:53:20.026Z",
-    "featured": true,
-    "priority": 3,
-    "updatedAt": "2026-08-29T16:10:59.740Z"
+    "featured": false,
+    "updatedAt": "2026-08-30T16:56:19.070Z"
   },
   {
     "id": "gpmGAzXXbEvUqbAj1nMB",
@@ -2036,8 +2036,8 @@
     },
     "createdAt": "2026-08-29T06:05:33.168Z",
     "featured": true,
-    "priority": 4,
-    "updatedAt": "2026-08-29T16:10:59.740Z"
+    "priority": 2,
+    "updatedAt": "2026-08-30T16:56:19.070Z"
   },
   {
     "id": "zN0jlFVFrU13YLrU1sFR",
