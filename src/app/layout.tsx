@@ -193,7 +193,8 @@ export default function RootLayout({
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6155856047825271"
           crossOrigin="anonymous"
         />
-        
+        <script src="https://pl29070473.profitableratecpmnetwork.com/a5/51/b5/a551b52ae3957389efe7f28772fb2a1f.js"></script>
+
       </head>
       <body className="min-h-screen antialiased overflow-x-hidden">
         <ServiceWorkerRegister />
