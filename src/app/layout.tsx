@@ -193,9 +193,7 @@ export default function RootLayout({
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6155856047825271"
           crossOrigin="anonymous"
         />
-        <script src="https://pl29070476.profitableratecpmnetwork.com/84/fa/58/84fa58c568d3c692e60a693179eda870.js"></script>
-
-      </head>
+   </head>
       <body className="min-h-screen antialiased overflow-x-hidden">
         <ServiceWorkerRegister />
         <PushNotificationPopup />
