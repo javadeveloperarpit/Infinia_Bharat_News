@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import NewsCard from "@/components/home/news-card";
 import VideoCard from "@/components/home/video-card";

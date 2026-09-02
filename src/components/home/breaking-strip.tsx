@@ -12,9 +12,7 @@ import {
   useLanguageStore,
 } from "@/store/language-store";
 
-import {
-  translations,
-} from "@/constants/translations";
+
 
 // ======================================================
 // TYPES
@@ -69,9 +67,6 @@ export default function BreakingStrip({
 
   const { language } =
     useLanguageStore();
-
-  const t =
-    translations[language];
 
   // ====================================================
   // PREPARE NEWS

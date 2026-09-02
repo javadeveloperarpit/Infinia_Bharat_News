@@ -52,40 +52,33 @@ function generateViews(id: string) {
 }
 
 function formatArticleDate(value: any) {
-  if (!value) {
-    return "Today";
-  }
+  if (!value) return "Today";
 
   try {
-    let date: Date;
+    let timestamp: number;
 
-    if (
-      value &&
-      typeof value.toDate === "function"
-    ) {
-      date = value.toDate();
+    if (value && typeof value.toDate === "function") {
+      timestamp = value.toDate().getTime();
     } else if (
       typeof value === "object" &&
       typeof value.seconds === "number"
     ) {
-      date = new Date(
-        value.seconds * 1000
-      );
+      timestamp = value.seconds * 1000;
     } else {
-      date = new Date(value);
+      timestamp = new Date(value).getTime();
     }
 
-    if (
-      Number.isNaN(
-        date.getTime()
-      )
-    ) {
+    if (Number.isNaN(timestamp)) {
       return "Today";
     }
 
-    return date.toLocaleDateString(
-      "hi-IN"
-    );
+    const date = new Date(timestamp);
+
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const year = date.getUTCFullYear();
+
+    return `${day}/${month}/${year}`;
   } catch {
     return "Today";
   }

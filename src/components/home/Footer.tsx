@@ -281,7 +281,7 @@ export default async function Footer() {
 
                 <div className="min-w-0">
 
-                  <p className="text-zinc-500 text-xs mb-1">
+                  <p className="text-zinc-100 text-xs mb-1">
                     Email Us
                   </p>
 
@@ -326,7 +326,7 @@ export default async function Footer() {
 
                 <div>
 
-                  <p className="text-zinc-500 text-xs mb-1">
+                  <p className="text-zinc-100 text-xs mb-1">
                     Our Location
                   </p>
 
@@ -353,7 +353,7 @@ export default async function Footer() {
               <p
                 className="
                   text-xs
-                  text-zinc-500
+                  text-zinc-100
                   uppercase
                   tracking-wider
                   mb-3
