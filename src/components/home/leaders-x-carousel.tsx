@@ -352,16 +352,6 @@ export default function LeadersXCarousel({
     return;
   }
 
-  // Normal link/button interaction ko disturb mat karo
-  const target = event.target as HTMLElement;
-
-  if (
-    target.closest("a") ||
-    target.closest("button")
-  ) {
-    return;
-  }
-
   isDraggingRef.current = true;
   hasDraggedRef.current = false;
 
@@ -973,10 +963,6 @@ function JobOpportunityCard({
   target="_blank"
   rel="noopener noreferrer"
   draggable={false}
-  onPointerDown={(event) => {
-    // Card click ko carousel drag system se isolate rakho
-    event.stopPropagation();
-  }}
   onClick={(event) => {
     if (isDragging.current) {
       event.preventDefault();
