@@ -1,1 +1,94 @@
-[]
+[
+  {
+    "id": "deloitte-15ejkqu",
+    "slug": "t-and-t-cyber-es-deputy-manager-cloud-security-mumbai-1trrvb0",
+    "title": "T&T | Cyber: ES | Deputy Manager | Cloud Security | Mumbai",
+    "company": "Deloitte India",
+    "location": "Mumbai Mumbai, India",
+    "workMode": "onsite",
+    "field": "Software & IT",
+    "category": "Consulting",
+    "link": "/jobs/t-and-t-cyber-es-deputy-manager-cloud-security-mumbai-1trrvb0"
+  },
+  {
+    "id": "deloitte-1i0upsh",
+    "slug": "t-and-t-nat-innovation-senior-devops-engineer-bengaluru-manager-1ajs2f8",
+    "title": "T&T | NAT : Innovation | Senior DevOps Engineer | Bengaluru | Manager",
+    "company": "Deloitte India",
+    "location": "Manager Bengaluru, India",
+    "workMode": "onsite",
+    "field": "Software & IT",
+    "category": "Consulting",
+    "link": "/jobs/t-and-t-nat-innovation-senior-devops-engineer-bengaluru-manager-1ajs2f8"
+  },
+  {
+    "id": "deloitte-1jhg9p9",
+    "slug": "senior-consultant-database-management-hyderabad-engineering-platform-development-and-integrati-6mnqta",
+    "title": "Senior Consultant | Database Management | Hyderabad | Engineering | Platform Development & Integrati",
+    "company": "Deloitte India",
+    "location": "Platform Development & Integrati Hyderabad, India",
+    "workMode": "onsite",
+    "field": "Software & IT",
+    "category": "Consulting",
+    "link": "/jobs/senior-consultant-database-management-hyderabad-engineering-platform-development-and-integrati-6mnqta"
+  },
+  {
+    "id": "joapi-acd67902-0a69-4ccd-af88-51433d695420",
+    "slug": "software-engineer-java-microservices-gen-ai-y3vstq",
+    "title": "Software Engineer - Java/Microservices/Gen AI",
+    "company": "wf",
+    "companyLogo": "https://supabase-erioun.tzekos.eu/storage/v1/object/public/company-logos/logos/wf.png",
+    "location": "Hyderabad, India",
+    "workMode": "onsite",
+    "field": "Software & IT",
+    "link": "/jobs/software-engineer-java-microservices-gen-ai-y3vstq"
+  },
+  {
+    "id": "joapi-b7cdc438-6e2f-4c19-a26c-89e6668e8512",
+    "slug": "electrical-design-engineer-119onpa",
+    "title": "Electrical Design Engineer",
+    "company": "hitachi",
+    "companyLogo": "https://supabase-erioun.tzekos.eu/storage/v1/object/public/company-logos/logos/hitachi.png",
+    "location": "Maneja, Gujarat, India",
+    "workMode": "onsite",
+    "field": "Software & IT",
+    "category": "Engineering",
+    "link": "/jobs/electrical-design-engineer-119onpa"
+  },
+  {
+    "id": "joapi-cccf763d-b5ad-491f-b3e5-472e4ddcf9cb",
+    "slug": "software-engineer-js7gma",
+    "title": "Software Engineer",
+    "company": "gevernova",
+    "companyLogo": "https://supabase-erioun.tzekos.eu/storage/v1/object/public/company-logos/logos/gevernova.png",
+    "location": "Hyderabad (2 Locations)",
+    "workMode": "onsite",
+    "field": "Software & IT",
+    "category": "Engineering",
+    "link": "/jobs/software-engineer-js7gma"
+  },
+  {
+    "id": "joapi-de19a6b3-ea09-4296-8f45-212bab8e91bf",
+    "slug": "lead-control-automation-system-engineer-oajqt6",
+    "title": "Lead Control Automation System Engineer",
+    "company": "gevernova",
+    "companyLogo": "https://supabase-erioun.tzekos.eu/storage/v1/object/public/company-logos/logos/gevernova.png",
+    "location": "Noida",
+    "workMode": "onsite",
+    "field": "Software & IT",
+    "category": "Engineering",
+    "link": "/jobs/lead-control-automation-system-engineer-oajqt6"
+  },
+  {
+    "id": "smart-Sutherland-744000136829532",
+    "slug": "adnic-microsoft-technology-net-qeknb8",
+    "title": "ADNIC - Microsoft Technology (.Net)",
+    "company": "Sutherland",
+    "location": "Hyderabad",
+    "employmentType": "Full-time",
+    "workMode": "onsite",
+    "field": "Other",
+    "category": "Information Technology",
+    "link": "/jobs/adnic-microsoft-technology-net-qeknb8"
+  }
+]
