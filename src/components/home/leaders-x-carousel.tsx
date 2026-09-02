@@ -342,85 +342,78 @@ export default function LeadersXCarousel({
      POINTER DOWN
   ========================================================= */
 
-  function handlePointerDown(
-    event: React.PointerEvent<HTMLDivElement>
+ function handlePointerDown(
+  event: React.PointerEvent<HTMLDivElement>
+) {
+  if (!loopWidth) {
+    return;
+  }
+
+  // Normal link/button interaction ko disturb mat karo
+  const target = event.target as HTMLElement;
+
+  if (
+    target.closest("a") ||
+    target.closest("button")
   ) {
-    if (!loopWidth) {
-      return;
-    }
+    return;
+  }
 
-    isDraggingRef.current =
-      true;
+  isDraggingRef.current = true;
+  hasDraggedRef.current = false;
 
-    hasDraggedRef.current =
-      false;
+  dragStartXRef.current = event.clientX;
+  dragStartPositionRef.current =
+    positionRef.current;
 
-    dragStartXRef.current =
-      event.clientX;
+  pausedRef.current = true;
 
-    dragStartPositionRef.current =
-      positionRef.current;
-
-    pausedRef.current =
-      true;
-
+  try {
     event.currentTarget.setPointerCapture(
       event.pointerId
     );
-  }
+  } catch {}
+}
 
   /* =========================================================
      POINTER MOVE
   ========================================================= */
 
   function handlePointerMove(
-    event: React.PointerEvent<HTMLDivElement>
+  event: React.PointerEvent<HTMLDivElement>
+) {
+  if (
+    !isDraggingRef.current ||
+    !loopWidth
   ) {
-    if (
-      !isDraggingRef.current ||
-      !loopWidth
-    ) {
-      return;
-    }
-
-    const delta =
-      event.clientX -
-      dragStartXRef.current;
-
-    if (
-      Math.abs(delta) > 5
-    ) {
-      hasDraggedRef.current =
-        true;
-    }
-
-    let nextPosition =
-      dragStartPositionRef.current -
-      delta;
-
-    while (
-      nextPosition < 0
-    ) {
-      nextPosition +=
-        loopWidth;
-    }
-
-    while (
-      nextPosition >=
-      loopWidth
-    ) {
-      nextPosition -=
-        loopWidth;
-    }
-
-    positionRef.current =
-      nextPosition;
-
-    if (trackRef.current) {
-      trackRef.current.style.transform =
-        `translate3d(${-nextPosition}px, 0, 0)`;
-    }
+    return;
   }
+
+  const delta =
+    event.clientX - dragStartXRef.current;
+
+  if (Math.abs(delta) > 5) {
+    hasDraggedRef.current = true;
+  }
+
+  let nextPosition =
+    dragStartPositionRef.current - delta;
+
+  while (nextPosition < 0) {
+    nextPosition += loopWidth;
+  }
+
+  while (nextPosition >= loopWidth) {
+    nextPosition -= loopWidth;
+  }
+
+  positionRef.current = nextPosition;
+
+  if (trackRef.current) {
+    trackRef.current.style.transform =
+      `translate3d(${-nextPosition}px, 0, 0)`;
+  }
+}
 
   /* =========================================================
      POINTER UP
@@ -941,16 +934,25 @@ function JobOpportunityCard({
     "internship";
 
   return (
-    <a
-      data-job-opportunity-card
-      href={opportunity.link}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={(event) => {
-        if (isDragging.current) {
-          event.preventDefault();
-        }
-      }}
+   <a
+  data-job-opportunity-card
+  href={opportunity.link}
+  target="_blank"
+  rel="noopener noreferrer"
+  draggable={false}
+  onPointerDown={(event) => {
+    // Card click ko carousel drag system se isolate rakho
+    event.stopPropagation();
+  }}
+  onClick={(event) => {
+    if (isDragging.current) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
+    // Genuine click — allow normal external navigation
+  }}
       className="
         group
         flex

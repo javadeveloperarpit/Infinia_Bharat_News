@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Clock3, Eye, ArrowRight } from "lucide-react";
+import RelativeTime from "@/components/common/RelativeTime";
 
 // ======================================================
 // TYPES
@@ -22,7 +23,7 @@ interface HeroProps {
 }
 
 // ======================================================
-// GENERATE VIEWS
+// GENERATE DETERMINISTIC VIEWS
 // ======================================================
 
 function generateViews(id: string) {
@@ -59,57 +60,6 @@ function limitText(
 }
 
 // ======================================================
-// FORMAT TIME
-// ======================================================
-
-function formatTime(createdAt?: string) {
-  if (!createdAt) {
-    return "Today";
-  }
-
-  const createdTime = new Date(createdAt).getTime();
-
-  if (isNaN(createdTime)) {
-    return "Today";
-  }
-
-  const difference = Math.max(
-    0,
-    Date.now() - createdTime
-  );
-
-  const seconds = Math.floor(difference / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-
-  if (seconds < 60) {
-    return `${seconds} sec ago`;
-  }
-
-  if (minutes < 60) {
-    return `${minutes} min ago`;
-  }
-
-  if (hours < 24) {
-    return `${hours} hours ago`;
-  }
-
-  if (days < 7) {
-    return `${days} days ago`;
-  }
-
-  return new Date(createdTime).toLocaleDateString(
-    "hi-IN",
-    {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    }
-  );
-}
-
-// ======================================================
 // COMPONENT
 // ======================================================
 
@@ -118,23 +68,16 @@ export default function HeroSection({
 }: HeroProps) {
   const hero = featured?.[0];
 
-  const sideStories =
-    featured?.slice(1, 5) || [];
+  const sideStories = featured?.slice(1, 5) || [];
 
   if (!hero) {
     return null;
   }
 
   return (
-    <section
-      className="
-        relative
-        w-full
-        mb-8
-      "
-    >
+    <section className="relative mb-8 w-full">
       {/* ==================================================
-          DESKTOP + MOBILE MAIN LAYOUT
+          MAIN LAYOUT
       ================================================== */}
 
       <div
@@ -144,7 +87,7 @@ export default function HeroSection({
           flex-col
           gap-4
           lg:flex-row
-          lg:items-start
+          lg:items-stretch
         "
       >
         {/* ==================================================
@@ -160,12 +103,10 @@ export default function HeroSection({
           "
         >
           <Link
-            href={`/news/${hero.slug}`}
+            href={`/news/${hero.slug || hero.id}`}
             className="group block w-full"
           >
-            {/* ==================================================
-                IMAGE
-            ================================================== */}
+            {/* IMAGE */}
 
             <div
               className="
@@ -199,9 +140,7 @@ export default function HeroSection({
                 "
               />
 
-              {/* ==================================================
-                  VERY SOFT IMAGE BOTTOM GRADIENT
-              ================================================== */}
+              {/* BOTTOM GRADIENT */}
 
               <div
                 className="
@@ -222,9 +161,7 @@ export default function HeroSection({
               />
             </div>
 
-            {/* ==================================================
-                FULL WIDTH TEXT BOX
-            ================================================== */}
+            {/* TEXT BOX */}
 
             <div
               className="
@@ -323,10 +260,7 @@ export default function HeroSection({
                     xl:text-[42px]
                   "
                 >
-                  {limitText(
-                    hero.title,
-                    150
-                  )}
+                  {limitText(hero.title, 150)}
                 </h1>
 
                 {/* DESCRIPTION */}
@@ -375,9 +309,9 @@ export default function HeroSection({
                   >
                     <Clock3 size={13} />
 
-                    {formatTime(
-                      hero.createdAt
-                    )}
+                    <RelativeTime
+                      createdAt={hero.createdAt}
+                    />
                   </span>
 
                   <span
@@ -390,9 +324,7 @@ export default function HeroSection({
                     <Eye size={13} />
 
                     {hero.views ??
-                      generateViews(
-                        hero.id
-                      )}
+                      generateViews(hero.id)}
 
                     {" "}views
                   </span>
@@ -435,87 +367,97 @@ export default function HeroSection({
         </div>
 
         {/* ==================================================
-            DESKTOP SIDEBAR
+            DESKTOP SIDE STORIES
         ================================================== */}
 
         <div
           className="
             hidden
+            w-full
+            flex-col
+            gap-3
             lg:flex
             lg:w-[30%]
-            lg:h-[750px]
-            lg:flex-col
-            lg:gap-3
           "
         >
-          {sideStories.map(
-            (story) => (
-              <Link
-                key={story.id}
-                href={`/news/${story.slug || story.id}`}
+          {sideStories.map((story) => (
+            <Link
+              key={story.id}
+              href={`/news/${story.slug || story.id}`}
+              className="
+                group
+                block
+                w-full
+                min-w-0
+              "
+            >
+              <article
                 className="
-                  group
-                  block
-                  min-h-0
-                  flex-1
+                  flex
+                  min-h-[150px]
+                  w-full
+                  overflow-hidden
+                  rounded-xl
+                  border
+                  border-zinc-200
+                  bg-white
+                  transition-all
+                  duration-300
+                  hover:border-[#AD0000]
+                  hover:shadow-lg
                 "
               >
-                <article
+                {/* IMAGE */}
+
+                <div
                   className="
+                    relative
                     flex
-                    h-full
-                    w-full
+                    w-[46%]
+                    shrink-0
+                    items-center
+                    justify-center
                     overflow-hidden
-                    rounded-xl
-                    border
-                    border-zinc-200
-                    bg-white
-                    transition-all
-                    duration-300
-                    hover:border-[#AD0000]
-                    hover:shadow-lg
+                    bg-zinc-100
                   "
                 >
-                  {/* IMAGE */}
-
-                  <div
-                    className="
-                      relative
-                      w-[60%]
-                      shrink-0
-                      overflow-hidden
-                      bg-zinc-200
+                  <Image
+                    src={story.thumbnail}
+                    alt={story.title}
+                    fill
+                    sizes="
+                      (min-width: 1280px) 220px,
+                      (min-width: 1024px) 180px
                     "
-                  >
-                    <Image
-                      src={story.thumbnail}
-                      alt={story.title}
-                      fill
-                      sizes="240px"
-                      className="
-                        object-cover
-                        transition-transform
-                        duration-500
-                        group-hover:scale-110
-                      "
-                    />
-                  </div>
-
-                  {/* CONTENT */}
-
-                  <div
                     className="
-                      flex
-                      min-w-0
-                      flex-1
-                      flex-col
-                      p-3
+                      object-contain
+                      p-0.5
+                      transition-transform
+                      duration-500
+                      group-hover:scale-[1.03]
                     "
-                  >
+                  />
+                </div>
+
+                {/* CONTENT */}
+
+                <div
+                  className="
+                    flex
+                    min-w-0
+                    flex-1
+                    flex-col
+                    justify-between
+                    gap-2
+                    p-3
+                  "
+                >
+                  <div className="min-w-0">
+                    {/* CATEGORY */}
+
                     <span
                       className="
-                        self-start
-                        shrink-0
+                        inline-block
                         max-w-full
                         truncate
                         rounded
@@ -531,13 +473,13 @@ export default function HeroSection({
                       {story.category || "NEWS"}
                     </span>
 
+                    {/* TITLE */}
+
                     <h2
                       className="
                         mt-2
-                        min-w-0
-                        line-clamp-4
                         break-words
-                        text-[13px]
+                        text-[12px]
                         font-extrabold
                         leading-[1.35]
                         text-zinc-900
@@ -548,55 +490,60 @@ export default function HeroSection({
                     >
                       {limitText(
                         story.title,
-                        100
+                        110
                       )}
                     </h2>
+                  </div>
 
-                    <div
+                  {/* META */}
+
+                  <div
+                    className="
+                      flex
+                      flex-wrap
+                      items-center
+                      gap-x-3
+                      gap-y-1
+                      pt-1
+                      text-[9px]
+                      text-zinc-500
+                    "
+                  >
+                    <span
                       className="
-                        mt-auto
                         flex
                         items-center
-                        gap-3
-                        pt-2
-                        text-[9px]
-                        text-zinc-500
+                        gap-1
                       "
                     >
-                      <span
-                        className="
-                          flex
-                          items-center
-                          gap-1
-                        "
-                      >
-                        <Clock3 size={10} />
+                      <Clock3 size={10} />
 
-                        {formatTime(
+                      <RelativeTime
+                        createdAt={
                           story.createdAt
+                        }
+                      />
+                    </span>
+
+                    <span
+                      className="
+                        flex
+                        items-center
+                        gap-1
+                      "
+                    >
+                      <Eye size={10} />
+
+                      {story.views ??
+                        generateViews(
+                          story.id
                         )}
-                      </span>
-
-                      <span
-                        className="
-                          flex
-                          items-center
-                          gap-1
-                        "
-                      >
-                        <Eye size={10} />
-
-                        {story.views ??
-                          generateViews(
-                            story.id
-                          )}
-                      </span>
-                    </div>
+                    </span>
                   </div>
-                </article>
-              </Link>
-            )
-          )}
+                </div>
+              </article>
+            </Link>
+          ))}
         </div>
       </div>
 
@@ -615,137 +562,162 @@ export default function HeroSection({
             lg:hidden
           "
         >
-          {sideStories.map(
-            (story) => (
-              <Link
-                key={story.id}
-                href={`/news/${story.slug || story.id}`}
+          {sideStories.map((story) => (
+            <Link
+              key={story.id}
+              href={`/news/${story.slug || story.id}`}
+              className="
+                block
+                w-full
+              "
+            >
+              <article
                 className="
-                  block
+                  flex
+                  min-h-[120px]
                   w-full
+                  overflow-hidden
+                  rounded-xl
+                  border
+                  border-zinc-200
+                  bg-white
+                  shadow-sm
                 "
               >
-                <article
+                {/* IMAGE */}
+
+                <div
                   className="
+                    relative
                     flex
-                    h-[122px]
-                    w-full
+                    w-[42%]
+                    shrink-0
+                    items-center
+                    justify-center
                     overflow-hidden
-                    rounded-xl
-                    border
-                    border-zinc-200
-                    bg-white
-                    shadow-sm
+                    bg-zinc-100
+                    sm:w-[38%]
                   "
                 >
-                  {/* IMAGE */}
-
-                  <div
+                  <Image
+                    src={story.thumbnail}
+                    alt={story.title}
+                    fill
+                    sizes="
+                      (max-width: 639px) 42vw,
+                      240px
+                    "
                     className="
-                      relative
-                      w-[55%]
-                      shrink-0
-                      overflow-hidden
-                      bg-zinc-200
+                      object-contain
+                      p-0.5
+                    "
+                  />
+                </div>
+
+                {/* CONTENT */}
+
+                <div
+                  className="
+                    flex
+                    min-w-0
+                    flex-1
+                    flex-col
+                    justify-between
+                    gap-2
+                    p-3
+                  "
+                >
+                  {/* CATEGORY */}
+
+                  <span
+                    className="
+                      inline-block
+                      max-w-full
+                      self-start
+                      truncate
+                      rounded
+                      bg-[#AD0000]
+                      px-2
+                      py-1
+                      text-[8px]
+                      font-black
+                      uppercase
+                      text-white
                     "
                   >
-                    <Image
-                      src={story.thumbnail}
-                      alt={story.title}
-                      fill
-                      sizes="180px"
-                      className="object-cover"
-                    />
-                  </div>
+                    {story.category || "NEWS"}
+                  </span>
 
-                  {/* CONTENT */}
+                  {/* TITLE */}
+
+                  <h2
+                    className="
+                      min-w-0
+                      break-words
+                      text-[12px]
+                      font-extrabold
+                      leading-[1.35]
+                      text-zinc-900
+                      sm:text-[13px]
+                    "
+                  >
+                    {limitText(
+                      story.title,
+                      130
+                    )}
+                  </h2>
+
+                  {/* META */}
 
                   <div
                     className="
                       flex
-                      min-w-0
-                      flex-1
-                      flex-col
-                      p-3
+                      flex-wrap
+                      items-center
+                      gap-x-3
+                      gap-y-1
+                      text-[9px]
+                      text-zinc-500
                     "
                   >
                     <span
                       className="
-                        self-start
-                        max-w-full
-                        truncate
-                        rounded
-                        bg-[#AD0000]
-                        px-2
-                        py-1
-                        text-[8px]
-                        font-black
-                        uppercase
-                        text-white
-                      "
-                    >
-                      {story.category || "NEWS"}
-                    </span>
-
-                    <h2
-                      className="
-                        mt-2
-                        line-clamp-3
-                        text-[13px]
-                        font-extrabold
-                        leading-[1.35]
-                        text-zinc-900
-                      "
-                    >
-                      {story.title}
-                    </h2>
-
-                    <div
-                      className="
-                        mt-auto
                         flex
                         items-center
-                        gap-3
-                        text-[9px]
-                        text-zinc-500
+                        gap-1
                       "
                     >
-                      <span
-                        className="
-                          flex
-                          items-center
-                          gap-1
-                        "
-                      >
-                        <Clock3 size={10} />
+                      <Clock3 size={10} />
 
-                        {formatTime(
+                      <RelativeTime
+                        createdAt={
                           story.createdAt
+                        }
+                      />
+                    </span>
+
+                    <span
+                      className="
+                        flex
+                        items-center
+                        gap-1
+                      "
+                    >
+                      <Eye size={10} />
+
+                      {story.views ??
+                        generateViews(
+                          story.id
                         )}
-                      </span>
-
-                      <span
-                        className="
-                          flex
-                          items-center
-                          gap-1
-                        "
-                      >
-                        <Eye size={10} />
-
-                        {story.views ??
-                          generateViews(
-                            story.id
-                          )}
-                      </span>
-                    </div>
+                    </span>
                   </div>
-                </article>
-              </Link>
-            )
-          )}
+                </div>
+              </article>
+            </Link>
+          ))}
         </div>
       )}
     </section>
   );
 }
+

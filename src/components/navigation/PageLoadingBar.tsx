@@ -7,32 +7,18 @@ import { usePathname } from "next/navigation";
 export default function PageLoadingBar() {
   const pathname = usePathname();
 
-  // Initial page load ke liye true
-  const [loading, setLoading] = useState(true);
+  // IMPORTANT:
+  // Initial page load par loader render NAHI hoga.
+  const [loading, setLoading] = useState(false);
 
   // ==========================================
-  // INITIAL WEBSITE LOAD
-  // ==========================================
-
-  useEffect(() => {
-    // Browser ko page render karne ka time
-    const timer = window.setTimeout(() => {
-      setLoading(false);
-    }, 900);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, []);
-
-  // ==========================================
-  // PAGE CHANGE
+  // ROUTE CHANGE COMPLETE
   // ==========================================
 
   useEffect(() => {
-    if (!loading) {
-      setLoading(false);
-    }
+    // Jaise hi new pathname React ko milta hai,
+    // loader immediately remove.
+    setLoading(false);
   }, [pathname]);
 
   // ==========================================
@@ -41,35 +27,10 @@ export default function PageLoadingBar() {
 
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
-      const target =
-        event.target as HTMLElement;
+      // Only normal left click
+      if (event.button !== 0) return;
 
-      const link =
-        target.closest("a");
-
-      if (!link) return;
-
-      const href =
-        link.getAttribute("href");
-
-      if (!href) return;
-
-      // External links
-      if (
-        href.startsWith("http://") ||
-        href.startsWith("https://") ||
-        href.startsWith("mailto:") ||
-        href.startsWith("tel:")
-      ) {
-        return;
-      }
-
-      // Hash links
-      if (href.startsWith("#")) {
-        return;
-      }
-
-      // New tab / modified click
+      // Ctrl / Cmd / Shift / Alt
       if (
         event.ctrlKey ||
         event.metaKey ||
@@ -79,48 +40,95 @@ export default function PageLoadingBar() {
         return;
       }
 
-      // Same page
-      if (href === pathname) {
+      const target = event.target as HTMLElement | null;
+
+      if (!target) return;
+
+      const link = target.closest("a");
+
+      if (!link) return;
+
+      const href = link.getAttribute("href");
+
+      if (!href) return;
+
+      // ------------------------------------------
+      // External links
+      // ------------------------------------------
+
+      if (
+        href.startsWith("http://") ||
+        href.startsWith("https://") ||
+        href.startsWith("mailto:") ||
+        href.startsWith("tel:")
+      ) {
         return;
       }
 
-      // Start loader
+      // ------------------------------------------
+      // Hash links
+      // ------------------------------------------
+
+      if (href.startsWith("#")) {
+        return;
+      }
+
+      // ------------------------------------------
+      // Download links
+      // ------------------------------------------
+
+      if (link.hasAttribute("download")) {
+        return;
+      }
+
+      // ------------------------------------------
+      // New tab
+      // ------------------------------------------
+
+      if (link.target === "_blank") {
+        return;
+      }
+
+      // ------------------------------------------
+      // Same page
+      // ------------------------------------------
+
+      const currentPath =
+        window.location.pathname +
+        window.location.search;
+
+      if (
+        href === currentPath ||
+        href === window.location.pathname
+      ) {
+        return;
+      }
+
+      // ==========================================
+      // SHOW LOADER
+      // ==========================================
+
       setLoading(true);
     };
 
-    document.addEventListener(
-      "click",
-      handleClick
-    );
+    document.addEventListener("click", handleClick);
 
     return () => {
-      document.removeEventListener(
-        "click",
-        handleClick
-      );
+      document.removeEventListener("click", handleClick);
     };
-  }, [pathname]);
+  }, []);
 
   // ==========================================
-  // HIDE AFTER NAVIGATION
+  // IMPORTANT
   // ==========================================
-
-  useEffect(() => {
-    if (!loading) return;
-
-    const timer =
-      window.setTimeout(() => {
-        setLoading(false);
-      }, 1200);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [pathname]);
 
   if (!loading) {
     return null;
   }
+
+  // ==========================================
+  // LOADER
+  // ==========================================
 
   return (
     <div
@@ -136,11 +144,6 @@ export default function PageLoadingBar() {
         animate-loader-fade-in
       "
     >
-
-      {/* ======================================
-          LOGO LOADER
-      ====================================== */}
-
       <div
         className="
           relative
@@ -151,7 +154,6 @@ export default function PageLoadingBar() {
           justify-center
         "
       >
-
         {/* SOFT GLOW */}
 
         <div
@@ -207,7 +209,6 @@ export default function PageLoadingBar() {
             animate-logo-breathe
           "
         >
-
           <div
             className="
               pointer-events-none
@@ -224,7 +225,6 @@ export default function PageLoadingBar() {
             alt="Infinia Bharat News"
             width={100}
             height={100}
-            priority
             className="
               relative
               z-10
@@ -238,27 +238,26 @@ export default function PageLoadingBar() {
           {/* CRYSTAL SHINE */}
 
           <div
-  className="
-    pointer-events-none
-    absolute
-    left-0
-    top-[-30%]
-    z-20
-    h-[180%]
-    w-[35%]
-    rotate-[25deg]
-    bg-gradient-to-r
-    from-transparent
-    via-white/80
-    to-transparent
-    blur-[3px]
-    animate-logo-shine
-  "
-/>
-
+            className="
+              pointer-events-none
+              absolute
+              left-0
+              top-[-30%]
+              z-20
+              h-[180%]
+              w-[35%]
+              rotate-[25deg]
+              bg-gradient-to-r
+              from-transparent
+              via-white/80
+              to-transparent
+              blur-[3px]
+              animate-logo-shine
+            "
+          />
         </div>
-
       </div>
     </div>
   );
 }
+
