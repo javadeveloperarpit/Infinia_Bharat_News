@@ -1,116 +1,89 @@
 "use client";
 
 import {
-  BadgeCheck,
+  BriefcaseBusiness,
   ExternalLink,
   ChevronLeft,
   ChevronRight,
+  GraduationCap,
 } from "lucide-react";
 
-import {
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 
-interface XPost {
-  person: string;
-  handle: string;
+export interface JobOpportunity {
+  id: string;
   title: string;
+  company: string;
+  companyLogo?: string;
+  location?: string;
+  type?: "job" | "internship" | "program" | "opportunity";
+  employmentType?: string;
+  workMode?: string;
+  field?: string;
   link: string;
-  pubDate: string;
-  image?: string;
+  applicationEnd?: string;
 }
 
 interface Props {
-  posts: XPost[];
-}
-
-/* =========================================================
-   OFFICIAL X MARK
-========================================================= */
-
-function XLogo({
-  size = 14,
-}: {
-  size?: number;
-}) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817-5.964 6.817H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z" />
-    </svg>
-  );
-}
-
-/* =========================================================
-   BLACK CIRCULAR X LOGO
-========================================================= */
-
-function XCircle({
-  size = 26,
-  iconSize = 13,
-}: {
-  size?: number;
-  iconSize?: number;
-}) {
-  return (
-    <span
-      className="
-        flex
-        shrink-0
-        items-center
-        justify-center
-        rounded-full
-        bg-black
-        text-white
-      "
-      style={{
-        width: size,
-        height: size,
-      }}
-    >
-      <XLogo size={iconSize} />
-    </span>
-  );
+  opportunities: JobOpportunity[];
 }
 
 /* =========================================================
    DATE
 ========================================================= */
 
-function formatPostDate(date: string) {
+function formatDate(date?: string) {
+  if (!date) return "";
+
   const d = new Date(date);
 
   if (isNaN(d.getTime())) {
     return "";
   }
 
-  return d.toLocaleString("en-IN", {
+  return new Intl.DateTimeFormat("en-IN", {
     day: "numeric",
     month: "short",
     year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+    timeZone: "Asia/Kolkata",
+  }).format(d);
 }
 
 /* =========================================================
-   PROFILE IMAGE
+   COMPANY INITIALS
 ========================================================= */
 
-function getProfileImage(
-  handle: string,
-  size = 64
+function getInitials(company: string) {
+  return company
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase();
+}
+
+/* =========================================================
+   OPPORTUNITY TYPE
+========================================================= */
+
+function getTypeLabel(
+  type?: JobOpportunity["type"]
 ) {
-  return `https://unavatar.io/x/${handle}?size=${size}`;
+  switch (type) {
+    case "internship":
+      return "Internship";
+
+    case "program":
+      return "Program";
+
+    case "opportunity":
+      return "Opportunity";
+
+    default:
+      return "Job";
+  }
 }
 
 /* =========================================================
@@ -118,7 +91,7 @@ function getProfileImage(
 ========================================================= */
 
 export default function LeadersXCarousel({
-  posts,
+  opportunities,
 }: Props) {
   const trackRef =
     useRef<HTMLDivElement>(null);
@@ -170,30 +143,29 @@ export default function LeadersXCarousel({
   ========================================================= */
 
   useEffect(() => {
-  const track = trackRef.current;
+    const track = trackRef.current;
 
-  if (!track) {
-    return;
-  }
-
-  let frameId: number | null = null;
-
-  const measure = () => {
-    const firstSet =
-      track.querySelector(
-        "[data-x-set='first']"
-      ) as HTMLElement | null;
-
-    if (!firstSet) {
+    if (!track) {
       return;
     }
 
-    if (frameId !== null) {
-      cancelAnimationFrame(frameId);
-    }
+    let frameId: number | null = null;
 
-    frameId =
-      requestAnimationFrame(() => {
+    const measure = () => {
+      const firstSet =
+        track.querySelector(
+          "[data-jobs-set='first']"
+        ) as HTMLElement | null;
+
+      if (!firstSet) {
+        return;
+      }
+
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+
+      frameId = requestAnimationFrame(() => {
         const width =
           firstSet.getBoundingClientRect().width;
 
@@ -206,23 +178,23 @@ export default function LeadersXCarousel({
 
         frameId = null;
       });
-  };
+    };
 
-  measure();
+    measure();
 
-  const observer =
-    new ResizeObserver(measure);
+    const observer =
+      new ResizeObserver(measure);
 
-  observer.observe(track);
+    observer.observe(track);
 
-  return () => {
-    observer.disconnect();
+    return () => {
+      observer.disconnect();
 
-    if (frameId !== null) {
-      cancelAnimationFrame(frameId);
-    }
-  };
-}, [posts]);
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+    };
+  }, [opportunities]);
 
   /* =========================================================
      CONTINUOUS AUTO MOVEMENT
@@ -314,54 +286,57 @@ export default function LeadersXCarousel({
   ========================================================= */
 
   function move(
-  direction: "left" | "right"
-) {
-  if (!loopWidth) {
-    return;
-  }
-
-  pausedRef.current = true;
-
-  const gap = 8;
-
-  const isDesktop =
-    window.matchMedia(
-      "(min-width: 640px)"
-    ).matches;
-
-  const cardWidth =
-    isDesktop
-      ? 315
-      : 205;
-
-  const amount =
-    cardWidth + gap;
-
-  if (direction === "right") {
-    positionRef.current += amount;
-
-    while (
-      positionRef.current >= loopWidth
-    ) {
-      positionRef.current -= loopWidth;
+    direction: "left" | "right"
+  ) {
+    if (!loopWidth) {
+      return;
     }
-  } else {
-    positionRef.current -= amount;
 
-    while (
-      positionRef.current < 0
-    ) {
-      positionRef.current += loopWidth;
+    pausedRef.current = true;
+
+    const gap = 8;
+
+    const isDesktop =
+      window.matchMedia(
+        "(min-width: 640px)"
+      ).matches;
+
+    const cardWidth =
+      isDesktop
+        ? 315
+        : 205;
+
+    const amount =
+      cardWidth + gap;
+
+    if (direction === "right") {
+      positionRef.current += amount;
+
+      while (
+        positionRef.current >=
+        loopWidth
+      ) {
+        positionRef.current -=
+          loopWidth;
+      }
+    } else {
+      positionRef.current -= amount;
+
+      while (
+        positionRef.current < 0
+      ) {
+        positionRef.current +=
+          loopWidth;
+      }
     }
-  }
 
-  if (trackRef.current) {
-    trackRef.current.style.transform =
-      `translate3d(${-positionRef.current}px, 0, 0)`;
-  }
+    if (trackRef.current) {
+      trackRef.current.style.transform =
+        `translate3d(${-positionRef.current}px, 0, 0)`;
+    }
 
-  scheduleResume(1200);
-}
+    scheduleResume(1200);
+  }
 
   /* =========================================================
      POINTER DOWN
@@ -471,9 +446,6 @@ export default function LeadersXCarousel({
 
     scheduleResume(1000);
 
-    /*
-     * Reset after click handling has finished.
-     */
     setTimeout(() => {
       hasDraggedRef.current =
         false;
@@ -566,7 +538,7 @@ export default function LeadersXCarousel({
      EMPTY
   ========================================================= */
 
-  if (!posts.length) {
+  if (!opportunities.length) {
     return null;
   }
 
@@ -584,9 +556,7 @@ export default function LeadersXCarousel({
         sm:py-4
       "
     >
-      {/* =================================================
-          HEADER
-      ================================================= */}
+      {/* HEADER */}
 
       <div
         className="
@@ -605,8 +575,6 @@ export default function LeadersXCarousel({
             justify-between
           "
         >
-          {/* TITLE */}
-
           <div className="min-w-0">
             <div
               className="
@@ -622,7 +590,7 @@ export default function LeadersXCarousel({
                   w-1
                   overflow-hidden
                   rounded-full
-                  bg-red-600
+                  bg-[#C8102E]
                   sm:h-7
                 "
               >
@@ -649,6 +617,12 @@ export default function LeadersXCarousel({
                   gap-1.5
                 "
               >
+                <BriefcaseBusiness
+                  size={20}
+                  strokeWidth={2.4}
+                  className="text-[#C8102E]"
+                />
+
                 <h2
                   className="
                     text-base
@@ -658,13 +632,8 @@ export default function LeadersXCarousel({
                     sm:text-xl
                   "
                 >
-                  Leaders on
+                  Top Companies Hiring
                 </h2>
-
-                <XCircle
-                  size={22}
-                  iconSize={18}
-                />
               </div>
             </div>
 
@@ -686,96 +655,144 @@ export default function LeadersXCarousel({
                   h-1.5
                   w-1.5
                   rounded-full
-                  bg-red-500
+                  bg-[#C8102E]
                 "
               />
 
               <span>
-                Latest posts from India's
-                public figures
+                Latest jobs, internships &
+                career opportunities
               </span>
             </div>
           </div>
 
           {/* DESKTOP CONTROLS */}
 
-          <div
-            className="
-              hidden
-              gap-1.5
-              sm:flex
-            "
-          >
-            <button
-              type="button"
-              onClick={() =>
-                move("left")
-              }
-              aria-label="Previous posts"
-              className="
-                flex
-                h-7
-                w-7
-                items-center
-                justify-center
-                rounded-full
-                border
-                border-zinc-200
-                bg-white
-                text-zinc-700
-                shadow-sm
-                transition
-                hover:bg-zinc-100
-                active:scale-95
-              "
-            >
-              <ChevronLeft
-                size={15}
-              />
-            </button>
+{/* SEE ALL + DESKTOP CONTROLS */}
 
-            <button
-              type="button"
-              onClick={() =>
-                move("right")
-              }
-              aria-label="Next posts"
-              className="
-                flex
-                h-7
-                w-7
-                items-center
-                justify-center
-                rounded-full
-                border
-                border-zinc-200
-                bg-white
-                text-zinc-700
-                shadow-sm
-                transition
-                hover:bg-zinc-100
-                active:scale-95
-              "
-            >
-              <ChevronRight
-                size={15}
-              />
-            </button>
-          </div>
+<div
+  className="
+    flex
+    items-center
+    gap-1.5
+  "
+>
+  {/* SEE ALL JOBS */}
+
+  <a
+    href="/jobs"
+    className="
+      group
+      flex
+      items-center
+      gap-1
+      rounded-full
+      border
+      border-[#C8102E]/20
+      bg-[#fff1f3]
+      px-2.5
+      py-1.5
+      text-[10px]
+      font-bold
+      text-[#C8102E]
+      transition
+      duration-200
+      hover:border-[#C8102E]
+      hover:bg-[#C8102E]
+      hover:text-white
+      sm:px-3
+      sm:text-[11px]
+    "
+  >
+    <span>See all jobs</span>
+
+    <ChevronRight
+      size={13}
+      strokeWidth={2.5}
+      className="
+        transition-transform
+        duration-200
+        group-hover:translate-x-0.5
+      "
+    />
+  </a>
+
+  {/* DESKTOP CONTROLS */}
+
+  <div
+    className="
+      hidden
+      gap-1.5
+      sm:flex
+    "
+  >
+    <button
+      type="button"
+      onClick={() =>
+        move("left")
+      }
+      aria-label="Previous opportunities"
+      className="
+        flex
+        h-7
+        w-7
+        items-center
+        justify-center
+        rounded-full
+        border
+        border-zinc-200
+        bg-white
+        text-zinc-700
+        shadow-sm
+        transition
+        hover:bg-[#fff1f3]
+        hover:text-[#C8102E]
+        active:scale-95
+      "
+    >
+      <ChevronLeft size={15} />
+    </button>
+
+    <button
+      type="button"
+      onClick={() =>
+        move("right")
+      }
+      aria-label="Next opportunities"
+      className="
+        flex
+        h-7
+        w-7
+        items-center
+        justify-center
+        rounded-full
+        border
+        border-zinc-200
+        bg-white
+        text-zinc-700
+        shadow-sm
+        transition
+        hover:bg-[#fff1f3]
+        hover:text-[#C8102E]
+        active:scale-95
+      "
+    >
+      <ChevronRight size={15} />
+    </button>
+  </div>
+</div>
         </div>
       </div>
 
-      {/* =================================================
-          CAROUSEL VIEWPORT
-      ================================================= */}
+      {/* CAROUSEL VIEWPORT */}
 
       <div
         className="
           relative
-          overflow-hidden
           cursor-grab
-          active:cursor-grabbing
           select-none
+          overflow-hidden
+          active:cursor-grabbing
           touch-pan-y
         "
         onMouseEnter={() => {
@@ -813,9 +830,7 @@ export default function LeadersXCarousel({
         }
         onWheel={handleWheel}
       >
-        {/* =================================================
-            MOVING TRACK
-        ================================================= */}
+        {/* MOVING TRACK */}
 
         <div
           ref={trackRef}
@@ -832,7 +847,7 @@ export default function LeadersXCarousel({
           {/* FIRST SET */}
 
           <div
-            data-x-set="first"
+            data-jobs-set="first"
             className="
               flex
               shrink-0
@@ -840,17 +855,14 @@ export default function LeadersXCarousel({
               px-3
             "
           >
-            {posts.map(
+            {opportunities.map(
               (
-                post,
+                opportunity,
                 index
               ) => (
-                <XCard
-                  key={`first-${post.handle}-${post.pubDate}-${index}`}
-                  post={post}
-                  profileImage={getProfileImage(
-                    post.handle
-                  )}
+                <JobOpportunityCard
+                  key={`first-${opportunity.id}-${index}`}
+                  opportunity={opportunity}
                   isDragging={
                     hasDraggedRef
                   }
@@ -862,7 +874,7 @@ export default function LeadersXCarousel({
           {/* SECOND SET */}
 
           <div
-            data-x-set="second"
+            data-jobs-set="second"
             className="
               flex
               shrink-0
@@ -870,17 +882,14 @@ export default function LeadersXCarousel({
               pr-3
             "
           >
-            {posts.map(
+            {opportunities.map(
               (
-                post,
+                opportunity,
                 index
               ) => (
-                <XCard
-                  key={`second-${post.handle}-${post.pubDate}-${index}`}
-                  post={post}
-                  profileImage={getProfileImage(
-                    post.handle
-                  )}
+                <JobOpportunityCard
+                  key={`second-${opportunity.id}-${index}`}
+                  opportunity={opportunity}
                   isDragging={
                     hasDraggedRef
                   }
@@ -912,29 +921,32 @@ export default function LeadersXCarousel({
 }
 
 /* =========================================================
-   X CARD
+   JOB OPPORTUNITY CARD
 ========================================================= */
 
-function XCard({
-  post,
-  profileImage,
+function JobOpportunityCard({
+  opportunity,
   isDragging,
 }: {
-  post: XPost;
-  profileImage: string;
+  opportunity: JobOpportunity;
   isDragging: React.MutableRefObject<boolean>;
 }) {
+  const typeLabel =
+    getTypeLabel(
+      opportunity.type
+    );
+
+  const isInternship =
+    opportunity.type ===
+    "internship";
+
   return (
     <a
-      data-x-card
-      href={post.link}
+      data-job-opportunity-card
+      href={opportunity.link}
       target="_blank"
       rel="noopener noreferrer"
       onClick={(event) => {
-        /*
-         * Prevent accidental opening when
-         * the user dragged/swiped the carousel.
-         */
         if (isDragging.current) {
           event.preventDefault();
         }
@@ -956,6 +968,7 @@ function XCard({
         transition
         duration-300
         hover:-translate-y-0.5
+        hover:border-[#f0b8c2]
         hover:shadow-md
 
         sm:h-[205px]
@@ -964,7 +977,7 @@ function XCard({
         sm:p-3
       "
     >
-      {/* USER */}
+      {/* COMPANY */}
 
       <div
         className="
@@ -975,28 +988,46 @@ function XCard({
       >
         <div
           className="
+            flex
             h-7
             w-7
             shrink-0
+            items-center
+            justify-center
             overflow-hidden
             rounded-full
-            bg-zinc-200
+            border
+            border-zinc-200
+            bg-zinc-50
+            text-[9px]
+            font-black
+            text-[#C8102E]
             sm:h-9
             sm:w-9
+            sm:text-[10px]
           "
         >
-          <Image
-  src={profileImage}
-  alt={post.person}
-  width={64}
-  height={64}
-  sizes="(max-width: 640px) 28px, 36px"
-  className="
-    h-full
-    w-full
-    object-cover
-  "
-/>
+          {opportunity.companyLogo ? (
+            <Image
+              src={
+                opportunity.companyLogo
+              }
+              alt=""
+              width={64}
+              height={64}
+              sizes="(max-width: 640px) 28px, 36px"
+              className="
+                h-full
+                w-full
+                object-contain
+                p-1
+              "
+            />
+          ) : (
+            getInitials(
+              opportunity.company
+            )
+          )}
         </div>
 
         <div
@@ -1009,7 +1040,7 @@ function XCard({
             className="
               flex
               items-center
-              gap-0.5
+              gap-1
             "
           >
             <span
@@ -1021,38 +1052,56 @@ function XCard({
                 sm:text-xs
               "
             >
-              {post.person}
+              {opportunity.company}
             </span>
-
-            <BadgeCheck
-              size={12}
-              strokeWidth={2.5}
-              fill="#1d9bf0"
-              color="white"
-              className="shrink-0"
-            />
           </div>
 
           <div
-  className="
-    truncate
-    text-[10px]
-    font-medium
-    text-zinc-600
-    sm:text-[11px]
-  "
->
-  @{post.handle}
-</div>
+            className="
+              truncate
+              text-[10px]
+              font-medium
+              text-zinc-500
+              sm:text-[11px]
+            "
+          >
+            Official career opportunity
+          </div>
         </div>
 
-        <XCircle
-          size={21}
-          iconSize={15}
-        />
+        <span
+          className="
+            flex
+            h-6
+            shrink-0
+            items-center
+            gap-1
+            rounded-full
+            bg-[#fff1f3]
+            px-2
+            text-[9px]
+            font-bold
+            text-[#C8102E]
+            sm:h-7
+            sm:px-2.5
+            sm:text-[10px]
+          "
+        >
+          {isInternship ? (
+            <GraduationCap
+              size={11}
+            />
+          ) : (
+            <BriefcaseBusiness
+              size={11}
+            />
+          )}
+
+          {typeLabel}
+        </span>
       </div>
 
-      {/* POST */}
+      {/* TITLE */}
 
       <div
         className="
@@ -1060,60 +1109,66 @@ function XCard({
           line-clamp-2
           break-words
           text-[11px]
+          font-semibold
           leading-[1.35]
-          text-zinc-800
+          text-zinc-900
+          transition-colors
+          group-hover:text-[#C8102E]
           sm:mt-2
-          sm:line-clamp-3
           sm:text-[13px]
           sm:leading-[1.4]
         "
       >
-        {post.title}
-
-        <span
-          className="
-            ml-1
-            font-semibold
-            text-zinc-400
-          "
-        >
-          ...
-        </span>
+        {opportunity.title}
       </div>
 
-      {/* IMAGE */}
+      {/* DETAILS */}
 
-      {post.image && (
-  <div
-    className="
-      mt-1.5
-      h-[42px]
-      overflow-hidden
-      rounded-lg
-      border
-      border-zinc-200
-      bg-zinc-100
-      sm:mt-2
-      sm:h-[78px]
-    "
-  >
-    <Image
-      src={post.image}
-      alt=""
-      width={315}
-      height={78}
-      sizes="(max-width: 640px) 205px, 315px"
-      className="
-        h-full
-        w-full
-        object-cover
-        transition-transform
-        duration-500
-        group-hover:scale-[1.03]
-      "
-    />
-  </div>
-)}
+      <div
+        className="
+          mt-1
+          flex
+          min-w-0
+          flex-wrap
+          items-center
+          gap-x-1.5
+          gap-y-0.5
+          text-[9px]
+          font-medium
+          text-zinc-500
+          sm:mt-1.5
+          sm:text-[10px]
+        "
+      >
+        {opportunity.location && (
+          <span className="truncate">
+            📍 {opportunity.location}
+          </span>
+        )}
+
+        {opportunity.employmentType && (
+          <span>
+            · {opportunity.employmentType}
+          </span>
+        )}
+      </div>
+
+      {/* OPTIONAL WORK MODE */}
+
+      {opportunity.workMode && (
+        <div
+          className="
+            mt-1
+            truncate
+            text-[9px]
+            font-semibold
+            text-zinc-500
+            sm:text-[10px]
+          "
+        >
+          {opportunity.workMode}
+        </div>
+      )}
 
       {/* FOOTER */}
 
@@ -1133,72 +1188,56 @@ function XCard({
         <div
           className="
             flex
+            min-w-0
             items-center
             gap-1
           "
         >
-          <XCircle
-            size={18}
-            iconSize={12}
+          <span
+            className="
+              h-1.5
+              w-1.5
+              shrink-0
+              rounded-full
+              bg-[#188038]
+            "
           />
 
           <div
             className="
-              flex
-              flex-col
-              leading-tight
+              truncate
+              text-[9px]
+              font-bold
+              uppercase
+              tracking-wide
+              text-zinc-600
+              sm:text-[10px]
             "
           >
-            <span
-              className="
-                text-[9px]
-                font-bold
-                uppercase
-                tracking-wide
-                text-zinc-700
-                sm:text-[10px]
-              "
-            >
-              Posted on X
-            </span>
-
-            <span
-  className="
-    flex
-    items-center
-    gap-1
-    text-[10px]
-    font-semibold
-    text-zinc-700
-    sm:text-[11px]
-  "
->
-              {formatPostDate(
-                post.pubDate
-              )}
-            </span>
+            {opportunity.applicationEnd
+              ? `Apply by ${formatDate(
+                  opportunity.applicationEnd
+                )}`
+              : "Currently open"}
           </div>
         </div>
 
-       <div
-  className="
-    flex
-    items-center
-    gap-1
-    text-[10px]
-    font-bold
-    text-zinc-700
-    transition-colors
-    group-hover:text-[#1d9bf0]
-    sm:text-[11px]
-  "
->
-  View
-
-  <ExternalLink
-    size={11}
-  />
-</div>
+        <div
+          className="
+            flex
+            shrink-0
+            items-center
+            gap-1
+            text-[10px]
+            font-bold
+            text-[#C8102E]
+            transition-colors
+            sm:text-[11px]
+          "
+        >
+          View
+          <ExternalLink size={11} />
+        </div>
       </div>
     </a>
   );

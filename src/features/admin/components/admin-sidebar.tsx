@@ -13,6 +13,7 @@ import {
   X,
   Sparkles,
   Radio,
+  BriefcaseBusiness,
 } from "lucide-react";
 
 const menu = [
@@ -55,6 +56,12 @@ const menu = [
     href: "/admin/shorts",
     icon: Video,
   },
+
+  {
+  name: "Jobs",
+  href: "/admin/jobs",
+  icon: BriefcaseBusiness,
+},
 
   {
     name: "AI Newsroom",

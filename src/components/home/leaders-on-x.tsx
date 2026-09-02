@@ -1,325 +1,202 @@
-import LeadersXCarousel from "./leaders-x-carousel";
+import LeadersXCarousel, {
+  JobOpportunity,
+} from "./leaders-x-carousel";
 
-interface XPost {
-  person: string;
-  handle: string;
+import jobsHome from "@/../public/data/jobs-home.json";
+
+interface JobsHomeItem {
+  id: string;
+  slug?: string;
   title: string;
-  link: string;
-  pubDate: string;
-  image?: string;
+  company: string;
+  companyLogo?: string;
+  location?: string;
+  type?: string;
+  region?: string;
+  employmentType?: string;
+  workMode?: string;
+  field?: string;
+  category?: string;
+  link?: string;
+  applicationEnd?: string;
+  published?: boolean;
+  verified?: boolean;
+  homepage?: boolean;
 }
 
-const PEOPLE = [
-  // 🇮🇳 NATIONAL LEADERS
+function getOpportunityType(
+  title: string,
+  category?: string
+): JobOpportunity["type"] {
+  const text =
+    `${title} ${category || ""}`.toLowerCase();
 
-  {
-    person: "Narendra Modi",
-    handle: "narendramodi",
-  },
-  {
-    person: "President of India",
-    handle: "rashtrapatibhvn",
-  },
-  {
-    person: "Amit Shah",
-    handle: "AmitShah",
-  },
-  {
-    person: "Rajnath Singh",
-    handle: "rajnathsingh",
-  },
-  {
-    person: "S. Jaishankar",
-    handle: "DrSJaishankar",
-  },
-  {
-    person: "Nitin Gadkari",
-    handle: "nitin_gadkari",
-  },
-  {
-    person: "Piyush Goyal",
-    handle: "PiyushGoyal",
-  },
-  {
-    person: "Ashwini Vaishnaw",
-    handle: "AshwiniVaishnaw",
-  },
-  {
-    person: "Dharmendra Pradhan",
-    handle: "dpradhanbjp",
-  },
-  {
-    person: "J. P. Nadda",
-    handle: "JPNadda",
-  },
+  if (/\bintern(ship)?\b/.test(text)) {
+    return "internship";
+  }
 
-  // 🏛️ OPPOSITION / NATIONAL POLITICS
+  if (
+    /\bgraduate\b/.test(text) ||
+    /\bcampus\b/.test(text) ||
+    /\btrainee\b/.test(text) ||
+    /\bgraduate program\b/.test(text)
+  ) {
+    return "program";
+  }
 
-  {
-    person: "Rahul Gandhi",
-    handle: "RahulGandhi",
-  },
-  {
-    person: "Mallikarjun Kharge",
-    handle: "kharge",
-  },
-  {
-    person: "Priyanka Gandhi Vadra",
-    handle: "priyankagandhi",
-  },
+  if (/\bprogram\b/.test(text)) {
+    return "program";
+  }
 
-  // 🟠 BJP / IMPORTANT NATIONAL VOICES
+  return "job";
+}
 
-  {
-    person: "Yogi Adityanath",
-    handle: "myogiadityanath",
-  },
-  {
-    person: "Himanta Biswa Sarma",
-    handle: "himantabiswa",
-  },
-  {
-    person: "Shivraj Singh Chouhan",
-    handle: "ChouhanShivraj",
-  },
-  {
-    person: "Manohar Lal",
-    handle: "mlkhattar",
-  },
-  {
-    person: "Devendra Fadnavis",
-    handle: "Dev_Fadnavis",
-  },
+function getInitialCompanyLogo(
+  company: string,
+  existingLogo?: string
+): string | undefined {
+  if (existingLogo) {
+    return existingLogo;
+  }
 
-  // 🇮🇳 OTHER MAJOR POLITICAL LEADERS
+  const domains: Record<string, string> = {
+    google: "google.com",
+    microsoft: "microsoft.com",
+    amazon: "amazon.com",
+    "tata group": "tata.com",
+    reliance: "ril.com",
+    jio: "jio.com",
+    infosys: "infosys.com",
+    deloitte: "deloitte.com",
+    adani: "adani.com",
+    accenture: "accenture.com",
+    ibm: "ibm.com",
+    adobe: "adobe.com",
+    flipkart: "flipkart.com",
+    wipro: "wipro.com",
+    hcltech: "hcltech.com",
+    capgemini: "capgemini.com",
+    ey: "ey.com",
+    kpmg: "kpmg.com",
+    pwc: "pwc.com",
+    cognizant: "cognizant.com",
+    "tech mahindra": "techmahindra.com",
+    ltimindtree: "ltimindtree.com",
+    mphasis: "mphasis.com",
+    oracle: "oracle.com",
+    sap: "sap.com",
+    cisco: "cisco.com",
+    intel: "intel.com",
+    nvidia: "nvidia.com",
+    qualcomm: "qualcomm.com",
+    dell: "dell.com",
+    hp: "hp.com",
+    jpmorganchase: "jpmorganchase.com",
+    "goldman sachs": "goldmansachs.com",
+    "morgan stanley": "morganstanley.com",
+    bcg: "bcg.com",
+    mckinsey: "mckinsey.com",
+    bain: "bain.com",
+  };
 
-  {
-    person: "Arvind Kejriwal",
-    handle: "ArvindKejriwal",
-  },
-  {
-    person: "Mamata Banerjee",
-    handle: "MamataOfficial",
-  },
-  {
-    person: "Akhilesh Yadav",
-    handle: "yadavakhilesh",
-  },
-  {
-    person: "Tejashwi Yadav",
-    handle: "yadavtejashwi",
-  },
-  {
-    person: "Uddhav Thackeray",
-    handle: "uddhavthackeray",
-  },
-  {
-    person: "Sharad Pawar",
-    handle: "PawarSpeaks",
-  },
-];
-
-function decodeHtml(text: string) {
-  return text
-    .replace(/<!\[CDATA\[|\]\]>/g, "")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&#x27;/gi, "'")
-    .replace(/&#x2F;/gi, "/")
+  const normalized = company
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[.,()[\]{}]/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
-}
 
-function extractTag(item: string, tag: string) {
-  const regex = new RegExp(
-    `<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${tag}>`,
-    "i"
+  const domainKey = Object.keys(domains).find(
+    (key) =>
+      normalized === key ||
+      normalized.includes(key) ||
+      key.includes(normalized)
   );
 
-  return item.match(regex)?.[1] || "";
-}
-
-function extractImage(item: string) {
-  const patterns = [
-    /<media:content[^>]+url=["']([^"']+)["']/i,
-    /<media:thumbnail[^>]+url=["']([^"']+)["']/i,
-    /<enclosure[^>]+url=["']([^"']+)["']/i,
-    /<img[^>]+src=["']([^"']+)["']/i,
-  ];
-
-  for (const pattern of patterns) {
-    const match = item.match(pattern);
-
-    if (match?.[1]) {
-      return decodeHtml(match[1]);
-    }
+  if (!domainKey) {
+    return undefined;
   }
 
-  return "";
+  return `https://www.google.com/s2/favicons?domain=${domains[domainKey]}&sz=128`;
 }
 
-function looksLikeReply(title: string) {
-  const text = title.replace(/\s+/g, " ").trim();
+export default function LeadersOnX() {
+  /*
+   * Explicitly tell TypeScript what the imported
+   * jobs-home.json contains.
+   */
+  const allJobs: JobsHomeItem[] =
+    Array.isArray(jobsHome)
+      ? (jobsHome as JobsHomeItem[])
+      : [];
 
-  const replyPatterns = [
-    /^replying to\s+@/i,
-    /^reply to\s+@/i,
-    /^in reply to\s+@/i,
-    /^re:\s*@/i,
-    /^@\w+\s/i,
-    /^thank you .+ ji\b/i,
-    /^thank you @/i,
-    /^thanks @/i,
-    /^congratulations @/i,
-    /^congrats @/i,
-    /^well done @/i,
-    /^appreciate .+ @/i,
-    /^grateful to @/i,
-  ];
+  /*
+   * Homepage JSON already contains only selected
+   * homepage jobs. Keep the hard safety limit of 20.
+   */
+  const selectedJobs: JobsHomeItem[] =
+    allJobs.slice(0, 20);
 
-  return replyPatterns.some((pattern) => pattern.test(text));
-}
-
-async function fetchGoogleNewsXPosts(
-  person: string,
-  handle: string
-): Promise<XPost[]> {
-  const query = encodeURIComponent(
-    `site:x.com/${handle}/status`
-  );
-
-  const url =
-    `https://news.google.com/rss/search?q=${query}` +
-    `&hl=en-IN&gl=IN&ceid=IN:en`;
-
-  try {
-    const response = await fetch(url, {
-      next: {
-        revalidate: 300,
-      },
-    });
-
-    if (!response.ok) {
-      console.error(
-        `Google News HTTP error ${handle}:`,
-        response.status
-      );
-
-      return [];
-    }
-
-    const xml = await response.text();
-
-    const items =
-      xml.match(/<item>([\s\S]*?)<\/item>/g) || [];
-
-    const posts = items
-      .map((item) => {
-        const title = decodeHtml(
-          extractTag(item, "title")
-        );
-
-        const link = decodeHtml(
-          extractTag(item, "link")
-        );
-
-        const pubDate = decodeHtml(
-          extractTag(item, "pubDate")
-        );
-
-        const image = extractImage(item);
-
-        return {
-          person,
-          handle,
-          title,
-          link,
-          pubDate,
-          image,
-        };
-      })
-      .filter((post) => {
-        if (!post.title || !post.link) {
-          return false;
-        }
-
-        const isXResult =
-          /-\s*x\.com\s*$/i.test(post.title) ||
-          post.title.toLowerCase().includes("x.com");
-
-        if (!isXResult) {
-          return false;
-        }
-
-        const cleanTitle = post.title
-          .replace(/\s*-\s*x\.com\s*$/i, "")
-          .trim();
-
-        if (cleanTitle.length < 100) {
-          return false;
-        }
-
-        const words = cleanTitle
-          .split(/\s+/)
-          .filter(Boolean);
-
-        if (words.length < 15) {
-          return false;
-        }
-
-        if (looksLikeReply(cleanTitle)) {
-          return false;
-        }
-
-        return true;
-      })
-      .map((post) => ({
-        ...post,
-        title: post.title
-          .replace(/\s*-\s*x\.com\s*$/i, "")
-          .trim(),
-      }));
-
-    posts.sort(
-      (a, b) =>
-        new Date(b.pubDate).getTime() -
-        new Date(a.pubDate).getTime()
-    );
-
-    return posts.slice(0, 2);
-  } catch (error) {
-    console.error(
-      `Google News fetch failed for ${handle}:`,
-      error
-    );
-
-    return [];
-  }
-}
-
-export default async function LeadersOnX() {
-  const results = await Promise.all(
-    PEOPLE.map((person) =>
-      fetchGoogleNewsXPosts(
-        person.person,
-        person.handle
-      )
-    )
-  );
-
-  const posts = results
-    .flat()
-    .sort(
-      (a, b) =>
-        new Date(b.pubDate).getTime() -
-        new Date(a.pubDate).getTime()
-    );
-
-  if (!posts.length) {
+  if (selectedJobs.length === 0) {
     return null;
   }
 
-  return <LeadersXCarousel posts={posts} />;
+  const opportunities: JobOpportunity[] =
+    selectedJobs
+      .filter(
+        (
+          job: JobsHomeItem
+        ): job is JobsHomeItem =>
+          Boolean(
+            job &&
+              job.id &&
+              job.title &&
+              job.company &&
+              job.link
+          )
+      )
+      .map(
+        (
+          job: JobsHomeItem
+        ): JobOpportunity => ({
+          id: job.id,
+          title: job.title,
+          company: job.company,
+
+          companyLogo:
+            getInitialCompanyLogo(
+              job.company,
+              job.companyLogo
+            ),
+
+          location: job.location,
+
+          type: getOpportunityType(
+            job.title,
+            job.category
+          ),
+
+          employmentType:
+            job.employmentType,
+
+          workMode: job.workMode,
+
+          field: job.field,
+
+          link: job.link as string,
+
+          applicationEnd:
+            job.applicationEnd,
+        })
+      );
+
+  if (opportunities.length === 0) {
+    return null;
+  }
+
+  return (
+    <LeadersXCarousel
+      opportunities={opportunities}
+    />
+  );
 }
