@@ -115,30 +115,61 @@ export default function HeroSection({
                 w-full
                 overflow-hidden
                 rounded-t-2xl
-                bg-black
+                bg-zinc-100
                 sm:aspect-auto
                 sm:h-[400px]
                 lg:h-[560px]
               "
             >
+              {/* ==========================================
+                  SOFT BACKGROUND
+                  Fills empty space without cropping
+              ========================================== */}
+
               <Image
-                src={hero.thumbnail}
-                alt={hero.title}
-                fill
-                priority
-                fetchPriority="high"
-                sizes="
-                  (max-width: 1023px) 100vw,
-                  70vw
-                "
-                className="
-                  object-cover
-                  transition-transform
-                  duration-700
-                  ease-out
-                  group-hover:scale-[1.035]
-                "
-              />
+  src={hero.thumbnail}
+  alt=""
+  fill
+  sizes="
+    (max-width: 1023px) 100vw,
+    70vw
+  "
+  className="
+    scale-110
+    object-cover
+    blur-2xl
+    opacity-90
+  "
+  aria-hidden="true"
+/>
+
+              {/* ==========================================
+                  ACTUAL IMAGE
+                  ALWAYS FULLY VISIBLE
+              ========================================== */}
+
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Image
+                  src={hero.thumbnail}
+                  alt={hero.title}
+                  fill
+                  priority
+                  loading="eager"
+                  fetchPriority="high"
+                  sizes="
+                    (max-width: 1023px) 100vw,
+                    70vw
+                  "
+                  className="
+                    object-contain
+                    p-0.5
+                    transition-transform
+                    duration-700
+                    ease-out
+                    group-hover:scale-[1.015]
+                  "
+                />
+              </div>
 
               {/* BOTTOM GRADIENT */}
 
@@ -421,6 +452,25 @@ export default function HeroSection({
                     bg-zinc-100
                   "
                 >
+                  {/* Soft background */}
+                  <Image
+                    src={story.thumbnail}
+                    alt=""
+                    fill
+                    sizes="
+                      (min-width: 1280px) 220px,
+                      (min-width: 1024px) 180px
+                    "
+                    className="
+                      scale-110
+                      object-cover
+                      blur-xl
+                      opacity-90
+                    "
+                    aria-hidden="true"
+                  />
+
+                  {/* Complete thumbnail */}
                   <Image
                     src={story.thumbnail}
                     alt={story.title}
@@ -431,10 +481,10 @@ export default function HeroSection({
                     "
                     className="
                       object-contain
-                      p-0.5
+                      p-1
                       transition-transform
                       duration-500
-                      group-hover:scale-[1.03]
+                      group-hover:scale-[1.025]
                     "
                   />
                 </div>
@@ -452,9 +502,9 @@ export default function HeroSection({
                     p-3
                   "
                 >
-                  <div className="min-w-0">
-                    {/* CATEGORY */}
+                  {/* CATEGORY */}
 
+                  <div className="min-w-0">
                     <span
                       className="
                         inline-block
@@ -599,6 +649,25 @@ export default function HeroSection({
                     sm:w-[38%]
                   "
                 >
+                  {/* Soft background */}
+                  <Image
+                    src={story.thumbnail}
+                    alt=""
+                    fill
+                    sizes="
+                      (max-width: 639px) 42vw,
+                      240px
+                    "
+                    className="
+                      scale-110
+                      object-cover
+                      blur-xl
+                      opacity-90
+                    "
+                    aria-hidden="true"
+                  />
+
+                  {/* Complete thumbnail */}
                   <Image
                     src={story.thumbnail}
                     alt={story.title}
@@ -609,7 +678,7 @@ export default function HeroSection({
                     "
                     className="
                       object-contain
-                      p-0.5
+                      p-1
                     "
                   />
                 </div>
@@ -720,4 +789,3 @@ export default function HeroSection({
     </section>
   );
 }
-

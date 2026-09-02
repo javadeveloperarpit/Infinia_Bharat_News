@@ -96,6 +96,9 @@ export default function LeadersXCarousel({
   const trackRef =
     useRef<HTMLDivElement>(null);
 
+  const carouselRef =
+  useRef<HTMLDivElement>(null);
+
   const animationRef =
     useRef<number | null>(null);
 
@@ -449,13 +452,57 @@ export default function LeadersXCarousel({
      HORIZONTAL WHEEL
   ========================================================= */
 
-  function handleWheel(
-    event: React.WheelEvent<HTMLDivElement>
-  ) {
-    if (!loopWidth) {
-      return;
-    }
+function handleWheel(event: WheelEvent) {
+  if (!loopWidth) {
+    return;
+  }
 
+  const delta =
+    Math.abs(event.deltaX) >
+    Math.abs(event.deltaY)
+      ? event.deltaX
+      : event.shiftKey
+        ? event.deltaY
+        : 0;
+
+  if (!delta) {
+    return;
+  }
+
+  pausedRef.current = true;
+
+  let nextPosition =
+    positionRef.current + delta;
+
+  while (nextPosition < 0) {
+    nextPosition += loopWidth;
+  }
+
+  while (nextPosition >= loopWidth) {
+    nextPosition -= loopWidth;
+  }
+
+  positionRef.current = nextPosition;
+
+  if (trackRef.current) {
+    trackRef.current.style.transform =
+      `translate3d(${-nextPosition}px, 0, 0)`;
+  }
+
+  scheduleResume(1000);
+}
+/* =========================================================
+   NON-PASSIVE WHEEL LISTENER
+========================================================= */
+
+useEffect(() => {
+  const element = carouselRef.current;
+
+  if (!element) {
+    return;
+  }
+
+  const wheelHandler = (event: WheelEvent) => {
     const delta =
       Math.abs(event.deltaX) >
       Math.abs(event.deltaY)
@@ -470,38 +517,24 @@ export default function LeadersXCarousel({
 
     event.preventDefault();
 
-    pausedRef.current =
-      true;
+    handleWheel(event);
+  };
 
-    let nextPosition =
-      positionRef.current +
-      delta;
-
-    while (
-      nextPosition < 0
-    ) {
-      nextPosition +=
-        loopWidth;
+  element.addEventListener(
+    "wheel",
+    wheelHandler,
+    {
+      passive: false,
     }
+  );
 
-    while (
-      nextPosition >=
-      loopWidth
-    ) {
-      nextPosition -=
-        loopWidth;
-    }
-
-    positionRef.current =
-      nextPosition;
-
-    if (trackRef.current) {
-      trackRef.current.style.transform =
-        `translate3d(${-nextPosition}px, 0, 0)`;
-    }
-
-    scheduleResume(1000);
-  }
+  return () => {
+    element.removeEventListener(
+      "wheel",
+      wheelHandler
+    );
+  };
+}, [loopWidth]);
 
   /* =========================================================
      CLEANUP
@@ -780,14 +813,15 @@ export default function LeadersXCarousel({
       {/* CAROUSEL VIEWPORT */}
 
       <div
-        className="
-          relative
-          cursor-grab
-          select-none
-          overflow-hidden
-          active:cursor-grabbing
-          touch-pan-y
-        "
+  ref={carouselRef}
+  className="
+    relative
+    cursor-grab
+    select-none
+    overflow-hidden
+    active:cursor-grabbing
+    touch-pan-y
+  "
         onMouseEnter={() => {
           if (
             !isDraggingRef.current
@@ -818,10 +852,9 @@ export default function LeadersXCarousel({
         onPointerUp={
           handlePointerUp
         }
-        onPointerCancel={
-          handlePointerUp
-        }
-        onWheel={handleWheel}
+       onPointerCancel={
+  handlePointerUp
+}
       >
         {/* MOVING TRACK */}
 
