@@ -239,6 +239,7 @@ export default function TopBar() {
     min-w-[320px]
     h-5
     overflow-hidden
+    shrink-0
     text-xs
     font-semibold
     tracking-wide
@@ -342,7 +343,7 @@ export default function TopBar() {
               hover:text-[#ECCA6D]
               transition
             "
-            href="https://twitter.com/"
+            href="https://x.com/InfiniaBharat"
             aria-label="X"
             target="_blank"
             rel="noopener noreferrer"

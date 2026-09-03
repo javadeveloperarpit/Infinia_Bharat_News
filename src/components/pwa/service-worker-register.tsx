@@ -23,10 +23,6 @@ export default function ServiceWorkerRegister() {
         scope: "/",
       })
       .then((registration) => {
-        console.log(
-          "INFINIA PWA Service Worker registered:",
-          registration.scope
-        );
 
         // Check for new SW version
         registration.update();

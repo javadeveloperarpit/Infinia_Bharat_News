@@ -88,12 +88,6 @@ async function getDeviceFingerprint(): Promise<string> {
 
   const fingerprintData =
     dataParts.join("|");
-
-  console.log(
-    "[INFINIA] Device fingerprint source:",
-    fingerprintData
-  );
-
   const data =
     new TextEncoder().encode(
       fingerprintData
@@ -115,11 +109,6 @@ async function getDeviceFingerprint(): Promise<string> {
           .padStart(2, "0")
       )
       .join("");
-
-  console.log(
-    "[INFINIA] Device fingerprint:",
-    fingerprint
-  );
 
   return fingerprint;
 }
@@ -179,19 +168,13 @@ export default function PushNotificationPopup() {
            */
           if (!TEST_MODE) {
 
-  console.log(
-    "[INFINIA] Notification permission:",
-    Notification.permission
-  );
 
   // Browser ne permanently block kiya hua hai
   if (
     Notification.permission ===
     "denied"
   ) {
-    console.log(
-      "[INFINIA] Notifications are blocked."
-    );
+
 
     return;
   }
@@ -200,27 +183,15 @@ export default function PushNotificationPopup() {
   const registration =
     await navigator.serviceWorker.ready;
 
-  console.log(
-    "[INFINIA] Service worker ready:",
-    registration.scope
-  );
-
    // Existing push subscription check karo
   const subscription =
     await registration.pushManager.getSubscription();
 
-  console.log(
-    "[INFINIA] Existing subscription:",
-    subscription
-  );
 
   // Active subscription already exists
   // => popup bilkul mat dikhao
   if (subscription) {
 
-    console.log(
-      "[INFINIA] User already subscribed. Popup cancelled."
-    );
 
     return;
   }
@@ -233,9 +204,6 @@ export default function PushNotificationPopup() {
     "granted"
   ) {
 
-    console.log(
-      "[INFINIA] Permission granted but subscription missing. Recovery popup allowed."
-    );
   }
 }
 

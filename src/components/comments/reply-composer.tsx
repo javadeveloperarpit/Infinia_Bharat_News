@@ -145,6 +145,31 @@ export default function ReplyComposer({
           parentId,
         });
 
+        // ========================================
+// NOTIFY PARENT COMMENT AUTHOR
+// ========================================
+
+try {
+  const token = await user.getIdToken();
+
+  await fetch("/api/comments/notify-reply", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      replyId: createdReply.id,
+      parentId,
+    }),
+  });
+} catch (emailError) {
+  // Email failure should NOT make the reply fail
+  console.error(
+    "REPLY EMAIL NOTIFICATION ERROR:",
+    emailError
+  );
+}
       // ========================================
       // RESET
       // ========================================

@@ -152,27 +152,49 @@ export default function CommentComposer({
       setSubmitting(true);
       setError("");
 
-      await createComment({
-        articleId,
+      const createdComment = await createComment({
+  articleId,
+  articleSlug,
+  userId: user.uid,
+  userName: user.displayName || "User",
+  userPhoto: user.photoURL || "",
+  text: cleanedText,
+  parentId,
+});
 
-        articleSlug,
+// ========================================
+// NOTIFY ADMIN BY EMAIL
+// ========================================
 
-        userId:
-          user.uid,
+try {
+  const token =
+    await user.getIdToken();
 
-        userName:
-          user.displayName ||
-          "User",
+  await fetch(
+    "/api/comments/notify-admin",
+    {
+      method: "POST",
 
-        userPhoto:
-          user.photoURL ||
-          "",
+      headers: {
+        Authorization:
+          `Bearer ${token}`,
 
-        text:
-          cleanedText,
+        "Content-Type":
+          "application/json",
+      },
 
-        parentId,
-      });
+      body: JSON.stringify({
+        commentId:
+          createdComment.id,
+      }),
+    }
+  );
+} catch (emailError) {
+  console.error(
+    "ADMIN EMAIL NOTIFICATION ERROR:",
+    emailError
+  );
+}
 
       // ========================================
       // RESET

@@ -29,12 +29,6 @@ self.addEventListener("install", (event) => {
       .then((cache) =>
         cache.addAll(STATIC_CACHE)
       )
-      .catch((error) => {
-        console.error(
-          "Service Worker cache install failed:",
-          error
-        );
-      })
   );
 
   self.skipWaiting();
@@ -245,11 +239,6 @@ async function handlePushNotification(
       data = event.data.json();
     }
   } catch (error) {
-    console.error(
-      "Push notification JSON parse failed:",
-      error
-    );
-
     try {
       data = {
         title:
@@ -551,11 +540,7 @@ async function handlePushNotification(
       title,
       options
     );
-  } catch (error) {
-    console.error(
-      "Notification display failed:",
-      error
-    );
+  } catch {
 
     // Very safe fallback
     await self.registration.showNotification(
@@ -728,7 +713,7 @@ async function openNotificationUrl(
     }
   }
 
-  // Open new tab/window
+
   return clients.openWindow(
     targetUrl
   );
