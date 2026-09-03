@@ -175,7 +175,9 @@ export default function BreakingStrip({
   return (
 
     <section
+        translate="no"
       className="
+        notranslate
         w-full
         bg-[#fffafa]
         border-y

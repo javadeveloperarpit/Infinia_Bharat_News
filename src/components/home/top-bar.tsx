@@ -230,7 +230,9 @@ export default function TopBar() {
         ========================================== */}
 
         <div
+  translate="no"
   className="
+    notranslate
     hidden
     lg:flex
     items-center
