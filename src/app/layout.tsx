@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
+import Script from "next/script";
+
 import "./globals.css";
 
 
@@ -190,15 +192,16 @@ export default function RootLayout({
     >
       <head>
         {/* Google AdSense Verification */}
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6155856047825271"
-          crossOrigin="anonymous"
-        />
+        <Script
+    id="google-adsense"
+    src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6155856047825271"
+    strategy="lazyOnload"
+    crossOrigin="anonymous"
+  />
 
    </head>
       <body className="min-h-screen antialiased overflow-x-hidden">
-        <DOMRecoveryBoundary>
+        
         <ServiceWorkerRegister />
         <PushNotificationPopup />
 
@@ -223,7 +226,7 @@ export default function RootLayout({
 
         
           {children}
-        </DOMRecoveryBoundary>
+        
       </body>
     </html>
   );
