@@ -1624,8 +1624,9 @@
     "createdAt": "2026-09-02T04:24:19.211Z",
     "status": "published",
     "thumbnail": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjW4emUXQJaH0PB6qO6fpLX4jhY7N2kx0dRHT9BTZ1ozJ18X7fTavqdj0ZKrK1s2w7-XWrve-Q4tzTut9lm1nmtKV2-HeT8H9uZ3EgBtXnfzbhOrBLNtkohBf_DPB2YNCbTkWgoXapCc8cJ-UAnmaOUCxl_-MHf482DlcTB90YjAegD8IloAK3XX7_k9XUq/s1600/ChatGPT%20Image%20Sep%202,%202026,%2010_26_14%20AM.png",
-    "featured": false,
-    "updatedAt": "2026-09-03T06:32:58.667Z"
+    "featured": true,
+    "priority": 1,
+    "updatedAt": "2026-09-03T08:32:32.536Z"
   },
   {
     "id": "eNJTkAgFo1m2UPbj0P56",
