@@ -8,6 +8,8 @@ import PageLoadingBar from "@/components/navigation/PageLoadingBar";
 import ServiceWorkerRegister from "@/components/pwa/service-worker-register";
 import PushNotificationPopup from "@/components/notifications/PushNotificationPopup";
 
+import DOMRecoveryBoundary from "@/components/common/dom-recovery-boundary";
+
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -196,6 +198,7 @@ export default function RootLayout({
 
    </head>
       <body className="min-h-screen antialiased overflow-x-hidden">
+        <DOMRecoveryBoundary>
         <ServiceWorkerRegister />
         <PushNotificationPopup />
 
@@ -220,7 +223,7 @@ export default function RootLayout({
 
         
           {children}
-        
+        </DOMRecoveryBoundary>
       </body>
     </html>
   );
