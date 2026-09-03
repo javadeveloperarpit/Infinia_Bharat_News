@@ -18,6 +18,8 @@ import ArticleSidebar from "@/components/article/article-sidebar";
 import CommentsList from "@/components/comments/comments-list";
 import ArticleAudioPlayer from "@/components/article/article-audio-player";
 
+import { getArticleKeywords } from "@/lib/seo/article-keywords";
+
 import {
   getAdsByType,
 } from "@/services/public/ads.public.service";
@@ -54,7 +56,7 @@ export async function generateMetadata({
   // ========================================================
   // ARTICLE NOT FOUND
   // ========================================================
-
+  
   if (!article) {
     return {
       title: "News Not Found",
@@ -68,7 +70,19 @@ export async function generateMetadata({
       },
     };
   }
+const categories = await getCategories();
 
+const category = categories.find(
+  (item) => item.id === article.categoryId
+);
+
+const finalKeywords = getArticleKeywords({
+  keywords: article.keywords,
+  slug: article.slug,
+  category: article.category,
+  categoryHi: article.categoryHi,
+  categorySlug: category?.slug,
+});
   // ========================================================
   // BASIC SEO DATA
   // ========================================================
@@ -137,15 +151,7 @@ const allImages = [
     // KEYWORDS
     // ======================================================
 
-    keywords: [
-      article.category || "",
-      article.categoryHi || "",
-      "भारत समाचार",
-      "हिंदी समाचार",
-      "ताजा खबर",
-      "ब्रेकिंग न्यूज़",
-      siteConfig.name,
-    ].filter(Boolean),
+    keywords: finalKeywords,
 
     // ======================================================
     // AUTHOR
@@ -483,7 +489,14 @@ const contentImages =
     categorySlug
       ? `${siteConfig.url}/category/${categorySlug}`
       : `${siteConfig.url}/category`;
-
+  
+  const finalKeywords = getArticleKeywords({
+  keywords: article.keywords,
+  slug: article.slug,
+  category: article.category,
+  categoryHi: article.categoryHi,
+  categorySlug: categorySlug,
+});
   // ========================================================
   // BREADCRUMB SCHEMA
   // ========================================================
@@ -601,6 +614,8 @@ const youtubeVideos =
     article.seoDescription?.trim() ||
     article.shortDescription?.trim() ||
     "",
+
+  keywords: finalKeywords.join(", "),
 
   image: [
     {

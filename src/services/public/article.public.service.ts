@@ -44,6 +44,8 @@ export interface PublicArticle {
 
   shortDescription: string;
 
+  keywords?: string[];
+
   content: string;
 
   seoTitle: string;
@@ -322,6 +324,17 @@ function formatArticle(
     seoDescription:
       data?.seoDescription ||
       "",
+
+    keywords:
+  Array.isArray(data?.keywords)
+    ? data.keywords
+    : typeof data?.keywords === "string"
+      ? data.keywords
+          .split(",")
+          .map((keyword: string) => keyword.trim())
+          .filter(Boolean)
+      : [],
+      
 
     categoryId:
       data?.categoryId ||

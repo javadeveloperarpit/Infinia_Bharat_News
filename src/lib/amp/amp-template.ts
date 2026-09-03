@@ -35,8 +35,8 @@ interface RenderAmpArticleInput {
   category?: CategoryLike;
   categories?: CategoryLike[];
   siteConfig: SiteConfigLike;
+  keywords?: string[];
 }
-
 // ============================================================
 // BRAND TOKENS
 // ============================================================
@@ -148,6 +148,7 @@ export function renderAmpArticle({
   related,
   category,
   siteConfig,
+  keywords,
 }: RenderAmpArticleInput): string {
   const articleUrl = `${siteConfig.url}/news/${article.slug}`;
 
@@ -259,7 +260,9 @@ export function renderAmpArticle({
 
     articleSection: categoryName,
 
-    inLanguage: siteConfig.language || "hi",
+keywords: keywords?.join(", ") || "",
+
+inLanguage: siteConfig.language || "hi",
 
     isAccessibleForFree: true,
   };

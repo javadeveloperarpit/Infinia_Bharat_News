@@ -167,6 +167,161 @@ async function fetchPage(
 }
 
 // ============================================================
+// EXTRACT SOURCE ARTICLE TEXT
+// ============================================================
+
+function extractArticleText(
+  html: string
+): string {
+  let text = "";
+
+  // ----------------------------------------------------------
+  // JSON-LD articleBody
+  // ----------------------------------------------------------
+
+  const jsonLdBlocks =
+    html.match(
+      /<script[^>]*type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi
+    ) || [];
+
+  for (const block of jsonLdBlocks) {
+    const jsonText = block
+      .replace(
+        /^<script[^>]*>/i,
+        ""
+      )
+      .replace(
+        /<\/script>$/i,
+        ""
+      )
+      .trim();
+
+    try {
+      const parsed = JSON.parse(
+        jsonText
+      );
+
+      const objects = Array.isArray(
+        parsed
+      )
+        ? parsed
+        : [parsed];
+
+      for (const item of objects) {
+        if (
+          item &&
+          typeof item === "object" &&
+          typeof item.articleBody === "string"
+        ) {
+          text = item.articleBody;
+          break;
+        }
+
+        if (
+          item &&
+          typeof item === "object" &&
+          Array.isArray(item["@graph"])
+        ) {
+          const article = item[
+            "@graph"
+          ].find(
+            (entry: any) =>
+              entry &&
+              typeof entry.articleBody ===
+                "string"
+          );
+
+          if (article) {
+            text = article.articleBody;
+            break;
+          }
+        }
+      }
+
+      if (text) break;
+    } catch {
+      // Ignore invalid JSON-LD
+    }
+  }
+
+  // ----------------------------------------------------------
+  // ARTICLE TAG FALLBACK
+  // ----------------------------------------------------------
+
+  if (!text) {
+    const articleMatch =
+      html.match(
+        /<article\b[^>]*>([\s\S]*?)<\/article>/i
+      );
+
+    if (articleMatch) {
+      text = articleMatch[1];
+    }
+  }
+
+  // ----------------------------------------------------------
+  // MAIN CONTENT FALLBACK
+  // ----------------------------------------------------------
+
+  if (!text) {
+    const mainMatch =
+      html.match(
+        /<main\b[^>]*>([\s\S]*?)<\/main>/i
+      );
+
+    if (mainMatch) {
+      text = mainMatch[1];
+    }
+  }
+
+  
+  // ----------------------------------------------------------
+  // REMOVE NON-CONTENT ELEMENTS
+  // ----------------------------------------------------------
+
+  text = text
+    .replace(
+      /<script\b[^>]*>[\s\S]*?<\/script>/gi,
+      " "
+    )
+    .replace(
+      /<style\b[^>]*>[\s\S]*?<\/style>/gi,
+      " "
+    )
+    .replace(
+      /<nav\b[^>]*>[\s\S]*?<\/nav>/gi,
+      " "
+    )
+    .replace(
+      /<footer\b[^>]*>[\s\S]*?<\/footer>/gi,
+      " "
+    )
+    .replace(
+      /<header\b[^>]*>[\s\S]*?<\/header>/gi,
+      " "
+    )
+    .replace(
+      /<aside\b[^>]*>[\s\S]*?<\/aside>/gi,
+      " "
+    );
+
+  // ----------------------------------------------------------
+  // CLEAN HTML
+  // ----------------------------------------------------------
+
+  text = cleanText(text);
+
+  // ----------------------------------------------------------
+  // LIMIT SOURCE TEXT
+  // ----------------------------------------------------------
+
+  return text.slice(
+    0,
+    30000
+  );
+}
+
+// ============================================================
 // EXTRACT ATTRIBUTE
 // ============================================================
 
@@ -386,44 +541,6 @@ function resolveUrl(
   }
 }
 
-// ============================================================
-// GET ORIGINAL NEWS IMAGE
-// ============================================================
-
-async function getOriginalImage(
-  articleUrl: string
-): Promise<string> {
-  if (!articleUrl) {
-    return "";
-  }
-
-  try {
-    const html =
-      await fetchPage(
-        articleUrl
-      );
-
-    const imageUrl =
-      extractImageFromHtml(
-        html,
-        articleUrl
-      );
-
-    console.log(
-      "Original article image:",
-      imageUrl
-    );
-
-    return imageUrl;
-  } catch (error) {
-    console.error(
-      "Original image extraction failed:",
-      error
-    );
-
-    return "";
-  }
-}
 
 // ============================================================
 // DOWNLOAD IMAGE FOR GEMINI
@@ -742,15 +859,45 @@ async function generateArticle(
   // ----------------------------------------------------------
   // ORIGINAL IMAGE
   // ----------------------------------------------------------
+let originalImageUrl = "";
+let sourceArticleText = "";
 
-  let originalImageUrl = "";
-
-  if (sourceUrl) {
-    originalImageUrl =
-      await getOriginalImage(
+if (sourceUrl) {
+  try {
+    const sourceHtml =
+      await fetchPage(
         sourceUrl
       );
+
+    // Extract article text from the same HTML
+    sourceArticleText =
+      extractArticleText(
+        sourceHtml
+      );
+
+    // Extract original image from the same HTML
+    originalImageUrl =
+      extractImageFromHtml(
+        sourceHtml,
+        sourceUrl
+      );
+
+    console.log(
+      "Source article text length:",
+      sourceArticleText.length
+    );
+
+    console.log(
+      "Original image URL:",
+      originalImageUrl
+    );
+  } catch (error) {
+    console.error(
+      "Source page extraction failed:",
+      error
+    );
   }
+}
 
   console.log(
     "Selected news:",
@@ -842,7 +989,28 @@ SOURCE:
 ${source || "Google News"}
 
 SOURCE URL:
-${sourceUrl || "Not available"}
+${sourceUrl || "Not available"}\
+
+SOURCE ARTICLE MATERIAL:
+
+${sourceArticleText || "No source article text could be extracted."}
+
+IMPORTANT:
+The source material above is provided only to establish facts and context.
+
+Use only information that can reasonably be supported by this material.
+
+Do not copy its wording.
+
+Do not translate it sentence-by-sentence.
+
+Do not preserve its paragraph structure.
+
+Do not reproduce distinctive phrases.
+
+Do not invent missing information.
+
+If the source material contains conflicting, unclear, or incomplete information, do not guess. Write only what can be safely established.
 
 ============================================================
 CATEGORY
@@ -918,7 +1086,13 @@ Avoid unnecessary keyword repetition.
 
 Write for Google search intent and Google Discover-style readability.
 
-write the article content similar to the source article.
+The source is REFERENCE MATERIAL only. NEVER rewrite, synonymize, translate, lightly paraphrase, or structurally mirror the source article.
+
+Do not reproduce the source wording, sentence order, paragraph order, headline formula, or distinctive phrasing.
+
+First identify the verified facts and the actual news development, then write an independently structured article in your own newsroom language.
+
+If the available information is insufficient for a genuinely useful article, keep the article concise rather than padding it with invented or generic material.
 
 Avoid clickbait.
 
@@ -937,8 +1111,43 @@ Create exactly these fields:
 - seoDescription
 - shortDescription
 - suggestedCategory
+- keywords
 - content
 - imagePrompt
+
+
+============================================================
+ARTICLE KEYWORDS
+============================================================
+
+Generate 8-15 highly relevant, article-specific SEO keywords and search phrases in the "keywords" array.
+
+KEYWORD RULES:
+
+1. Every keyword must directly describe THIS article.
+2. Include important people, organizations, places, events, schemes, products, laws, issues or entities actually present in the story.
+3. Include realistic Hindi search phrases.
+4. Include commonly searched official English names or terms where relevant.
+5. Prefer 2-5 word search phrases when they better match search intent.
+6. Use semantic variations only when genuinely useful.
+7. Do NOT invent names, entities, places, statistics or events.
+8. Do NOT use unrelated high-volume keywords.
+9. Do NOT keyword-stuff.
+10. Do NOT use hashtags.
+11. Do NOT use complete sentences.
+12. Do NOT add "INFINIA BHARAT NEWS" unless the story is specifically about the publication.
+13. Avoid generic keywords such as "latest news", "breaking news", "today news" unless genuinely relevant to the exact story.
+14. Do not repeat the same keyword with trivial spelling or case variations.
+15. Return keywords only as a JSON array of strings.
+
+Example:
+
+"keywords": [
+  "दिल्ली भारी बारिश",
+  "दिल्ली जलभराव",
+  "Delhi heavy rain",
+  "Delhi waterlogging"
+]
 
 IMPORTANT:
 
@@ -1144,6 +1353,7 @@ Use exactly:
   "shortDescription": "",
   "content": "",
   "suggestedCategory": "",
+  "keywords": [],
   "imagePrompt": ""
 }
 
@@ -1370,6 +1580,29 @@ const seoTitle =
     article.seoTitle
   );
 
+const keywords = Array.isArray(article.keywords)
+  ? article.keywords
+      .map((keyword: unknown) =>
+        String(keyword).trim()
+      )
+      .filter(Boolean)
+      .filter(
+        (keyword: string) =>
+          !keyword.startsWith("#") &&
+          keyword.length >= 2 &&
+          keyword.split(/\s+/).length <= 6
+      )
+      .filter(
+        (keyword: string, index: number, list: string[]) =>
+          list.findIndex(
+            (item) =>
+              item.toLowerCase() ===
+              keyword.toLowerCase()
+          ) === index
+      )
+      .slice(0, 15)
+  : [];
+
 // ----------------------------------------------------------
 // VALIDATE SEO TITLE
 // ----------------------------------------------------------
@@ -1407,7 +1640,8 @@ console.log(
       article.shortDescription ||
         ""
     ),
-
+  
+  keywords,
   content:
     String(
       article.content || ""

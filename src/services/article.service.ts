@@ -29,6 +29,8 @@ export interface ArticleData {
 
   seoDescription: string;
 
+  keywords?: string[];
+
   slug?: string;
 
   author?: {

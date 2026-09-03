@@ -84,7 +84,16 @@ export async function POST(
     const body =
       await request.json();
 
-
+const keywords = Array.isArray(body.keywords)
+  ? body.keywords
+      .map((keyword: unknown) => String(keyword).trim())
+      .filter(Boolean)
+  : typeof body.keywords === "string"
+    ? body.keywords
+        .split(",")
+        .map((keyword: string) => keyword.trim())
+        .filter(Boolean)
+    : [];
     // ==================================================
     // SLUG
     // ==================================================
@@ -109,6 +118,7 @@ export async function POST(
     const articleData = {
 
       ...body,
+      keywords,
 
       slug,
 
@@ -154,6 +164,8 @@ export async function POST(
         ref.id,
 
       ...body,
+
+      keywords,
 
       slug,
 

@@ -40,6 +40,9 @@ export interface Article {
 
 
   tags:string[];
+  
+
+  keywords: string[];
 
 
   authorId:string;

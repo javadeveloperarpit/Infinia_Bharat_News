@@ -105,6 +105,16 @@ export async function PUT(
     const body =
       await request.json();
 
+    const keywords = Array.isArray(body.keywords)
+  ? body.keywords
+      .map((keyword: unknown) => String(keyword).trim())
+      .filter(Boolean)
+  : typeof body.keywords === "string"
+    ? body.keywords
+        .split(",")
+        .map((keyword: string) => keyword.trim())
+        .filter(Boolean)
+    : [];
 
     // ==================================================
     // FIREBASE REFERENCE
@@ -297,6 +307,7 @@ const {
   updatedAt: _updatedAt,
   author: _author,
   slug: _slug,
+  keywords: _keywords,
   ...safeBody
 } = body;
 
@@ -305,6 +316,8 @@ const updateData: Record<string, any> = {
   ...safeBody,
 
   slug,
+
+  keywords,
 
   author,
 
@@ -349,6 +362,8 @@ await ref.update(
       ...oldData,
 
       ...body,
+
+      keywords,
 
       featured:
         nextFeatured,

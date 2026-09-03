@@ -35,6 +35,7 @@ interface GeneratedArticle {
   suggestedCategory: string;
   categoryId: string;
   imagePrompt: string;
+  keywords?: string[];
 }
 
 export default function AINewsPage() {
@@ -185,14 +186,11 @@ export default function AINewsPage() {
                 "application/json",
             },
 
-            body:
-              JSON.stringify({
-                title:
-                  item.title,
-
-                source:
-                  item.source,
-              }),
+            body: JSON.stringify({
+              title: item.title,
+              source: item.source,
+              link: item.link,
+            }),
 
           }
         );
@@ -224,6 +222,9 @@ export default function AINewsPage() {
       setArticle({
   ...data.article,
   categoryId: data.article.categoryId || "",
+  keywords: Array.isArray(data.article.keywords)
+    ? data.article.keywords
+    : [],
 });
 
 
@@ -1213,6 +1214,74 @@ Generate ONLY the image.
 
                 </div>
 
+                  {/* =================================================
+    SEO KEYWORDS
+================================================== */}
+
+<div>
+
+  <label
+    className="
+      text-xs
+      font-bold
+      text-zinc-500
+    "
+  >
+    SEO KEYWORDS
+  </label>
+
+  <div
+    className="
+      mt-3
+      flex
+      flex-wrap
+      gap-2
+    "
+  >
+
+    {Array.isArray(article.keywords) &&
+    article.keywords.length > 0 ? (
+
+      article.keywords.map(
+        (keyword, index) => (
+
+          <span
+            key={`${keyword}-${index}`}
+            className="
+              inline-flex
+              items-center
+              rounded-full
+              border
+              bg-zinc-50
+              px-3
+              py-1.5
+              text-xs
+              font-medium
+              text-zinc-700
+            "
+          >
+            {keyword}
+          </span>
+
+        )
+      )
+
+    ) : (
+
+      <span
+        className="
+          text-sm
+          text-zinc-400
+        "
+      >
+        No keywords generated
+      </span>
+
+    )}
+
+  </div>
+
+</div>
 
                 {/* =================================================
                     SHORT DESCRIPTION

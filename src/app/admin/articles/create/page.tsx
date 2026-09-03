@@ -41,6 +41,8 @@ const [loading, setLoading] =
 const [categories, setCategories] =
   useState<any[]>([]);
 
+const [keywordInput, setKeywordInput] = useState("");
+
 const [categoriesLoading, setCategoriesLoading] =
   useState(true);
 
@@ -59,6 +61,8 @@ const [form, setForm] = useState({
   seoTitle: "",
 
   seoDescription: "",
+
+  keywords: [] as string[],
 
   featured: false,
 
@@ -309,6 +313,9 @@ useEffect(() => {
           aiArticle.seoDescription ||
           "",
 
+        keywords: Array.isArray(aiArticle.keywords)
+          ? aiArticle.keywords
+          : [],
         featured:
           Boolean(
             aiArticle.featured
@@ -1038,6 +1045,83 @@ useEffect(() => {
 
         </div>
 
+            <div className="space-y-2">
+  <label className="text-sm font-medium">
+    Keywords
+  </label>
+
+  <div className="flex min-h-[44px] flex-wrap items-center gap-2 rounded-md border p-2">
+    {form.keywords.map((keyword, index) => (
+      <span
+        key={`${keyword}-${index}`}
+        className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-sm"
+      >
+        {keyword}
+
+        <button
+          type="button"
+          onClick={() =>
+            setForm((prev) => ({
+              ...prev,
+              keywords: prev.keywords.filter((_, i) => i !== index),
+            }))
+          }
+          className="ml-1 text-muted-foreground hover:text-foreground"
+          aria-label={`Remove ${keyword}`}
+        >
+          ×
+        </button>
+      </span>
+    ))}
+
+    <input
+      type="text"
+      value={keywordInput}
+      onChange={(e) => setKeywordInput(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === ",") {
+          e.preventDefault();
+
+          const newKeywords = keywordInput
+            .split(",")
+            .map((keyword) => keyword.trim())
+            .filter(Boolean);
+
+          if (newKeywords.length > 0) {
+            setForm((prev) => ({
+              ...prev,
+              keywords: [
+                ...prev.keywords,
+                ...newKeywords.filter(
+                  (keyword) =>
+                    !prev.keywords.some(
+                      (existing) =>
+                        existing.toLowerCase() === keyword.toLowerCase()
+                    )
+                ),
+              ],
+            }));
+          }
+
+          setKeywordInput("");
+        }
+
+        if (e.key === "Backspace" && !keywordInput && form.keywords.length > 0) {
+          setForm((prev) => ({
+            ...prev,
+            keywords: prev.keywords.slice(0, -1),
+          }));
+        }
+      }}
+      placeholder="Type a keyword and press Enter"
+      className="min-w-[220px] flex-1 border-0 bg-transparent outline-none"
+    />
+  </div>
+
+  <p className="text-xs text-muted-foreground">
+    Enter दबाकर keyword add करें. Comma-separated keywords भी एक साथ add किए जा सकते हैं.
+  </p>
+</div>
 
         {/* ==================================================
             OPTIONS

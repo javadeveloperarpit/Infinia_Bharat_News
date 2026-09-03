@@ -6,6 +6,8 @@ import {
   getAllPublishedArticles,
 } from "@/services/public/article.public.service";
 
+import { getArticleKeywords } from "@/lib/seo/article-keywords";
+
 import { getCategories } from "@/services/public/category.public.service";
 
 import { siteConfig } from "@/config/site";
@@ -50,13 +52,24 @@ export async function GET(
     getCategories(),
   ]);
 
-  const category = categories.find((item) => item.id === article.categoryId);
+  const category = categories.find(
+  (item) => item.id === article.categoryId
+);
 
-  const html = renderAmpArticle({
+const finalKeywords = getArticleKeywords({
+  keywords: article.keywords,
+  slug: article.slug,
+  category: article.category,
+  categoryHi: article.categoryHi,
+  categorySlug: category?.slug,
+});
+
+const html = renderAmpArticle({
     article,
     related,
     category,
     siteConfig,
+    keywords: finalKeywords,
   });
 
   return new NextResponse(html, {
