@@ -12,7 +12,7 @@ import {
 
 import {
   createAd,
-  getAds,
+  getAllAdsForAdmin,
   deleteAd,
   updateAd,
   type AdsData,
@@ -1418,7 +1418,7 @@ export default function AdsPage() {
       setLoading(true);
 
       const data =
-        await getAds();
+        await getAllAdsForAdmin();
 
       setAds(data || []);
     } catch (error) {

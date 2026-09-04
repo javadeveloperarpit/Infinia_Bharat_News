@@ -967,7 +967,58 @@ export async function getAdsByType(
     return [];
   }
 }
+// ======================================================
+// GET ALL ADS FOR ADMIN
+//
+// ADMIN ONLY
+// Returns BOTH active and inactive ads.
+//
+// IMPORTANT:
+// Do NOT use this function on the public website.
+// ======================================================
 
+export async function getAllAdsForAdmin(): Promise<BusinessAd[]> {
+  try {
+    const types: AdType[] = [
+      "banner",
+      "cube",
+      "popup",
+      "page_transition",
+      "shorts_video",
+      "floating_tv",
+      "sticky_bottom",
+      "native",
+    ];
+
+    const results = await Promise.all(
+      types.map(async (type) => {
+        const snapshot = await getDocs(
+          getTypeCollection(type)
+        );
+
+        return snapshot.docs.map((item) => ({
+          id: item.id,
+          ...(item.data() as AdsData),
+        }));
+      })
+    );
+
+    return results
+      .flat()
+      .sort(
+        (a, b) =>
+          (b.priority ?? 1) -
+          (a.priority ?? 1)
+      );
+  } catch (error) {
+    console.error(
+      "Failed to load all ads for admin:",
+      error
+    );
+
+    return [];
+  }
+}
 // ======================================================
 // GET SINGLE AD
 // ======================================================
