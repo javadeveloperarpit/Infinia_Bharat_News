@@ -1,11 +1,10 @@
 {
-  "updatedAt": "2026-08-24T14:07:05.490Z",
+  "updatedAt": "2026-09-04T03:36:09.350Z",
   "ads": [
     {
       "id": "fdqn8ijw6UBIADFKK4AK",
       "title": "advertisement demo",
       "type": "cube",
-      "active": true,
       "priority": 1,
       "mobileEnabled": true,
       "desktopEnabled": true,
@@ -48,7 +47,8 @@
           "scale": 0.35
         }
       },
-      "updatedAt": "2026-08-24T14:06:56.712Z"
+      "active": false,
+      "updatedAt": "2026-09-04T03:36:01.930Z"
     }
   ]
 }
