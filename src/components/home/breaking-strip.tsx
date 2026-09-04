@@ -7,6 +7,7 @@ import {
 } from "react";
 
 import Image from "next/image";
+import Link from "next/link";
 
 import {
   useLanguageStore,
@@ -34,9 +35,38 @@ export interface BreakingNewsItem {
   updatedAt?: string;
 }
 
+
+// ======================================================
+// FALLBACK ARTICLE TYPE
+// ======================================================
+
+export interface BreakingFallbackArticle {
+  id: string;
+
+  slug: string;
+
+  title: string;
+
+  titleHi?: string;
+
+  createdAt?: string;
+
+  publishedAt?: string;
+
+  categoryId?: string;
+}
+
+
 interface BreakingStripProps {
   news: BreakingNewsItem[];
+
+  /*
+    Active breaking news khatam hone par
+    latest articles yahan inject honge.
+  */
+  articles?: BreakingFallbackArticle[];
 }
+
 
 // ======================================================
 // BREAKING STRIP
@@ -44,56 +74,127 @@ interface BreakingStripProps {
 
 export default function BreakingStrip({
   news: initialNews,
+  articles = [],
 }: BreakingStripProps) {
-
-  const [news, setNews] =
-  useState<BreakingNewsItem[]>(() => {
-    const active = initialNews.filter(
-      (item) => item.active
-    );
-
-    return [
-      ...active,
-      ...active,
-      ...active,
-    ];
-  });
-
-  const [position, setPosition] =
-    useState(0);
-
-  const trackRef =
-    useRef<HTMLDivElement>(null);
 
   const { language } =
     useLanguageStore();
 
+
   // ====================================================
-  // PREPARE NEWS
+  // ACTIVE BREAKING NEWS
+  // ====================================================
+
+  const activeBreakingNews =
+    initialNews.filter(
+      (item) => item.active
+    );
+
+
+  // ====================================================
+  // FALLBACK LATEST ARTICLES
+  // ====================================================
+
+  const fallbackArticles =
+    articles
+      .filter(
+        (article) =>
+          article?.slug &&
+          article?.title
+      )
+      .sort(
+        (a, b) =>
+          new Date(
+            b.createdAt ||
+            b.publishedAt ||
+            0
+          ).getTime() -
+          new Date(
+            a.createdAt ||
+            a.publishedAt ||
+            0
+          ).getTime()
+      )
+      .slice(0, 4);
+
+
+  // ====================================================
+  // INJECT FALLBACK
+  // ====================================================
+
+  /*
+    Agar active breaking news available hai:
+      → original breaking news
+
+    Agar active breaking news nahi hai:
+      → latest 4 articles
+
+    UI / CSS / dimensions same rahenge.
+  */
+
+  const sourceNews: BreakingNewsItem[] =
+    activeBreakingNews.length > 0
+      ? activeBreakingNews
+      : fallbackArticles.map(
+          (article) => ({
+            id: `fallback-${article.id}`,
+
+            text:
+              article.title,
+
+            textHi:
+              article.titleHi ||
+              article.title,
+
+            active: true,
+
+            createdAt:
+              article.createdAt ||
+              article.publishedAt,
+          })
+        );
+
+
+  // ====================================================
+  // MARQUEE DATA
+  // ====================================================
+
+  const [news, setNews] =
+    useState<BreakingNewsItem[]>(() => [
+      ...sourceNews,
+      ...sourceNews,
+      ...sourceNews,
+    ]);
+
+
+  const [position, setPosition] =
+    useState(0);
+
+
+  const trackRef =
+    useRef<HTMLDivElement>(null);
+
+
+  // ====================================================
+  // UPDATE WHEN SOURCE CHANGES
   // ====================================================
 
   useEffect(() => {
 
-    const active =
-      initialNews.filter(
-        (item) =>
-          item.active
-      );
-
-    /*
-      Extra copies rakhenge
-      taaki stream kabhi empty na ho.
-    */
-
     setNews([
-      ...active,
-      ...active,
-      ...active,
+      ...sourceNews,
+      ...sourceNews,
+      ...sourceNews,
     ]);
 
     setPosition(0);
 
-  }, [initialNews]);
+  }, [
+    initialNews,
+    articles,
+    language,
+  ]);
+
 
   // ====================================================
   // CONTINUOUS MOVEMENT
@@ -116,6 +217,7 @@ export default function BreakingStrip({
 
   }, []);
 
+
   // ====================================================
   // RESET WITHOUT JUMP
   // ====================================================
@@ -128,9 +230,11 @@ export default function BreakingStrip({
     if (!track)
       return;
 
+
     const firstChild =
       track.firstElementChild as
         HTMLElement | null;
+
 
     if (
       firstChild &&
@@ -158,6 +262,7 @@ export default function BreakingStrip({
 
   }, [position]);
 
+
   // ====================================================
   // EMPTY
   // ====================================================
@@ -168,6 +273,7 @@ export default function BreakingStrip({
     return null;
   }
 
+
   // ====================================================
   // UI
   // ====================================================
@@ -175,64 +281,68 @@ export default function BreakingStrip({
   return (
 
     <section
-        translate="no"
-      className="
-        notranslate
-        w-full
-        bg-[#fffafa]
-        border-y
-        border-zinc-200
-        overflow-hidden
-        shadow-sm
-      "
-    >
-
-      <div
-        className="
-          flex
-          h-11
-          sm:h-12
-          md:h-14
-          items-center
-        "
-      >
-
+  translate="no"
+  className="
+    notranslate
+    relative
+    w-full
+    bg-[#fffafa]
+    border-y
+    border-zinc-200
+    overflow-visible
+    shadow-sm
+  "
+>
+  <div
+    className="
+      relative
+      flex
+      h-10
+      sm:h-11
+      md:h-12
+      items-center
+    "
+  >
         {/* ==================================================
             LABEL
         ================================================== */}
 
         <div
-          className="
-            h-full
-            shrink-0
-            flex
-            items-center
-            justify-center
-            px-1
-            md:px-2
-          "
-        >
+  className="
+    relative
+    z-20
+    h-full
+    shrink-0
+    flex
+    items-center
+    justify-center
+    px-1
+    md:px-2
+    overflow-visible
+  "
+>
+  <Image
+    src={
+      language === "hi"
+        ? "/images/breaking news tag.webp"
+        : "/images/breaking news tag2.webp"
+    }
+    alt="Breaking News"
+    width={170}
+    height={48}
+    priority
+    className="
+  h-11
+  md:h-12
+  w-auto
+  max-w-none
+  -translate-y-1
+  select-none
+  pointer-events-none
+"
+  />
+</div>
 
-          <Image
-            src={
-              language === "hi"
-                ? "/images/breaking news tag.webp"
-                : "/images/breaking news tag2.webp"
-            }
-            alt="Breaking News"
-            width={170}
-            height={48}
-            priority
-            className="
-              h-9
-              md:h-11
-              w-auto
-              select-none
-              pointer-events-none
-            "
-          />
-
-        </div>
 
         {/* ==================================================
             STREAM
@@ -263,44 +373,98 @@ export default function BreakingStrip({
               (
                 item,
                 index
-              ) => (
+              ) => {
 
-                <div
-                  key={
-                    item.id +
-                    index
-                  }
-                  className="
-                    flex
-                    items-center
-                    px-8
-                    font-semibold
-                    text-[13px]
-                    sm:text-sm
-                    md:text-[15px]
-                    tracking-normal
-                    text-zinc-800
-                    shrink-0
-                  "
-                >
+                /*
+                  Fallback article identify karne ke liye
+                  id me fallback- prefix use kiya hai.
+                */
 
-                  {language === "hi"
+                const isFallback =
+                  item.id.startsWith(
+                    "fallback-"
+                  );
+
+
+                const articleId =
+                  isFallback
+                    ? item.id.replace(
+                        "fallback-",
+                        ""
+                      )
+                    : null;
+
+
+                const article =
+                  articleId
+                    ? fallbackArticles.find(
+                        (a) =>
+                          a.id ===
+                          articleId
+                      )
+                    : null;
+
+
+                const content =
+                  language === "hi"
                     ? item.textHi ||
                       item.text
-                    : item.text}
+                    : item.text;
 
-                  <span
+
+                return (
+
+                  <div
+                    key={
+                      item.id +
+                      index
+                    }
                     className="
-                      mx-6
-                      h-4
-                      w-px
-                      bg-red-600
+                      flex
+                      items-center
+                      px-8
+                      font-semibold
+                      text-[13px]
+                      sm:text-sm
+                      md:text-[15px]
+                      tracking-normal
+                      text-zinc-800
+                      shrink-0
                     "
-                  />
+                  >
 
-                </div>
+                    {article ? (
 
-              )
+                      <Link
+                        href={`/news/${article.slug}`}
+                        className="
+                          hover:text-red-700
+                          transition-colors
+                        "
+                      >
+                        {content}
+                      </Link>
+
+                    ) : (
+
+                      content
+
+                    )}
+
+
+                    <span
+                      className="
+                        mx-6
+                        h-4
+                        w-px
+                        bg-red-600
+                      "
+                    />
+
+                  </div>
+
+                );
+              }
             )}
 
           </div>

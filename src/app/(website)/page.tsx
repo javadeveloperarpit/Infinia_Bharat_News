@@ -552,6 +552,7 @@ const organizationSchema = {
 
       <BreakingStrip
   news={breakingNews}
+  articles={articles}
 />
 
       {/* ================================
@@ -562,7 +563,7 @@ const organizationSchema = {
         ads={bannerAdsPlain}
       />
 
-      <LeadersOnX />
+      
 
       {/* ================================
           HERO
@@ -601,9 +602,7 @@ const organizationSchema = {
             YOUTUBE SHORTS
         ================================= */}
 
-        <ShortsSection
-          shorts={shorts}
-        />
+        
       </section>
 
 
@@ -635,7 +634,14 @@ const organizationSchema = {
             />
           )
         )}
+
+        <ShortsSection
+          shorts={shorts}
+        />
+        <LeadersOnX />
       </div>
+      
+      
     </main>
  </> );
 
