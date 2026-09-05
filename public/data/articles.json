@@ -740,8 +740,8 @@
     },
     "createdAt": "2026-09-04T13:11:14.638Z",
     "featured": true,
-    "priority": 5,
-    "updatedAt": "2026-09-04T13:13:05.793Z"
+    "priority": 4,
+    "updatedAt": "2026-09-05T17:59:04.923Z"
   },
   {
     "id": "I1qn5AYiiJ9zvQv733TR",
@@ -919,9 +919,7 @@
       "संयुक्त राष्ट्र का नया नक्शा",
       "अफ्रीका बड़ा क्यों दिखेगा"
     ],
-    "featured": false,
     "breaking": false,
-    "priority": 0,
     "status": "published",
     "slug": "un-new-world-map-equal-earth-africa-mercator-map-20260905-174151024",
     "author": {
@@ -934,7 +932,9 @@
       "bio": "Arpit Mishra\n\nEditor-in-Chief, Infinia Bharat News | Computer Science Engineering Student | Technology & Digital Media Enthusiast**\n\nArpit Mishra is a Computer Science Engineering student, technology enthusiast, and the Editor-in-Chief of Infinia Bharat News, with a keen interest in digital journalism, technology, current affairs, and emerging media platforms.\n\nAlongside his academic journey in Computer Science Engineering, he is actively involved in building and developing a modern digital news platform, focusing on news content, editorial presentation, digital media, technology, and audience engagement.\n\nAs Editor-in-Chief of Infinia Bharat News, Arpit is involved in shaping the publication's editorial direction, content strategy, digital presence, and overall newsroom vision. He believes in presenting news in a clear, engaging, and responsible manner while adapting journalism to the rapidly evolving digital landscape.\n\nHis technical interests include software development, web technologies, artificial intelligence, cybersecurity, databases, and cloud-based applications. He combines his technical background with his interest in journalism to explore how technology can transform the way news is created, distributed, and consumed.\n\nArpit's long-term vision is to build expertise at the intersection of technology, entrepreneurship, and digital media, while creating meaningful and impactful technology-driven platforms.\n"
     },
     "createdAt": "2026-09-05T17:41:51.238Z",
-    "updatedAt": "2026-09-05T17:41:51.238Z"
+    "featured": true,
+    "priority": 5,
+    "updatedAt": "2026-09-05T17:59:04.923Z"
   },
   {
     "id": "MefXgXVc0qFb3G5lJsTN",
@@ -2345,7 +2345,6 @@
     "content": "<p>हाल ही में सामने आए <strong>'ऑपरेशन सिंदूर'</strong> से जुड़े घटनाक्रम ने राजनीतिक गलियारों में हलचल पैदा कर दी है। इस मामले में एक रिटायर्ड एयर मार्शल की नियुक्ति को लेकर विपक्ष ने सरकार से स्पष्टीकरण की मांग की है। विपक्ष का आरोप है कि इस नियुक्ति के पीछे कुछ छिपे हुए तथ्य हैं, जिन्हें सार्वजनिक किया जाना चाहिए।</p><h3>विपक्ष के तीखे सवाल</h3><p>विपक्षी दलों ने इस नियुक्ति प्रक्रिया की पारदर्शिता पर गंभीर सवाल उठाए हैं। उनका तर्क है कि जिस तरह से यह नियुक्ति की गई है, वह कई तरह की शंकाओं को जन्म देती है। विपक्ष का कहना है कि 'ऑपरेशन सिंदूर' जैसे संवेदनशील विषय से जुड़े मामलों में निर्णय लेने की प्रक्रिया पूरी तरह से पारदर्शी होनी चाहिए।</p><ul><li data-list-item-id=\"ed5881c3d39e177df1a6d116e595cfb5a\">नियुक्ति के पीछे के वास्तविक आधार क्या हैं?</li><li data-list-item-id=\"e88325cbfbab540f525995ae63de80bee\">क्या इस नियुक्ति के लिए निर्धारित सभी मानदंडों का पालन किया गया है?</li><li data-list-item-id=\"ecc569e739edad61613fa2a65705c25e0\">ऑपरेशन सिंदूर के साथ इस नियुक्ति का क्या संबंध है?</li></ul><h3>मामले की गंभीरता</h3><p>राजनीतिक विश्लेषकों का मानना है कि यह मुद्दा आने वाले दिनों में और तूल पकड़ सकता है। रक्षा मामलों से जुड़ी नियुक्तियों पर विपक्ष की यह सक्रियता सरकार के लिए एक बड़ी चुनौती बन सकती है। हालांकि, सरकार की ओर से अभी तक इस पर कोई विस्तृत आधिकारिक बयान नहीं आया है, जिससे अटकलों का बाजार गर्म है।</p><p>आम जनता के लिए यह समझना जरूरी है कि रक्षा क्षेत्र में होने वाली नियुक्तियां देश की सुरक्षा और रणनीतिक हितों से जुड़ी होती हैं। ऐसे में किसी भी प्रकार का विवाद न केवल संस्था की छवि को प्रभावित करता है, बल्कि जनता के भरोसे को भी कम कर सकता है।</p><h3>आगे क्या?</h3><p>फिलहाल, यह मामला अब राजनीतिक बहस का केंद्र बन गया है। विपक्ष ने मांग की है कि सरकार इस पूरे प्रकरण पर श्वेत पत्र जारी करे या संसद में इस पर चर्चा कराए। आने वाले समय में यह देखना दिलचस्प होगा कि सरकार इस विवाद को कैसे शांत करती है और क्या कोई ठोस जवाब सामने आता है।</p>",
     "seoTitle": "operation-sindoor-retired-air-marshal-appointment-controversy",
     "seoDescription": "ऑपरेशन सिंदूर और एक रिटायर्ड एयर मार्शल की नियुक्ति को लेकर विपक्ष ने सरकार से तीखे सवाल पूछे हैं। मामले की गंभीरता और राजनीतिक हलचल पर एक विस्तृत रिपोर्ट।",
-    "featured": true,
     "breaking": true,
     "status": "published",
     "slug": "operation-sindoor-retired-air-marshal-appointment-controversy-20260903-062443308",
@@ -2359,8 +2358,8 @@
       "bio": "Shubhi Mishra\n\nEditor, Infinia Bharat News | Video Editor | Graphic Designer | Digital Media Creative\n\nShubhi Mishra is an Editor at Infinia Bharat News, a skilled video editor, and a creative graphic designer with a strong interest in digital journalism, visual storytelling, and modern media.\n\nAt Infinia Bharat News, she contributes to the editorial and creative workflow, working across news content, video editing, graphic design, digital creatives, and visual presentation. Her ability to combine editorial understanding with creative skills helps transform news stories into engaging and visually compelling digital content.\n\nAs a video editing professional, Shubhi specializes in creating impactful news videos, short-form content, reels, and digital media productions. Her graphic design expertise includes creating news graphics, social media creatives, thumbnails, promotional visuals, and branded content.\n\nShe is passionate about the evolving world of digital media and believes that strong storytelling, thoughtful design, and responsible journalism can work together to create meaningful content for today's audience.\n\nThrough her work at Infinia Bharat News, Shubhi contributes to building a modern, creative, and audience-focused digital news platform where journalism meets technology and visual storytelling."
     },
     "createdAt": "2026-09-03T06:24:43.790Z",
-    "priority": 4,
-    "updatedAt": "2026-09-04T10:32:40.124Z"
+    "featured": false,
+    "updatedAt": "2026-09-05T17:59:04.923Z"
   },
   {
     "id": "vWcNkJDH8VpygizStUx7",
