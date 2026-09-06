@@ -98,10 +98,7 @@ const finalKeywords = getArticleKeywords({
     article.shortDescription?.trim() ||
     `${article.title} - ${siteConfig.name}`;
 
-  const image =
-    article.thumbnail ||
-    `${siteConfig.url}${siteConfig.logo}`;
-
+  const image = article.thumbnail;
   const contentImages = Array.from(
   article.content?.matchAll(
     /<img[^>]+src=["']([^"']+)["'][^>]*>/gi
@@ -391,8 +388,7 @@ export default async function NewsPage({
   // ========================================================
 
   const articleImage =
-    article.thumbnail ||
-    `${siteConfig.url}${siteConfig.logo}`;
+    article.thumbnail;
 
   const articleUrl =
     `${siteConfig.url}/news/${article.slug}`;
@@ -623,10 +619,6 @@ const youtubeVideos =
 
       url: articleImage,
 
-      width: 1200,
-
-      height: 630,
-
       caption: article.title,
     },
 
@@ -685,9 +677,6 @@ const youtubeVideos =
       url:
         `${siteConfig.url}/logos/logo-light.webp`,
 
-      width: 1200,
-
-      height: 630,
     },
   },
 

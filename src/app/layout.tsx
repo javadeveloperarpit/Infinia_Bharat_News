@@ -101,8 +101,6 @@ export const metadata: Metadata = {
     images: [
       {
         url: siteConfig.logo,
-        width: 1200,
-        height: 630,
         alt: "INFINIA BHARAT NEWS",
       },
     ],
@@ -141,8 +139,6 @@ const organizationSchema = {
   logo: {
     "@type": "ImageObject",
     url: `${siteConfig.url}/logos/logo-light.webp`,
-    width: 1200,
-    height: 630,
   },
 
   image: `${siteConfig.url}${siteConfig.logo}`,

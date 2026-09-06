@@ -160,7 +160,7 @@ export function renderAmpArticle({
     `${article.title} - ${siteConfig.name}`;
 
   const heroImage =
-    article.thumbnail || `${siteConfig.url}${siteConfig.logo}`;
+    article.thumbnail;
 
   const categoryName =
     article.categoryHi ||
@@ -216,20 +216,18 @@ export function renderAmpArticle({
     description,
 
     image: [
-      {
-        "@type": "ImageObject",
-        url: heroImage,
-        width: 1200,
-        height: 630,
-        caption: article.title,
-      },
+  {
+    "@type": "ImageObject",
+    url: heroImage,
+    caption: article.title,
+  },
 
-      ...contentImages.map((img) => ({
-        "@type": "ImageObject",
-        url: img.url,
-        caption: img.alt || article.title,
-      })),
-    ],
+  ...contentImages.map((img) => ({
+    "@type": "ImageObject",
+    url: img.url,
+    caption: img.alt || article.title,
+  })),
+],
 
     datePublished: article.createdAt,
 
@@ -251,11 +249,9 @@ export function renderAmpArticle({
       url: siteConfig.url,
 
       logo: {
-        "@type": "ImageObject",
-        url: `${siteConfig.url}/logos/logo-light.webp`,
-        width: 1200,
-        height: 630,
-      },
+  "@type": "ImageObject",
+  url: `${siteConfig.url}/logos/logo-light.webp`,
+},
     },
 
     articleSection: categoryName,
@@ -471,7 +467,7 @@ inLanguage: siteConfig.language || "hi",
   name="robots"
   content="${
     article.status === "published"
-      ? "index,follow"
+      ? "index,follow,max-image-preview:large"
       : "noindex,nofollow"
   }">
 

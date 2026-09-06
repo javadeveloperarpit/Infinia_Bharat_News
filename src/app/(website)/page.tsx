@@ -123,9 +123,7 @@ export async function generateMetadata(): Promise<Metadata> {
       images: [
         {
           url: siteConfig.logo,
-          width: 1200,
-          height: 630,
-          alt: siteConfig.name,
+          alt: siteConfig.name
         },
       ],
     },
@@ -503,11 +501,7 @@ const organizationSchema = {
   logo: {
     "@type": "ImageObject",
 
-    url: `${siteConfig.url}${siteConfig.logo}`,
-
-    width: 1200,
-
-    height: 630,
+    url: `${siteConfig.url}${siteConfig.logo}`
   },
 
   description: siteConfig.description,
