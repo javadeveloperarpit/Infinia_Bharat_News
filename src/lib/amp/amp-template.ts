@@ -37,6 +37,7 @@ interface RenderAmpArticleInput {
   siteConfig: SiteConfigLike;
   keywords?: string[];
 }
+
 // ============================================================
 // BRAND TOKENS
 // ============================================================
@@ -62,12 +63,6 @@ const BORDER = "#E4E4E7";
 // ============================================================
 // HARD-CODED HINDI CATEGORIES
 // ============================================================
-//
-// AMP page ko categories prop par dependent nahi rakha gaya.
-// Isliye categories hamesha render hongi.
-//
-// English categories intentionally navigation se hatai gayi hain.
-//
 
 const AMP_CATEGORIES: Array<{
   name: string;
@@ -140,6 +135,96 @@ const AMP_CATEGORIES: Array<{
 ];
 
 // ============================================================
+// AMP ARTICLE CONTENT SPLITTER
+// ============================================================
+//
+// Flow:
+//
+// Paragraph 1
+// Paragraph 2
+//
+// Faded teaser
+// [ पूरा लेख पढ़ें ]
+//
+// Click:
+//
+// Full remaining article expands naturally.
+//
+// IMPORTANT:
+// No fixed height.
+// No overflow hidden.
+// No internal scrolling.
+//
+
+function escapeHtmlText(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function splitAmpArticleContent(html: string) {
+  if (!html) {
+    return {
+      firstPart: "",
+      teaserPart: "",
+      remainingPart: "",
+      hasMore: false,
+    };
+  }
+
+  const paragraphRegex =
+    /<p\b[^>]*>[\s\S]*?<\/p>/gi;
+
+  const matches = Array.from(
+    html.matchAll(paragraphRegex)
+  );
+
+  if (matches.length <= 2) {
+    return {
+      firstPart: html,
+      teaserPart: "",
+      remainingPart: "",
+      hasMore: false,
+    };
+  }
+
+  const secondEnd =
+    (matches[1].index ?? 0) + matches[1][0].length;
+
+  const thirdStart =
+    matches[2].index ?? secondEnd;
+
+  const thirdHtml = matches[2][0];
+
+  const teaserText = thirdHtml
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const shortTeaser =
+    teaserText.length > 180
+      ? `${teaserText.slice(0, 180).trim()}…`
+      : teaserText;
+
+  return {
+    firstPart: html.slice(0, secondEnd),
+    teaserPart: escapeHtmlText(shortTeaser),
+    remainingPart: html.slice(thirdStart),
+    hasMore: true,
+  };
+}
+
+// ============================================================
 // MAIN BUILDER
 // ============================================================
 
@@ -147,10 +232,12 @@ export function renderAmpArticle({
   article,
   related,
   category,
+  categories,
   siteConfig,
   keywords,
 }: RenderAmpArticleInput): string {
-  const articleUrl = `${siteConfig.url}/news/${article.slug}`;
+  const articleUrl =
+    `${siteConfig.url}/news/${article.slug}`;
 
   const title = article.title;
 
@@ -173,28 +260,60 @@ export function renderAmpArticle({
     ? `${siteConfig.url}/category/${category.slug}`
     : `${siteConfig.url}/category`;
 
-  const authorName = article.author?.name || siteConfig.name;
-  const authorPhoto = article.author?.photo || "";
-  const authorSlug = article.author?.slug;
+  const authorName =
+    article.author?.name ||
+    siteConfig.name;
+
+  const authorPhoto =
+    article.author?.photo ||
+    "";
+
+  const authorSlug =
+    article.author?.slug;
 
   const authorUrl = authorSlug
     ? `${siteConfig.url}/author/${authorSlug}`
     : undefined;
 
-  const authorBio = (article.author?.bio || "").trim();
+  const authorBio =
+    (article.author?.bio || "").trim();
 
-  const publishedDate = formatHindiDate(article.createdAt);
-  const updatedDate = formatHindiDate(
-    article.updatedAt || article.createdAt
-  );
+  const publishedDate =
+    formatHindiDate(article.createdAt);
 
-  const readTime = calculateReadTime(article.content);
+  const updatedDate =
+    formatHindiDate(
+      article.updatedAt ||
+      article.createdAt
+    );
 
-  const contentImages = extractContentImages(article.content || "");
-  const youtubeVideos = extractYoutubeVideos(article.content || "");
-  const ampBody = convertToAmpHtml(article.content || "");
+  const readTime =
+    calculateReadTime(article.content);
 
-  const needsYoutube = youtubeVideos.length > 0;
+  const contentImages =
+    extractContentImages(
+      article.content || ""
+    );
+
+  const youtubeVideos =
+    extractYoutubeVideos(
+      article.content || ""
+    );
+
+  const ampBody =
+    convertToAmpHtml(
+      article.content || ""
+    );
+
+  // ==========================================================
+  // READ MORE SPLIT
+  // ==========================================================
+
+  const splitContent =
+    splitAmpArticleContent(ampBody);
+
+  const needsYoutube =
+    youtubeVideos.length > 0;
 
   // ==========================================================
   // SCHEMA
@@ -202,9 +321,11 @@ export function renderAmpArticle({
 
   const articleSchema = {
     "@context": "https://schema.org",
+
     "@type": "NewsArticle",
 
-    "@id": `${articleUrl}#newsarticle`,
+    "@id":
+      `${articleUrl}#newsarticle`,
 
     mainEntityOfPage: {
       "@type": "WebPage",
@@ -216,49 +337,65 @@ export function renderAmpArticle({
     description,
 
     image: [
-  {
-    "@type": "ImageObject",
-    url: heroImage,
-    caption: article.title,
-  },
+      {
+        "@type": "ImageObject",
+        url: heroImage,
+        caption: article.title,
+      },
 
-  ...contentImages.map((img) => ({
-    "@type": "ImageObject",
-    url: img.url,
-    caption: img.alt || article.title,
-  })),
-],
+      ...contentImages.map((img) => ({
+        "@type": "ImageObject",
+        url: img.url,
+        caption:
+          img.alt || article.title,
+      })),
+    ],
 
-    datePublished: article.createdAt,
+    datePublished:
+      article.createdAt,
 
-    dateModified: article.updatedAt || article.createdAt,
+    dateModified:
+      article.updatedAt ||
+      article.createdAt,
 
     author: {
       "@type": "Person",
       name: authorName,
-      ...(authorUrl ? { url: authorUrl } : {}),
+
+      ...(authorUrl
+        ? {
+            url: authorUrl,
+          }
+        : {}),
     },
 
     publisher: {
       "@type": "NewsMediaOrganization",
 
-      "@id": `${siteConfig.url}/#organization`,
+      "@id":
+        `${siteConfig.url}/#organization`,
 
-      name: siteConfig.name,
+      name:
+        siteConfig.name,
 
-      url: siteConfig.url,
+      url:
+        siteConfig.url,
 
       logo: {
-  "@type": "ImageObject",
-  url: `${siteConfig.url}/logos/logo-light.webp`,
-},
+        "@type": "ImageObject",
+        url:
+          `${siteConfig.url}/logos/logo-light.webp`,
+      },
     },
 
-    articleSection: categoryName,
+    articleSection:
+      categoryName,
 
-keywords: keywords?.join(", ") || "",
+    keywords:
+      keywords?.join(", ") || "",
 
-inLanguage: siteConfig.language || "hi",
+    inLanguage:
+      siteConfig.language || "hi",
 
     isAccessibleForFree: true,
   };
@@ -289,7 +426,8 @@ inLanguage: siteConfig.language || "hi",
 
       {
         "@type": "ListItem",
-        position: category?.slug ? 3 : 2,
+        position:
+          category?.slug ? 3 : 2,
         name: article.title,
         item: articleUrl,
       },
@@ -300,101 +438,120 @@ inLanguage: siteConfig.language || "hi",
   // CATEGORY NAV
   // ==========================================================
 
-  const categoryNavHtml = AMP_CATEGORIES.map(
-    (item) => `
-      <a
-        class="desktop-category-link"
-        href="${siteConfig.url}/category/${escapeAttr(item.slug)}"
-      >
-        ${escapeAttr(item.name)}
-      </a>
-    `
-  ).join("");
+  const categoryNavHtml =
+    AMP_CATEGORIES.map(
+      (item) => `
+        <a
+          class="desktop-category-link"
+          href="${siteConfig.url}/category/${escapeAttr(
+            item.slug
+          )}"
+        >
+          ${escapeAttr(item.name)}
+        </a>
+      `
+    ).join("");
 
   // ==========================================================
   // MOBILE MENU
   // ==========================================================
 
-  const mobileCategoryHtml = AMP_CATEGORIES.map(
-    (item) => `
-      <a
-        class="mobile-menu-link"
-        href="${siteConfig.url}/category/${escapeAttr(item.slug)}"
-      >
-        <span>${escapeAttr(item.name)}</span>
-        <span class="menu-arrow">›</span>
-      </a>
-    `
-  ).join("");
+  const mobileCategoryHtml =
+    AMP_CATEGORIES.map(
+      (item) => `
+        <a
+          class="mobile-menu-link"
+          href="${siteConfig.url}/category/${escapeAttr(
+            item.slug
+          )}"
+        >
+          <span>${escapeAttr(item.name)}</span>
+          <span class="menu-arrow">›</span>
+        </a>
+      `
+    ).join("");
 
   // ==========================================================
   // BREAKING
   // ==========================================================
 
-  const breakingBadge = article.breaking
-    ? `<span class="badge badge-breaking">ब्रेकिंग</span>`
-    : "";
+  const breakingBadge =
+    article.breaking
+      ? `<span class="badge badge-breaking">ब्रेकिंग</span>`
+      : "";
 
   // ==========================================================
   // AUTHOR
   // ==========================================================
 
-  const authorAvatarHtml = authorPhoto
-    ? `
-      <amp-img
-        src="${escapeAttr(authorPhoto)}"
-        alt="${escapeAttr(authorName)}"
-        width="40"
-        height="40"
-        layout="fixed"
-        class="author-avatar">
-      </amp-img>
-    `
-    : `
-      <span class="author-avatar author-avatar--fallback">
-        ${escapeAttr(authorName.charAt(0))}
-      </span>
-    `;
+  const authorAvatarHtml =
+    authorPhoto
+      ? `
+        <amp-img
+          src="${escapeAttr(authorPhoto)}"
+          alt="${escapeAttr(authorName)}"
+          width="40"
+          height="40"
+          layout="fixed"
+          class="author-avatar">
+        </amp-img>
+      `
+      : `
+        <span class="author-avatar author-avatar--fallback">
+          ${escapeAttr(
+            authorName.charAt(0)
+          )}
+        </span>
+      `;
 
-  const authorBioHtml = authorBio
-    ? authorBio
-        .split(/\n{2,}/)
-        .map(
-          (para) =>
-            `<p>${escapeAttr(para).replace(/\n/g, "<br>")}</p>`
-        )
-        .join("")
-    : "";
+  const authorBioHtml =
+    authorBio
+      ? authorBio
+          .split(/\n{2,}/)
+          .map(
+            (para) =>
+              `<p>${escapeAttr(
+                para
+              ).replace(
+                /\n/g,
+                "<br>"
+              )}</p>`
+          )
+          .join("")
+      : "";
 
   // ==========================================================
   // YOUTUBE
   // ==========================================================
 
-  const youtubeSectionHtml = needsYoutube
-    ? `
-      <section class="block-section">
+  const youtubeSectionHtml =
+    needsYoutube
+      ? `
+        <section class="block-section">
 
-        <h2 class="section-title">
-          वीडियो देखें
-        </h2>
+          <h2 class="section-title">
+            वीडियो देखें
+          </h2>
 
-        ${youtubeVideos
-          .map(
-            (video) => `
-              <amp-youtube
-                data-videoid="${escapeAttr(video.id)}"
-                layout="responsive"
-                width="480"
-                height="270"
-                class="youtube-embed">
-              </amp-youtube>
-            `
-          )
-          .join("")}
+          ${youtubeVideos
+            .map(
+              (video) => `
+                <amp-youtube
+                  data-videoid="${escapeAttr(
+                    video.id
+                  )}"
+                  layout="responsive"
+                  width="480"
+                  height="270"
+                  class="youtube-embed">
+                </amp-youtube>
+              `
+            )
+            .join("")}
 
-      </section>
-    `
-    : "";
+        </section>
+      `
+      : "";
 
   // ==========================================================
   // RELATED
@@ -405,12 +562,16 @@ inLanguage: siteConfig.language || "hi",
       ? related
           .slice(0, 6)
           .map((item) => {
-            const rImg = item.thumbnail || heroImage;
+            const rImg =
+              item.thumbnail ||
+              heroImage;
 
             return `
               <a
                 class="related-card"
-                href="${siteConfig.url}/amp/news/${escapeAttr(item.slug)}"
+                href="${siteConfig.url}/amp/news/${escapeAttr(
+                  item.slug
+                )}"
               >
 
                 <amp-img
@@ -423,7 +584,9 @@ inLanguage: siteConfig.language || "hi",
                 </amp-img>
 
                 <span class="related-title">
-                  ${escapeAttr(item.title)}
+                  ${escapeAttr(
+                    item.title
+                  )}
                 </span>
 
               </a>
@@ -451,6 +614,7 @@ inLanguage: siteConfig.language || "hi",
 
 <title>${escapeAttr(title)}</title>
 
+<!-- PRIMARY CANONICAL REMAINS NORMAL ARTICLE URL -->
 <link
   rel="canonical"
   href="${articleUrl}">
@@ -485,7 +649,9 @@ inLanguage: siteConfig.language || "hi",
 
 <meta
   property="og:site_name"
-  content="${escapeAttr(siteConfig.name)}">
+  content="${escapeAttr(
+    siteConfig.name
+  )}">
 
 <meta
   property="og:title"
@@ -505,11 +671,17 @@ inLanguage: siteConfig.language || "hi",
 
 <meta
   property="article:modified_time"
-  content="${article.updatedAt || article.createdAt || ""}">
+  content="${
+    article.updatedAt ||
+    article.createdAt ||
+    ""
+  }">
 
 <meta
   property="article:section"
-  content="${escapeAttr(categoryName)}">
+  content="${escapeAttr(
+    categoryName
+  )}">
 
 <meta
   name="twitter:card"
@@ -527,7 +699,9 @@ inLanguage: siteConfig.language || "hi",
   name="twitter:image"
   content="${escapeAttr(heroImage)}">
 
-<!-- AMP SIDEBAR -->
+<!-- ========================================================
+     AMP SIDEBAR
+========================================================= -->
 
 <script
   async
@@ -535,12 +709,25 @@ inLanguage: siteConfig.language || "hi",
   src="https://cdn.ampproject.org/v0/amp-sidebar-0.1.js">
 </script>
 
-<!-- AMP SOCIAL SHARE -->
+<!-- ========================================================
+     AMP SOCIAL SHARE
+========================================================= -->
 
 <script
   async
   custom-element="amp-social-share"
   src="https://cdn.ampproject.org/v0/amp-social-share-0.1.js">
+</script>
+
+<!-- ========================================================
+     AMP BIND
+     Required for "पूरा लेख पढ़ें"
+========================================================= -->
+
+<script
+  async
+  custom-element="amp-bind"
+  src="https://cdn.ampproject.org/v0/amp-bind-0.1.js">
 </script>
 
 ${
@@ -556,48 +743,86 @@ ${
 }
 
 <style amp-boilerplate>
+
 body {
-  -webkit-animation: -amp-start 8s steps(1,end) 0s 1 normal both;
-  -moz-animation: -amp-start 8s steps(1,end) 0s 1 normal both;
-  -ms-animation: -amp-start 8s steps(1,end) 0s 1 normal both;
-  animation: -amp-start 8s steps(1,end) 0s 1 normal both;
+  -webkit-animation:
+    -amp-start 8s steps(1,end) 0s 1 normal both;
+
+  -moz-animation:
+    -amp-start 8s steps(1,end) 0s 1 normal both;
+
+  -ms-animation:
+    -amp-start 8s steps(1,end) 0s 1 normal both;
+
+  animation:
+    -amp-start 8s steps(1,end) 0s 1 normal both;
 }
 
 @-webkit-keyframes -amp-start {
-  from { visibility:hidden }
-  to { visibility:visible }
+  from {
+    visibility: hidden;
+  }
+
+  to {
+    visibility: visible;
+  }
 }
 
 @-moz-keyframes -amp-start {
-  from { visibility:hidden }
-  to { visibility:visible }
+  from {
+    visibility: hidden;
+  }
+
+  to {
+    visibility: visible;
+  }
 }
 
 @-ms-keyframes -amp-start {
-  from { visibility:hidden }
-  to { visibility:visible }
+  from {
+    visibility: hidden;
+  }
+
+  to {
+    visibility: visible;
+  }
 }
 
 @-o-keyframes -amp-start {
-  from { visibility:hidden }
-  to { visibility:visible }
+  from {
+    visibility: hidden;
+  }
+
+  to {
+    visibility: visible;
+  }
 }
 
 @keyframes -amp-start {
-  from { visibility:hidden }
-  to { visibility:visible }
+  from {
+    visibility: hidden;
+  }
+
+  to {
+    visibility: visible;
+  }
 }
+
 </style>
 
 <noscript>
+
 <style amp-boilerplate>
+
 body {
-  -webkit-animation:none;
-  -moz-animation:none;
-  -ms-animation:none;
-  animation:none;
+  -webkit-animation: none;
+  -moz-animation: none;
+  -ms-animation: none;
+  animation: none;
 }
+
 </style>
+
 </noscript>
 
 <script type="application/ld+json">
@@ -773,19 +998,19 @@ a {
 
 .header-logo amp-img {
   display: block;
-}
-
-.header-logo amp-img {
-  display: block;
   width: 170px;
   height: 54px;
 }
-  @media (max-width: 767px) {
+
+@media (max-width: 767px) {
+
   .header-logo amp-img {
     width: 155px;
     height: 49px;
   }
+
 }
+
 /* ============================================================
    HAMBURGER
 ============================================================ */
@@ -826,13 +1051,6 @@ a {
   height: 14px;
 
   position: relative;
-}
-
-.menu-icon::before,
-.menu-icon::after,
-.menu-icon {
-
-  background: transparent;
 }
 
 .menu-line {
@@ -908,17 +1126,10 @@ a {
     0 5px 16px rgba(200,16,46,0.28);
 
   white-space: nowrap;
-
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.reels-btn:active {
-  transform: scale(0.97);
 }
 
 .reels-icon {
+
   width: 22px;
   height: 22px;
 
@@ -1886,6 +2097,147 @@ h1.title {
   overflow-wrap: anywhere;
 }
 
+/* ============================================================
+   READ MORE / ARTICLE TEASER
+============================================================ */
+
+.article-teaser {
+
+  position:
+    relative;
+
+  color:
+    #52525b;
+
+  opacity:
+    0.58;
+
+  font-size:
+    17px;
+
+  line-height:
+    1.75;
+
+  margin:
+    2px 0 0;
+
+  padding:
+    0 0 14px;
+}
+
+.article-teaser::after {
+
+  content:
+    "";
+
+  position:
+    absolute;
+
+  left:
+    0;
+
+  right:
+    0;
+
+  bottom:
+    0;
+
+  height:
+    42px;
+
+  pointer-events:
+    none;
+
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(253,248,248,0),
+      ${BG}
+    );
+}
+
+.read-more-wrap {
+
+  display:
+    flex;
+
+  justify-content:
+    center;
+
+  margin:
+    8px 0 26px;
+}
+
+.read-more-btn {
+
+  appearance:
+    none;
+
+  border:
+    0;
+
+  border-radius:
+    999px;
+
+  padding:
+    12px 22px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #730708 0%,
+      #c8102e 100%
+    );
+
+  color:
+    #ffffff;
+
+  font-size:
+    14px;
+
+  font-weight:
+    800;
+
+  line-height:
+    1.2;
+
+  box-shadow:
+    0 5px 16px
+    rgba(115,7,8,0.20);
+
+  cursor:
+    pointer;
+
+  -webkit-tap-highlight-color:
+    transparent;
+}
+
+.read-more-arrow {
+
+  display:
+    inline-block;
+
+  margin-left:
+    7px;
+
+  font-size:
+    15px;
+
+}
+
+@media (max-width: 480px) {
+
+  .read-more-btn {
+
+    padding:
+      11px 20px;
+
+    font-size:
+      13.5px;
+  }
+
+}
+
 @media (min-width: 1024px) {
 
   .content p {
@@ -2495,6 +2847,20 @@ h1.title {
 <body>
 
 <!-- ==========================================================
+     AMP ARTICLE READER STATE
+=========================================================== -->
+
+<amp-state id="articleReader">
+
+  <script type="application/json">
+    {
+      "expanded": false
+    }
+  </script>
+
+</amp-state>
+
+<!-- ==========================================================
      MOBILE SIDEBAR
 =========================================================== -->
 
@@ -2510,14 +2876,13 @@ h1.title {
       ${escapeAttr(siteConfig.name)}
     </span>
 
-    <button 
-  class="mobile-menu-close" 
-  on="tap:mobile-menu.close" 
-  aria-label="मेन्यू बंद करें"
-  type="button">
-  ×
- </button>
-
+    <button
+      class="mobile-menu-close"
+      on="tap:mobile-menu.close"
+      aria-label="मेन्यू बंद करें"
+      type="button">
+      ×
+    </button>
 
   </div>
 
@@ -2594,13 +2959,11 @@ h1.title {
 
     <div class="header-left">
 
-      <!-- MOBILE HAMBURGER -->
-
-      <button 
-  class="menu-button" 
-  on="tap:mobile-menu.toggle" 
-  aria-label="मेन्यू खोलें"
-  type="button">
+      <button
+        class="menu-button"
+        on="tap:mobile-menu.toggle"
+        aria-label="मेन्यू खोलें"
+        type="button">
 
         <span class="menu-icon">
 
@@ -2612,12 +2975,12 @@ h1.title {
 
       </button>
 
-      <!-- LOGO -->
-
       <a
         class="header-logo"
         href="${siteConfig.url}"
-        aria-label="${escapeAttr(siteConfig.name)}">
+        aria-label="${escapeAttr(
+          siteConfig.name
+        )}">
 
         <amp-img
           src="${escapeAttr(
@@ -2625,7 +2988,9 @@ h1.title {
           )}"
           width="170"
           height="54"
-          alt="${escapeAttr(siteConfig.name)}"
+          alt="${escapeAttr(
+            siteConfig.name
+          )}"
           layout="fixed">
         </amp-img>
 
@@ -2633,18 +2998,20 @@ h1.title {
 
     </div>
 
-    <a 
-  class="reels-btn" 
-  href="${siteConfig.url}/reels"
-  aria-label="रील्स देखें">
+    <a
+      class="reels-btn"
+      href="${siteConfig.url}/reels"
+      aria-label="रील्स देखें">
 
-  <span class="reels-icon">▶</span>
+      <span class="reels-icon">
+        ▶
+      </span>
 
-  <span class="reels-text">
-    REELS
-  </span>
+      <span class="reels-text">
+        REELS
+      </span>
 
-</a>
+    </a>
 
   </div>
 
@@ -2660,30 +3027,25 @@ h1.title {
 
   <div class="wrap nav-inner">
 
-    <a
-      href="${siteConfig.url}">
+    <a href="${siteConfig.url}">
       होम
     </a>
 
-    <a
-      href="${siteConfig.url}/latest">
+    <a href="${siteConfig.url}/latest">
       ताज़ा खबरें
     </a>
 
     ${categoryNavHtml}
 
-    <a
-      href="${siteConfig.url}/video">
+    <a href="${siteConfig.url}/video">
       वीडियो
     </a>
 
-    <a
-      href="${siteConfig.url}/reels">
+    <a href="${siteConfig.url}/reels">
       रील्स
     </a>
 
-    <a
-      href="${siteConfig.url}/live-tv">
+    <a href="${siteConfig.url}/live-tv">
       लाइव टीवी
     </a>
 
@@ -2721,40 +3083,46 @@ h1.title {
 
         <div class="meta-row">
 
-  ${
-    authorUrl
-      ? `
-        <a
-          class="author-profile-link"
-          href="${escapeAttr(authorUrl)}"
-          aria-label="${escapeAttr(authorName)} की प्रोफाइल देखें"
-        >
-          ${authorAvatarHtml}
-        </a>
-      `
-      : authorAvatarHtml
-  }
+          ${
+            authorUrl
+              ? `
+                <a
+                  class="author-profile-link"
+                  href="${escapeAttr(authorUrl)}"
+                  aria-label="${escapeAttr(
+                    authorName
+                  )} की प्रोफाइल देखें"
+                >
+                  ${authorAvatarHtml}
+                </a>
+              `
+              : authorAvatarHtml
+          }
 
-  <div class="meta-text">
+          <div class="meta-text">
 
-    ${
-      authorUrl
-        ? `
-          <a
-            class="author-name author-profile-link"
-            href="${escapeAttr(authorUrl)}"
-          >
-            ${escapeAttr(authorName)}
-          </a>
-        `
-        : `
-          <div class="author-name">
-            ${escapeAttr(authorName)}
-          </div>
-        `
-    }
+            ${
+              authorUrl
+                ? `
+                  <a
+                    class="author-name author-profile-link"
+                    href="${escapeAttr(authorUrl)}"
+                  >
+                    ${escapeAttr(
+                      authorName
+                    )}
+                  </a>
+                `
+                : `
+                  <div class="author-name">
+                    ${escapeAttr(
+                      authorName
+                    )}
+                  </div>
+                `
+            }
 
-    <div class="meta-sub">
+            <div class="meta-sub">
 
               ${publishedDate}
 
@@ -2831,87 +3199,161 @@ h1.title {
 
         </figure>
 
-        <!-- CONTENT -->
+        <!-- ==================================================
+             CONTENT
+        =================================================== -->
 
         <div class="content">
 
-          ${ampBody}
+          <!-- ==================================================
+               FIRST TWO PARAGRAPHS — ALWAYS VISIBLE
+          =================================================== -->
+
+          ${splitContent.firstPart}
+
+          ${
+            splitContent.hasMore
+              ? `
+
+                <!-- ==================================================
+                     SHORT FADED TEASER
+                =================================================== -->
+
+                <div
+                  class="article-teaser"
+                  [hidden]="articleReader.expanded"
+                >
+                  ${splitContent.teaserPart}
+                </div>
+
+                <!-- ==================================================
+                     SINGLE READ MORE BUTTON
+                =================================================== -->
+
+                <div
+                  class="read-more-wrap"
+                  [hidden]="articleReader.expanded"
+                >
+                  <button
+                    class="read-more-btn"
+                    type="button"
+                    on="tap:AMP.setState({articleReader: {expanded: true}})"
+                    aria-label="पूरा लेख पढ़ें"
+                  >
+                    <span>पूरा लेख पढ़ें</span>
+                    <span class="read-more-arrow">↓</span>
+                  </button>
+                </div>
+
+                <!-- ==================================================
+                     COMPLETE REMAINING ARTICLE
+
+                     Static hidden guarantees the remaining article
+                     stays hidden before AMP Bind initializes.
+                =================================================== -->
+
+                <div
+                  hidden
+                  [hidden]="!articleReader.expanded"
+                >
+                  ${splitContent.remainingPart}
+                </div>
+
+              `
+              : ""
+          }
 
         </div>
 
-        <!-- YOUTUBE -->
+        <!-- ==================================================
+             YOUTUBE
+        =================================================== -->
 
         ${youtubeSectionHtml}
 
-        <!-- AUTHOR -->
+        <!-- ==================================================
+             AUTHOR
+        =================================================== -->
 
-       <section class="author-box">
+        <section class="author-box">
 
-  ${
-    authorUrl
-      ? `
-        <a
-          class="author-box-link"
-          href="${escapeAttr(authorUrl)}"
-          aria-label="${escapeAttr(authorName)} की प्रोफाइल देखें"
-        >
+          ${
+            authorUrl
+              ? `
+                <a
+                  class="author-box-link"
+                  href="${escapeAttr(authorUrl)}"
+                  aria-label="${escapeAttr(
+                    authorName
+                  )} की प्रोफाइल देखें"
+                >
 
-          <div class="author-box-head">
+                  <div class="author-box-head">
 
-            ${authorAvatarHtml}
+                    ${authorAvatarHtml}
 
-            <div>
+                    <div>
 
-              <div class="author-box-name">
-                ${escapeAttr(authorName)}
-              </div>
+                      <div class="author-box-name">
+                        ${escapeAttr(
+                          authorName
+                        )}
+                      </div>
 
-              <div class="author-box-role">
+                      <div class="author-box-role">
 
-                ${escapeAttr(
-                  article.author?.role || "Editor"
-                )},
+                        ${escapeAttr(
+                          article.author?.role ||
+                          "Editor"
+                        )},
 
-                ${escapeAttr(siteConfig.name)}
+                        ${escapeAttr(
+                          siteConfig.name
+                        )}
 
-              </div>
+                      </div>
 
-            </div>
+                    </div>
 
-          </div>
+                  </div>
 
-        </a>
-      `
-      : `
-        <div class="author-box-head">
+                </a>
+              `
+              : `
+                <div class="author-box-head">
 
-          ${authorAvatarHtml}
+                  ${authorAvatarHtml}
 
-          <div>
+                  <div>
 
-            <div class="author-box-name">
-              ${escapeAttr(authorName)}
-            </div>
+                    <div class="author-box-name">
+                      ${escapeAttr(
+                        authorName
+                      )}
+                    </div>
 
-            <div class="author-box-role">
+                    <div class="author-box-role">
 
-              ${escapeAttr(
-                article.author?.role || "Editor"
-              )},
+                      ${escapeAttr(
+                        article.author?.role ||
+                        "Editor"
+                      )},
 
-              ${escapeAttr(siteConfig.name)}
+                      ${escapeAttr(
+                        siteConfig.name
+                      )}
 
-            </div>
+                    </div>
 
-          </div>
+                  </div>
 
-        </div>
-      `
-  }
+                </div>
+              `
+          }
 
-  ${authorBioHtml}
+          ${authorBioHtml}
 
-</section>
+        </section>
 
       </div>
 
@@ -2963,7 +3405,9 @@ h1.title {
         )}"
         width="150"
         height="47"
-        alt="${escapeAttr(siteConfig.name)}"
+        alt="${escapeAttr(
+          siteConfig.name
+        )}"
         layout="fixed">
       </amp-img>
 

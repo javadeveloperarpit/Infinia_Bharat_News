@@ -490,7 +490,41 @@ function prepareAudioContent(html: string) {
     }
   );
 }
+function splitArticleContent(html: string) {
+  if (!html) {
+    return {
+      firstPart: "",
+      remainingPart: "",
+      hasMore: false,
+    };
+  }
 
+  // First two readable paragraphs
+  const paragraphRegex =
+    /<p\b[^>]*>[\s\S]*?<\/p>/gi;
+
+  const matches = Array.from(
+    html.matchAll(paragraphRegex)
+  );
+
+  if (matches.length <= 2) {
+    return {
+      firstPart: html,
+      remainingPart: "",
+      hasMore: false,
+    };
+  }
+
+  const secondParagraphEnd =
+    (matches[1].index ?? 0) +
+    matches[1][0].length;
+
+  return {
+    firstPart: html.slice(0, secondParagraphEnd),
+    remainingPart: html.slice(secondParagraphEnd),
+    hasMore: true,
+  };
+}
 /* =========================================================
    ARTICLE CONTENT
 ========================================================= */
@@ -501,16 +535,22 @@ export default function ArticleContent({
   const [activeIndex, setActiveIndex] =
     useState<number | null>(null);
 
-  const content = useMemo(() => {
-    const converted =
-      convertMediaEmbeds(
-        article?.content || ""
-      );
+  const [isExpanded, setIsExpanded] = useState(false);
 
-    return prepareAudioContent(
-      converted
+ const content = useMemo(() => {
+  const converted =
+    convertMediaEmbeds(
+      article?.content || ""
     );
-  }, [article?.content]);
+
+  return prepareAudioContent(
+    converted
+  );
+}, [article?.content]);
+
+const splitContent = useMemo(() => {
+  return splitArticleContent(content);
+}, [content]);
 
   /* =======================================================
      AUDIO EVENT LISTENER
@@ -1036,15 +1076,131 @@ export default function ArticleContent({
             min-height: 500px;
           }
         }
+        
+
+      .article-remaining {
+  position: relative;
+
+  /* IMPORTANT:
+     page ki height natural rahegi,
+     sirf visual clipping hogi */
+  max-height: 320px;
+
+  overflow: hidden;
+}
+
+.article-remaining::after {
+  content: "";
+
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  height: 180px;
+
+  pointer-events: none;
+
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0),
+    rgba(255,255,255,0.75),
+    #fff
+  );
+}
+
+.article-read-more-overlay {
+  position: absolute;
+
+  left: 0;
+  right: 0;
+  bottom: 20px;
+
+  z-index: 5;
+
+  display: flex;
+  justify-content: center;
+}
+
+.article-read-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 11px 22px;
+
+  border: none;
+  border-radius: 999px;
+
+  background: #c8102e;
+  color: white;
+
+  font-size: 15px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  box-shadow: 0 5px 18px rgba(0,0,0,.18);
+}
+
+/* CLICK KE BAAD */
+.article-remaining-open {
+  max-height: none;
+  overflow: visible;
+}
+
+.article-remaining-open::after {
+  display: none;
+}
+
+.article-remaining-open .article-read-more-overlay {
+  display: none;
+}
 
       `}</style>
 
-      <div
-        className="article-content"
-        dangerouslySetInnerHTML={{
-          __html: content,
-        }}
-      />
+      <div className="article-content">
+
+  {/* =====================================================
+      FIRST 2 PARAGRAPHS
+  ====================================================== */}
+
+  <div
+    dangerouslySetInnerHTML={{
+      __html: splitContent.firstPart,
+    }}
+  />
+
+  {splitContent.hasMore && (
+  <div
+    className={
+      isExpanded
+        ? "article-remaining article-remaining-open"
+        : "article-remaining"
+    }
+  >
+    <div
+      className="article-remaining-content"
+      dangerouslySetInnerHTML={{
+        __html: splitContent.remainingPart,
+      }}
+    />
+
+    {!isExpanded && (
+      <div className="article-read-more-overlay">
+        <button
+          type="button"
+          className="article-read-more"
+          onClick={() => setIsExpanded(true)}
+        >
+          <span>पूरा लेख पढ़ें</span>
+          <span className="article-read-more-arrow">↓</span>
+        </button>
+      </div>
+    )}
+  </div>
+)}
+</div>
     </>
   );
 }
