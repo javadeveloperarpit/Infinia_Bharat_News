@@ -6,10 +6,8 @@ import {
 } from "@/services/public/category.public.service";
 
 import {
-  getPublishedArticles,
+  getAllPublishedArticles,
 } from "@/services/public/article.public.service";
-
-
 export const metadata: Metadata = {
   title: "English News Categories | Infinia Bharat News",
   description:
@@ -120,12 +118,12 @@ const categoryData: Record<
 export default async function EnglishArticlesPage() {
 
   const [
-    categories,
-    articles,
-  ] = await Promise.all([
-    getCategories(),
-    getPublishedArticles(),
-  ]);
+  categories,
+  articles,
+] = await Promise.all([
+  getCategories(),
+  getAllPublishedArticles(),
+]);
 
 
   // ==========================================================
