@@ -569,9 +569,7 @@ export function renderAmpArticle({
             return `
               <a
                 class="related-card"
-                href="${siteConfig.url}/amp/news/${escapeAttr(
-                  item.slug
-                )}"
+                href="${siteConfig.url}/news/${escapeAttr(item.slug)}"
               >
 
                 <amp-img

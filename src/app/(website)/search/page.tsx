@@ -7,15 +7,38 @@ import {
   searchVideos,
 } from "@/services/public/search.public.service";
 
-export const metadata: Metadata = {
-  title: "Search News | Infinia Bharat News",
-  description:
-    "Search the latest news, articles and videos on Infinia Bharat News.",
-  robots: {
-    index: false,
-    follow: true,
-  },
-};
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    q?: string;
+  }>;
+}): Promise<Metadata> {
+  const { q } = await searchParams;
+
+  const keyword = q?.trim() || "";
+
+  if (!keyword) {
+    return {
+      title: "Search News | Infinia Bharat News",
+      description:
+        "Search the latest news, articles and videos on Infinia Bharat News.",
+      robots: {
+        index: false,
+        follow: true,
+      },
+    };
+  }
+
+  return {
+    title: `Search Results for: ${keyword}`,
+    description: `Search results for "${keyword}" on Infinia Bharat News. Find the latest news, articles and videos related to ${keyword}.`,
+    robots: {
+      index: false,
+      follow: true,
+    },
+  };
+}
 
 const quickLinks = [
   { title: "Home", href: "/" },

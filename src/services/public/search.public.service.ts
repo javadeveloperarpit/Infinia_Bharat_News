@@ -1,14 +1,14 @@
 import fs from "fs/promises";
 import path from "path";
 
-import {
-  PublicArticle,
-} from "./article.public.service";
+import { PublicArticle } from "./article.public.service";
+import { PublicVideo } from "./video.public.service";
 
-import {
-  PublicVideo,
-} from "./video.public.service";
+// ============================================================
+// SEARCH CONFIG
+// ============================================================
 
+const MAX_RESULTS = 20;
 
 // ============================================================
 // LOAD ARTICLES
@@ -23,27 +23,15 @@ async function loadArticles(): Promise<any[]> {
       "articles.json"
     );
 
-    const file = await fs.readFile(
-      filePath,
-      "utf-8"
-    );
-
+    const file = await fs.readFile(filePath, "utf-8");
     const data = JSON.parse(file);
 
-    return Array.isArray(data)
-      ? data
-      : [];
-
+    return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error(
-      "SEARCH LOAD ARTICLES ERROR:",
-      error
-    );
-
+    console.error("SEARCH LOAD ARTICLES ERROR:", error);
     return [];
   }
 }
-
 
 // ============================================================
 // LOAD VIDEOS
@@ -58,67 +46,463 @@ async function loadVideos(): Promise<any[]> {
       "videos.json"
     );
 
-    const file = await fs.readFile(
-      filePath,
-      "utf-8"
-    );
-
+    const file = await fs.readFile(filePath, "utf-8");
     const data = JSON.parse(file);
 
-    return Array.isArray(data)
-      ? data
-      : [];
-
+    return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error(
-      "SEARCH LOAD VIDEOS ERROR:",
-      error
-    );
-
+    console.error("SEARCH LOAD VIDEOS ERROR:", error);
     return [];
   }
 }
-
 
 // ============================================================
 // FORMAT TIMESTAMP
 // ============================================================
 
-function formatTimestamp(
-  value: any
-): string | undefined {
-
+function formatTimestamp(value: any): string | undefined {
   if (!value) {
     return undefined;
   }
 
-  if (
-    typeof value?.toDate === "function"
-  ) {
-    return value
-      .toDate()
-      .toISOString();
+  if (typeof value?.toDate === "function") {
+    return value.toDate().toISOString();
   }
 
-  if (
-    typeof value?.seconds === "number"
-  ) {
-    return new Date(
-      value.seconds * 1000
-    ).toISOString();
+  if (typeof value?.seconds === "number") {
+    return new Date(value.seconds * 1000).toISOString();
   }
 
   const date = new Date(value);
 
-  if (
-    isNaN(date.getTime())
-  ) {
+  if (isNaN(date.getTime())) {
     return undefined;
   }
 
   return date.toISOString();
 }
 
+// ============================================================
+// NORMALIZE SEARCH TEXT
+// ============================================================
+
+function normalizeText(value: any): string {
+  return String(value || "")
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// ============================================================
+// TOKENIZE
+// ============================================================
+
+function tokenize(value: any): string[] {
+  const normalized = normalizeText(value);
+
+  if (!normalized) {
+    return [];
+  }
+
+  return normalized.split(" ").filter(Boolean);
+}
+
+// ============================================================
+// LEVENSHTEIN DISTANCE
+// ============================================================
+
+function levenshteinDistance(
+  a: string,
+  b: string,
+  maxDistance = Infinity
+): number {
+  if (a === b) {
+    return 0;
+  }
+
+  if (!a) {
+    return Array.from(b).length;
+  }
+
+  if (!b) {
+    return Array.from(a).length;
+  }
+
+  const aChars = Array.from(a);
+  const bChars = Array.from(b);
+
+  if (Math.abs(aChars.length - bChars.length) > maxDistance) {
+    return maxDistance + 1;
+  }
+
+  // Keep the shorter string in the columns.
+  if (aChars.length > bChars.length) {
+    return levenshteinDistance(
+      b,
+      a,
+      maxDistance
+    );
+  }
+
+  let previous = Array.from(
+    { length: aChars.length + 1 },
+    (_, index) => index
+  );
+
+  let current = new Array<number>(
+    aChars.length + 1
+  );
+
+  for (let j = 1; j <= bChars.length; j++) {
+    current[0] = j;
+
+    let rowMin = current[0];
+
+    for (let i = 1; i <= aChars.length; i++) {
+      const substitutionCost =
+        aChars[i - 1] === bChars[j - 1]
+          ? 0
+          : 1;
+
+      current[i] = Math.min(
+        current[i - 1] + 1,
+        previous[i] + 1,
+        previous[i - 1] + substitutionCost
+      );
+
+      rowMin = Math.min(
+        rowMin,
+        current[i]
+      );
+    }
+
+    if (rowMin > maxDistance) {
+      return maxDistance + 1;
+    }
+
+    [previous, current] = [
+      current,
+      previous,
+    ];
+  }
+
+  return previous[aChars.length];
+}
+
+// ============================================================
+// MAX FUZZY DISTANCE
+// ============================================================
+
+function getMaxDistance(
+  token: string
+): number {
+  const length = Array.from(token).length;
+
+  if (length <= 2) {
+    return 0;
+  }
+
+  if (length <= 4) {
+    return 1;
+  }
+
+  if (length <= 7) {
+    return 2;
+  }
+
+  if (length <= 12) {
+    return 3;
+  }
+
+  return 4;
+}
+
+// ============================================================
+// TOKEN SIMILARITY
+// ============================================================
+
+function tokenSimilarity(
+  queryToken: string,
+  candidateToken: string
+): number {
+  if (
+    !queryToken ||
+    !candidateToken
+  ) {
+    return 0;
+  }
+
+  if (queryToken === candidateToken) {
+    return 1;
+  }
+
+  // Prefix / partial matching.
+  if (
+    candidateToken.startsWith(queryToken) ||
+    queryToken.startsWith(candidateToken)
+  ) {
+    const shorter = Math.min(
+      Array.from(queryToken).length,
+      Array.from(candidateToken).length
+    );
+
+    const longer = Math.max(
+      Array.from(queryToken).length,
+      Array.from(candidateToken).length
+    );
+
+    if (shorter >= 3) {
+      return 0.88 + (shorter / longer) * 0.08;
+    }
+  }
+
+  const maxDistance =
+    getMaxDistance(queryToken);
+
+  if (maxDistance === 0) {
+    return 0;
+  }
+
+  const queryLength =
+    Array.from(queryToken).length;
+
+  const candidateLength =
+    Array.from(candidateToken).length;
+
+  if (
+    Math.abs(
+      queryLength -
+        candidateLength
+    ) > maxDistance
+  ) {
+    return 0;
+  }
+
+  const distance =
+    levenshteinDistance(
+      queryToken,
+      candidateToken,
+      maxDistance
+    );
+
+  if (distance > maxDistance) {
+    return 0;
+  }
+
+  const maxLength = Math.max(
+    queryLength,
+    candidateLength
+  );
+
+  return Math.max(
+    0,
+    1 - distance / maxLength
+  );
+}
+
+// ============================================================
+// FIELD SCORE
+// ============================================================
+
+function scoreField(
+  queryTokens: string[],
+  fieldValue: any
+): number {
+  const normalizedField =
+    normalizeText(fieldValue);
+
+  if (!normalizedField) {
+    return 0;
+  }
+
+  // Highest priority: exact complete phrase.
+  const normalizedQuery =
+    queryTokens.join(" ");
+
+  if (
+    normalizedQuery &&
+    normalizedField.includes(
+      normalizedQuery
+    )
+  ) {
+    return 1;
+  }
+
+  const candidateTokens =
+    tokenize(normalizedField);
+
+  if (!candidateTokens.length) {
+    return 0;
+  }
+
+  let totalScore = 0;
+  let matchedTokens = 0;
+
+  for (const queryToken of queryTokens) {
+    let bestMatch = 0;
+
+    for (const candidateToken of candidateTokens) {
+      const similarity =
+        tokenSimilarity(
+          queryToken,
+          candidateToken
+        );
+
+      if (similarity > bestMatch) {
+        bestMatch = similarity;
+      }
+
+      if (bestMatch === 1) {
+        break;
+      }
+    }
+
+    // Ignore extremely weak fuzzy matches.
+    if (bestMatch >= 0.55) {
+      totalScore += bestMatch;
+      matchedTokens++;
+    }
+  }
+
+  if (!matchedTokens) {
+    return 0;
+  }
+
+  // Require every query word for multi-word searches
+  // unless the query has only one word.
+  if (
+    queryTokens.length > 1 &&
+    matchedTokens < queryTokens.length
+  ) {
+    return 0;
+  }
+
+  return (
+    totalScore /
+    queryTokens.length
+  );
+}
+
+// ============================================================
+// COMPLETE SEARCH SCORE
+// ============================================================
+
+function scoreArticle(
+  article: any,
+  queryTokens: string[]
+): number {
+  const titleScore = scoreField(
+    queryTokens,
+    article?.title
+  );
+
+  const shortDescriptionScore =
+    scoreField(
+      queryTokens,
+      article?.shortDescription
+    );
+
+  const seoTitleScore = scoreField(
+    queryTokens,
+    article?.seoTitle
+  );
+
+  const seoDescriptionScore =
+    scoreField(
+      queryTokens,
+      article?.seoDescription
+    );
+
+  const categoryScore = Math.max(
+    scoreField(
+      queryTokens,
+      article?.category
+    ),
+    scoreField(
+      queryTokens,
+      article?.categoryHi
+    )
+  );
+
+  // Content is deliberately checked last.
+  // This prevents a random mention deep inside
+  // an article from outranking a title match.
+  const contentScore = scoreField(
+    queryTokens,
+    article?.content
+  );
+
+  return (
+    titleScore * 100 +
+    seoTitleScore * 70 +
+    shortDescriptionScore * 55 +
+    seoDescriptionScore * 40 +
+    categoryScore * 30 +
+    contentScore * 20
+  );
+}
+
+// ============================================================
+// COMPLETE VIDEO SCORE
+// ============================================================
+
+function scoreVideo(
+  video: any,
+  queryTokens: string[]
+): number {
+  const titleScore = scoreField(
+    queryTokens,
+    video?.title
+  );
+
+  const descriptionScore =
+    scoreField(
+      queryTokens,
+      video?.description ||
+        video?.shortDescription
+    );
+
+  const categoryScore = Math.max(
+    scoreField(
+      queryTokens,
+      video?.category
+    ),
+    scoreField(
+      queryTokens,
+      video?.categoryHi
+    )
+  );
+
+  return (
+    titleScore * 100 +
+    descriptionScore * 50 +
+    categoryScore * 30
+  );
+}
+
+// ============================================================
+// DATE SORT FALLBACK
+// ============================================================
+
+function getTime(value: any): number {
+  const formatted =
+    formatTimestamp(value);
+
+  if (!formatted) {
+    return 0;
+  }
+
+  const time = new Date(
+    formatted
+  ).getTime();
+
+  return Number.isFinite(time)
+    ? time
+    : 0;
+}
 
 // ============================================================
 // SEARCH ARTICLES
@@ -127,22 +511,24 @@ function formatTimestamp(
 export async function searchArticles(
   keyword: string
 ): Promise<PublicArticle[]> {
-
   const search =
-    keyword
-      ?.trim()
-      .toLowerCase();
+    normalizeText(keyword);
 
   if (!search) {
+    return [];
+  }
+
+  const queryTokens =
+    tokenize(search);
+
+  if (!queryTokens.length) {
     return [];
   }
 
   const rawArticles =
     await loadArticles();
 
-
   return rawArticles
-
     // ONLY PUBLISHED
     .filter(
       (article) =>
@@ -150,116 +536,111 @@ export async function searchArticles(
         "published"
     )
 
-    // SEARCH
+    // SCORE
+    .map((article) => ({
+      article,
+      score: scoreArticle(
+        article,
+        queryTokens
+      ),
+    }))
+
+    // REMOVE NON-MATCHES
     .filter(
-      (article) => {
-
-        const title =
-          String(
-            article?.title || ""
-          ).toLowerCase();
-
-        const shortDescription =
-          String(
-            article?.shortDescription || ""
-          ).toLowerCase();
-
-        const content =
-          String(
-            article?.content || ""
-          ).toLowerCase();
-
-        const seoTitle =
-          String(
-            article?.seoTitle || ""
-          ).toLowerCase();
-
-        const seoDescription =
-          String(
-            article?.seoDescription || ""
-          ).toLowerCase();
-
-        const category =
-          String(
-            article?.category || ""
-          ).toLowerCase();
-
-        const categoryHi =
-          String(
-            article?.categoryHi || ""
-          ).toLowerCase();
-
-
-        return (
-          title.includes(search) ||
-          shortDescription.includes(search) ||
-          content.includes(search) ||
-          seoTitle.includes(search) ||
-          seoDescription.includes(search) ||
-          category.includes(search) ||
-          categoryHi.includes(search)
-        );
-      }
+      ({ score }) =>
+        score > 0
     )
 
+    // BEST MATCH FIRST
+    .sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+
+      return (
+        getTime(
+          b.article?.createdAt
+        ) -
+        getTime(
+          a.article?.createdAt
+        )
+      );
+    })
+
     // FORMAT
+    .slice(0, MAX_RESULTS)
+
     .map(
-  (article): PublicArticle => ({
-    id: String(article?.id || ""),
+      ({ article }): PublicArticle => ({
+        id: String(
+          article?.id || ""
+        ),
 
-    title: article?.title || "",
+        title:
+          article?.title || "",
 
-    slug: article?.slug || "",
+        slug:
+          article?.slug || "",
 
-    thumbnail: article?.thumbnail || "",
+        thumbnail:
+          article?.thumbnail || "",
 
-    shortDescription:
-      article?.shortDescription || "",
+        shortDescription:
+          article?.shortDescription ||
+          "",
 
-    content:
-      article?.content || "",
+        content:
+          article?.content || "",
 
-    seoTitle:
-      article?.seoTitle || "",
+        seoTitle:
+          article?.seoTitle || "",
 
-    seoDescription:
-      article?.seoDescription || "",
+        seoDescription:
+          article?.seoDescription ||
+          "",
 
-    categoryId:
-      article?.categoryId || "",
+        categoryId:
+          article?.categoryId || "",
 
-    category:
-      article?.category || "",
+        category:
+          article?.category || "",
 
-    categoryHi:
-      article?.categoryHi || "",
+        categoryHi:
+          article?.categoryHi || "",
 
-    featured:
-      Boolean(article?.featured),
+        featured:
+          Boolean(
+            article?.featured
+          ),
 
-    breaking:
-      Boolean(article?.breaking),
+        breaking:
+          Boolean(
+            article?.breaking
+          ),
 
-    priority:
-      Number(article?.priority || 0),
+        priority:
+          Number(
+            article?.priority || 0
+          ),
 
-    status:
-      "published",
+        status:
+          "published",
 
-    author:
-      article?.author,
+        author:
+          article?.author,
 
-    createdAt:
-      formatTimestamp(article?.createdAt),
+        createdAt:
+          formatTimestamp(
+            article?.createdAt
+          ),
 
-    updatedAt:
-      formatTimestamp(article?.updatedAt),
-  })
-)
-    // LIMIT SEARCH RESULTS
-    .slice(0, 20);
+        updatedAt:
+          formatTimestamp(
+            article?.updatedAt
+          ),
+      })
+    );
 }
-
 
 // ============================================================
 // SEARCH VIDEOS
@@ -268,22 +649,24 @@ export async function searchArticles(
 export async function searchVideos(
   keyword: string
 ): Promise<PublicVideo[]> {
-
   const search =
-    keyword
-      ?.trim()
-      .toLowerCase();
+    normalizeText(keyword);
 
   if (!search) {
+    return [];
+  }
+
+  const queryTokens =
+    tokenize(search);
+
+  if (!queryTokens.length) {
     return [];
   }
 
   const rawVideos =
     await loadVideos();
 
-
   return rawVideos
-
     // ONLY PUBLISHED
     .filter(
       (video) =>
@@ -291,102 +674,100 @@ export async function searchVideos(
         "published"
     )
 
-    // SEARCH
+    // SCORE
+    .map((video) => ({
+      video,
+      score: scoreVideo(
+        video,
+        queryTokens
+      ),
+    }))
+
+    // REMOVE NON-MATCHES
     .filter(
-      (video) => {
-
-        const title =
-          String(
-            video?.title || ""
-          ).toLowerCase();
-
-        const description =
-          String(
-            video?.description ||
-            video?.shortDescription ||
-            ""
-          ).toLowerCase();
-
-        const category =
-          String(
-            video?.category || ""
-          ).toLowerCase();
-
-        const categoryHi =
-          String(
-            video?.categoryHi || ""
-          ).toLowerCase();
-
-
-        return (
-          title.includes(search) ||
-          description.includes(search) ||
-          category.includes(search) ||
-          categoryHi.includes(search)
-        );
-      }
+      ({ score }) =>
+        score > 0
     )
+
+    // BEST MATCH FIRST
+    .sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+
+      return (
+        getTime(
+          b.video?.createdAt
+        ) -
+        getTime(
+          a.video?.createdAt
+        )
+      );
+    })
+
+    // LIMIT
+    .slice(0, MAX_RESULTS)
 
     // FORMAT
     .map(
-  (video): PublicVideo => {
+      ({ video }): PublicVideo => {
+        const youtubeUrl =
+          video?.youtubeUrl ||
+          video?.url ||
+          "";
 
-    const youtubeUrl =
-      video?.youtubeUrl ||
-      video?.url ||
-      "";
+        return {
+          id: String(
+            video?.id || ""
+          ),
 
-    return {
-      id: String(video?.id || ""),
+          title:
+            video?.title || "",
 
-      title:
-        video?.title || "",
+          youtubeUrl,
 
-      youtubeUrl,
+          thumbnail:
+            video?.thumbnail ||
+            video?.image ||
+            getYoutubeThumbnail(
+              youtubeUrl
+            ),
 
-      thumbnail:
-        video?.thumbnail ||
-        video?.image ||
-        getYoutubeThumbnail(
-          youtubeUrl
-        ),
+          description:
+            video?.description ||
+            video?.shortDescription ||
+            "",
 
-      description:
-        video?.description ||
-        video?.shortDescription ||
-        "",
+          categoryId:
+            video?.categoryId || "",
 
-      categoryId:
-        video?.categoryId || "",
+          category:
+            video?.category || "",
 
-      category:
-        video?.category || "",
+          categoryHi:
+            video?.categoryHi || "",
 
-      categoryHi:
-        video?.categoryHi || "",
+          status:
+            "published",
 
-      status:
-        "published",
+          createdAt:
+            formatTimestamp(
+              video?.createdAt
+            ),
 
-      createdAt:
-        formatTimestamp(
-          video?.createdAt
-        ),
+          updatedAt:
+            formatTimestamp(
+              video?.updatedAt
+            ),
 
-      updatedAt:
-        formatTimestamp(
-          video?.updatedAt
-        ),
-
-      views:
-        Number(video?.views || 0),
-    };
-  }
-)
-
-    .slice(0, 20);
+          views:
+            Number(
+              video?.views || 0
+            ),
+        };
+      }
+    );
 }
-
 
 // ============================================================
 // YOUTUBE THUMBNAIL
@@ -395,18 +776,18 @@ export async function searchVideos(
 function getYoutubeThumbnail(
   url: string
 ): string {
-
   if (!url) {
     return "";
   }
 
   try {
-
     const parsed =
       new URL(url);
 
     const videoId =
-      parsed.searchParams.get("v");
+      parsed.searchParams.get(
+        "v"
+      );
 
     if (videoId) {
       return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
@@ -417,7 +798,6 @@ function getYoutubeThumbnail(
         "youtu.be"
       )
     ) {
-
       const id =
         parsed.pathname
           .replace("/", "")
@@ -445,10 +825,10 @@ function getYoutubeThumbnail(
     if (embedMatch?.[1]) {
       return `https://img.youtube.com/vi/${embedMatch[1]}/maxresdefault.jpg`;
     }
-
   } catch {
     return "";
   }
 
   return "";
 }
+
