@@ -427,6 +427,12 @@ function scoreArticle(
     )
   );
 
+  const keywordsScore = scoreField(
+  queryTokens,
+  Array.isArray(article?.keywords)
+    ? article.keywords.join(" ")
+    : article?.keywords
+);
   // Content is deliberately checked last.
   // This prevents a random mention deep inside
   // an article from outranking a title match.
@@ -437,6 +443,7 @@ function scoreArticle(
 
   return (
     titleScore * 100 +
+    keywordsScore * 85 +
     seoTitleScore * 70 +
     shortDescriptionScore * 55 +
     seoDescriptionScore * 40 +
@@ -444,6 +451,7 @@ function scoreArticle(
     contentScore * 20
   );
 }
+
 
 // ============================================================
 // COMPLETE VIDEO SCORE
