@@ -104,7 +104,7 @@ const sections: Section[] = [
         title: "Trending",
         description:
           "Stories and topics currently attracting reader attention.",
-        href: "/trending",
+        href: "/",
       },
       {
         title: "Viral",
