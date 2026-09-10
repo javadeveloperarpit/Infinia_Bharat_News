@@ -180,7 +180,7 @@ export default async function Home() {
   getAdsByType("banner"),
   getAdsByType("native"),
   getActiveBreakingNews(),
-  getEnglishArticles(6),
+  getEnglishArticles(8),
 ]);
   // ======================================
   // CONVERT BANNER ADS TO PLAIN OBJECTS
@@ -355,22 +355,65 @@ export default async function Home() {
       }
     );
 
+
+  // ======================================
+// FEATURED ARTICLE IDS
+// ======================================
+
+const featuredArticleIds = new Set(
+  featured.map(
+    (article) => article.id
+  )
+);
+
+// ======================================
+// ENGLISH ARTICLES
+// Hero articles remove karke
+// latest 6 English articles rakho
+// ======================================
+
+const filteredEnglishArticles =
+  englishArticles
+    .filter(
+      (article) =>
+        !featuredArticleIds.has(
+          article.id
+        )
+    )
+    .slice(0, 6);
 const latestItems = [
   // ==================================
   // NON-ENGLISH ARTICLES ONLY
   // ==================================
 
-  ...articles
+    ...articles
     .filter((article) => {
+
+      // Hero / Featured articles को Latest News से हटाएं
+      if (
+        featuredArticleIds.has(
+          article.id
+        )
+      ) {
+        return false;
+      }
+
       const category =
-        categoryMap.get(article.categoryId);
+        categoryMap.get(
+          article.categoryId
+        );
 
       const slug =
-        String(category?.slug || "")
+        String(
+          category?.slug || ""
+        )
           .trim()
           .toLowerCase();
 
-      return !slug.startsWith("english-");
+      // English articles को Latest News से हटाएं
+      return !slug.startsWith(
+        "english-"
+      );
     })
     .map((article) => {
       const category =
@@ -592,18 +635,14 @@ const organizationSchema = {
           nativeAds={nativeAdsPlain}
         />
 
-        {/* ================================
-            YOUTUBE SHORTS
-        ================================= */}
 
         
       </section>
 
 
       <EnglishArticlesSection
-  articles={englishArticles}
+  articles={filteredEnglishArticles}
 />
-
       {/* ================================
           CATEGORY SECTIONS
       ================================= */}
