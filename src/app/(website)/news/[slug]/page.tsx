@@ -845,24 +845,7 @@ const youtubeVideos =
             article={article}
           />
 
-          {/* ==================================================
-              COMMENTS
-          ================================================== */}
-
-          <section
-            id="comments"
-            className="
-              mt-10
-              border-t
-              border-zinc-200
-              pt-8
-            "
-          >
-            <CommentsList
-              articleId={article.id}
-              articleSlug={article.slug}
-            />
-          </section>
+          
            <ArticleAudioPlayer
   title={article.title}
   content={article.content}
@@ -883,6 +866,25 @@ const youtubeVideos =
           <ArticleContent
             article={article}
           />
+
+          {/* ==================================================
+              COMMENTS
+          ================================================== */}
+
+          <section
+            id="comments"
+            className="
+              mt-10
+              border-t
+              border-zinc-200
+              pt-8
+            "
+          >
+            <CommentsList
+              articleId={article.id}
+              articleSlug={article.slug}
+            />
+          </section>
 
           {/* ==================================================
               MOBILE TRENDING
