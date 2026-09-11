@@ -1,29 +1,5 @@
 [
   {
-    "id": "adani-1dlxc66",
-    "slug": "energy-and-utilities-2d9lil",
-    "title": "Energy & Utilities",
-    "company": "Adani Group",
-    "location": "India",
-    "employmentType": "Full time",
-    "workMode": "onsite",
-    "field": "Operations & Supply Chain",
-    "category": "Operations & Supply Chain",
-    "link": "/jobs/energy-and-utilities-2d9lil"
-  },
-  {
-    "id": "adani-1moob8g",
-    "slug": "media-releases-o5e2o4",
-    "title": "Media Releases",
-    "company": "Adani Group",
-    "location": "India",
-    "employmentType": "Full time",
-    "workMode": "onsite",
-    "field": "Other",
-    "category": "Other",
-    "link": "/jobs/media-releases-o5e2o4"
-  },
-  {
     "id": "adani-1rjavoy",
     "slug": "group-esg-report-1rbjlkj",
     "title": "Group ESG Report",
@@ -34,18 +10,6 @@
     "field": "Other",
     "category": "Other",
     "link": "/jobs/group-esg-report-1rbjlkj"
-  },
-  {
-    "id": "adani-hpaz2f",
-    "slug": "adani-greenprint-1vmhfca",
-    "title": "Adani Greenprint",
-    "company": "Adani Group",
-    "location": "India",
-    "employmentType": "Full time",
-    "workMode": "onsite",
-    "field": "Other",
-    "category": "Other",
-    "link": "/jobs/adani-greenprint-1vmhfca"
   },
   {
     "id": "deloitte-15ejkqu",
@@ -193,6 +157,45 @@
     "link": "/jobs/lead-control-automation-system-engineer-oajqt6"
   },
   {
+    "id": "jobicy-149936",
+    "slug": "legal-consultant-anti-trust-and-competition-1w3e4lw",
+    "title": "Legal Consultant - Anti Trust and Competition",
+    "company": "Axiom",
+    "companyLogo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2025/08/1c48ca0c-221.jpeg",
+    "location": "APAC, Singapore",
+    "employmentType": "Full-Time",
+    "workMode": "remote",
+    "field": "Consulting & Strategy",
+    "category": "Legal & Compliance",
+    "link": "/jobs/legal-consultant-anti-trust-and-competition-1w3e4lw"
+  },
+  {
+    "id": "jobicy-150370",
+    "slug": "technical-account-specialist-storm-sewer-flood-19w97vq",
+    "title": "Technical Account Specialist - Storm, Sewer, Flood",
+    "company": "Autodesk",
+    "companyLogo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2022/03/983ea436405fa9ab72f858e1f1b874a7.jpeg",
+    "location": "UK",
+    "employmentType": "Full-Time",
+    "workMode": "remote",
+    "field": "Software & IT",
+    "category": "Technical Support",
+    "link": "/jobs/technical-account-specialist-storm-sewer-flood-19w97vq"
+  },
+  {
+    "id": "jobicy-152245",
+    "slug": "senior-trust-and-safety-manager-1hhtlcv",
+    "title": "Senior Trust and Safety Manager",
+    "company": "Getlabs",
+    "companyLogo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2022/06/d1cccc9f9f79c0f5eced2145900f943a.jpg",
+    "location": "USA",
+    "employmentType": "Full-Time",
+    "workMode": "remote",
+    "field": "Software & IT",
+    "category": "Product & Operations",
+    "link": "/jobs/senior-trust-and-safety-manager-1hhtlcv"
+  },
+  {
     "id": "sarkariresult-1071lrb",
     "slug": "rcfl-management-trainee-online-form-2026-last-date-10-09-2026-date-extended-ya27an",
     "title": "RCFL Management Trainee Online Form 2026 | Last Date : 10/09/2026 | Date Extended",
@@ -232,15 +235,15 @@
     "applicationEnd": "2026-09-19T00:00:00+05:30"
   },
   {
-    "id": "smart-Sutherland-744000136829532",
-    "slug": "adnic-microsoft-technology-net-qeknb8",
-    "title": "ADNIC - Microsoft Technology (.Net)",
+    "id": "smart-Sutherland-744000098382635",
+    "slug": "microsoft-training-professional-egypt-remote-63b0dl",
+    "title": "Microsoft Training Professional | Egypt | Remote",
     "company": "Sutherland",
-    "location": "Hyderabad",
+    "location": "Alexandria",
     "employmentType": "Full-time",
     "workMode": "onsite",
     "field": "Other",
-    "category": "Information Technology",
-    "link": "/jobs/adnic-microsoft-technology-net-qeknb8"
+    "category": "Training",
+    "link": "/jobs/microsoft-training-professional-egypt-remote-63b0dl"
   }
 ]
