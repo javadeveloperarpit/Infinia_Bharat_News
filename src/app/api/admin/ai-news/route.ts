@@ -3,10 +3,17 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/firebase-admin";
 
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
-const GEMINI_MODEL =
-  process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
+const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "openrouter/free";
+
+const AI_TIMEOUT_MS = 90_000;
+const MAX_RESEARCH_SOURCES = 5;
+const MAX_SOURCE_CHARS = 12_000;
 
 // ============================================================
 // TYPES
@@ -33,12 +40,14 @@ interface Category {
 // ============================================================
 
 function cleanText(text: string) {
-  return text
+  return String(text || "")
     .replace(/<[^>]*>/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&apos;/g, "'")
     .replace(/&quot;/g, '"')
     .replace(/&nbsp;/g, " ")
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/gi, "'")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -48,7 +57,7 @@ function cleanText(text: string) {
 // ============================================================
 
 function normalize(text: string) {
-  return text
+  return String(text || "")
     .toLowerCase()
     .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .replace(/\s+/g, " ")
@@ -92,9 +101,7 @@ function similarity(a: string, b: string) {
 // ENGLISH SLUG SANITIZER
 // ============================================================
 
-function sanitizeEnglishSlug(
-  value: string
-): string {
+function sanitizeEnglishSlug(value: string): string {
   return String(value || "")
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -108,13 +115,236 @@ function sanitizeEnglishSlug(
 }
 
 // ============================================================
+// HTML ESCAPE
+// ============================================================
+
+function escapeHtml(value: string) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// ============================================================
+// STRIP MARKDOWN FENCES
+// ============================================================
+
+function removeMarkdownFences(value: string) {
+  return String(value || "")
+    .replace(/^```html\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+}
+
+// ============================================================
+// CLEAN GENERATED HTML
+// ============================================================
+
+function cleanGeneratedHtml(value: string) {
+  let html = removeMarkdownFences(value);
+
+  /*
+   * Remove dangerous/non-editor elements.
+   * We deliberately preserve normal CKEditor-supported HTML.
+   */
+
+  html = html
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<iframe\b[^>]*>[\s\S]*?<\/iframe>/gi, "")
+    .replace(/<object\b[^>]*>[\s\S]*?<\/object>/gi, "")
+    .replace(/<embed\b[^>]*>/gi, "");
+
+  /*
+   * Remove inline event handlers.
+   */
+
+  html = html.replace(
+    /\s+on[a-z]+\s*=\s*(".*?"|'.*?'|[^\s>]+)/gi,
+    ""
+  );
+
+  /*
+   * Remove javascript URLs.
+   */
+
+  html = html.replace(
+    /(href|src)\s*=\s*(['"])\s*javascript:[^'"]*\2/gi,
+    ""
+  );
+
+  return html.trim();
+}
+
+// ============================================================
+// VALIDATE ARTICLE HTML
+// ============================================================
+
+function validateArticleHtml(value: string) {
+  const html = cleanGeneratedHtml(value);
+
+  const textOnly = html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!textOnly) {
+    return {
+      valid: false,
+      html,
+      reason: "Article content is empty.",
+    };
+  }
+
+  /*
+   * The AI must produce real editorial structure.
+   */
+
+  const paragraphCount =
+    (html.match(/<p\b/gi) || []).length;
+
+  const headingCount =
+    (html.match(/<h[2-3]\b/gi) || []).length;
+
+  const strongCount =
+    (html.match(/<strong\b/gi) || []).length;
+
+  const listCount =
+    (html.match(/<(ul|ol)\b/gi) || []).length;
+
+  const tableCount =
+    (html.match(/<table\b/gi) || []).length;
+
+  /*
+   * Plain-text dump detection.
+   */
+
+  const hasHtmlStructure =
+    paragraphCount >= 2 ||
+    headingCount >= 1 ||
+    listCount >= 1 ||
+    tableCount >= 1;
+
+  if (!hasHtmlStructure) {
+    return {
+      valid: false,
+      html,
+      reason:
+        "Article was returned without sufficient HTML editorial structure.",
+    };
+  }
+
+  /*
+   * Minimum amount of useful editorial formatting.
+   */
+
+  if (
+    textOnly.length > 800 &&
+    headingCount === 0
+  ) {
+    return {
+      valid: false,
+      html,
+      reason:
+        "Long article does not contain editorial section headings.",
+    };
+  }
+
+  /*
+   * Strong formatting is encouraged but not mandatory
+   * for very short stories.
+   */
+
+  return {
+    valid: true,
+    html,
+    reason: "",
+    stats: {
+      paragraphCount,
+      headingCount,
+      strongCount,
+      listCount,
+      tableCount,
+      textLength: textOnly.length,
+    },
+  };
+}
+
+// ============================================================
+// REPAIR PLAIN ARTICLE
+// ============================================================
+
+function repairPlainArticle(
+  value: string,
+  title: string
+) {
+  /*
+   * This is a fallback only.
+   *
+   * We do NOT try to "rewrite" the article here.
+   * We simply convert obvious plain-text paragraph
+   * boundaries into safe HTML.
+   */
+
+  const raw = String(value || "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .trim();
+
+  if (!raw) {
+    return "";
+  }
+
+  const blocks = raw
+    .split(/\n{2,}/)
+    .map((block) =>
+      block
+        .replace(/\n+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+    )
+    .filter(Boolean);
+
+  if (blocks.length === 0) {
+    return "";
+  }
+
+  /*
+   * If Gemini ignored HTML completely, preserve its wording
+   * rather than performing an AI-like rewrite.
+   */
+
+  return blocks
+    .map((block, index) => {
+      /*
+       * Avoid adding the title again.
+       */
+
+      if (
+        index === 0 &&
+        normalize(block) === normalize(title)
+      ) {
+        return "";
+      }
+
+      return `<p>${escapeHtml(block)}</p>`;
+    })
+    .filter(Boolean)
+    .join("\n");
+}
+
+// ============================================================
 // GET FIRESTORE CATEGORIES
 // ============================================================
 
 async function getCategories(): Promise<Category[]> {
-  const snapshot = await adminDb
-    .collection("categories")
-    .get();
+  const snapshot =
+    await adminDb
+      .collection("categories")
+      .get();
 
   return snapshot.docs
     .map((doc) => {
@@ -138,9 +368,7 @@ async function getCategories(): Promise<Category[]> {
 // FETCH URL
 // ============================================================
 
-async function fetchPage(
-  url: string
-): Promise<string> {
+async function fetchPage(url: string): Promise<string> {
   const response = await fetch(url, {
     cache: "no-store",
     redirect: "follow",
@@ -170,9 +398,7 @@ async function fetchPage(
 // EXTRACT SOURCE ARTICLE TEXT
 // ============================================================
 
-function extractArticleText(
-  html: string
-): string {
+function extractArticleText(html: string): string {
   let text = "";
 
   // ----------------------------------------------------------
@@ -197,13 +423,9 @@ function extractArticleText(
       .trim();
 
     try {
-      const parsed = JSON.parse(
-        jsonText
-      );
+      const parsed = JSON.parse(jsonText);
 
-      const objects = Array.isArray(
-        parsed
-      )
+      const objects = Array.isArray(parsed)
         ? parsed
         : [parsed];
 
@@ -222,14 +444,13 @@ function extractArticleText(
           typeof item === "object" &&
           Array.isArray(item["@graph"])
         ) {
-          const article = item[
-            "@graph"
-          ].find(
-            (entry: any) =>
-              entry &&
-              typeof entry.articleBody ===
-                "string"
-          );
+          const article =
+            item["@graph"].find(
+              (entry: any) =>
+                entry &&
+                typeof entry.articleBody ===
+                  "string"
+            );
 
           if (article) {
             text = article.articleBody;
@@ -274,7 +495,6 @@ function extractArticleText(
     }
   }
 
-  
   // ----------------------------------------------------------
   // REMOVE NON-CONTENT ELEMENTS
   // ----------------------------------------------------------
@@ -315,10 +535,7 @@ function extractArticleText(
   // LIMIT SOURCE TEXT
   // ----------------------------------------------------------
 
-  return text.slice(
-    0,
-    30000
-  );
+  return text.slice(0, 30000);
 }
 
 // ============================================================
@@ -334,27 +551,23 @@ function extractAttribute(
     "i"
   );
 
-  return (
-    tag.match(regex)?.[1] || ""
-  );
+  return tag.match(regex)?.[1] || "";
 }
 
 // ============================================================
-// EXTRACT IMAGE URL FROM HTML
+// EXTRACT IMAGE URL
 // ============================================================
 
 function extractImageFromHtml(
   html: string,
   pageUrl: string
 ): string {
+  const metaTags =
+    html.match(/<meta\b[^>]*>/gi) || [];
+
   // ----------------------------------------------------------
   // OG IMAGE
   // ----------------------------------------------------------
-
-  const metaTags =
-    html.match(
-      /<meta\b[^>]*>/gi
-    ) || [];
 
   for (const tag of metaTags) {
     const property =
@@ -430,9 +643,7 @@ function extractImageFromHtml(
   // ----------------------------------------------------------
 
   const linkTags =
-    html.match(
-      /<link\b[^>]*>/gi
-    ) || [];
+    html.match(/<link\b[^>]*>/gi) || [];
 
   for (const tag of linkTags) {
     const rel =
@@ -441,9 +652,7 @@ function extractImageFromHtml(
         "rel"
       ).toLowerCase();
 
-    if (
-      rel.includes("image_src")
-    ) {
+    if (rel.includes("image_src")) {
       const href =
         extractAttribute(
           tag,
@@ -460,7 +669,7 @@ function extractImageFromHtml(
   }
 
   // ----------------------------------------------------------
-  // ARTICLE IMAGE FALLBACK
+  // ARTICLE IMAGE
   // ----------------------------------------------------------
 
   const articleMatch =
@@ -524,7 +733,7 @@ function extractImageFromHtml(
 }
 
 // ============================================================
-// RESOLVE RELATIVE URL
+// RESOLVE URL
 // ============================================================
 
 function resolveUrl(
@@ -541,9 +750,8 @@ function resolveUrl(
   }
 }
 
-
 // ============================================================
-// DOWNLOAD IMAGE FOR GEMINI
+// DOWNLOAD IMAGE
 // ============================================================
 
 async function downloadImageAsBase64(
@@ -567,7 +775,7 @@ async function downloadImageAsBase64(
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0 Safari/537.36",
 
           Accept:
-            "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+            "image/avif,image/webp,image/apng,image/svg+xml,image/jpeg,image/png,*/*;q=0.8",
         },
       });
 
@@ -583,9 +791,7 @@ async function downloadImageAsBase64(
       ) || "";
 
     if (
-      !contentType.startsWith(
-        "image/"
-      )
+      !contentType.startsWith("image/")
     ) {
       throw new Error(
         "URL did not return an image"
@@ -624,16 +830,12 @@ async function downloadImageAsBase64(
         mimeType
       )
     ) {
-      mimeType =
-        "image/jpeg";
+      mimeType = "image/jpeg";
     }
 
     return {
       data:
-        buffer.toString(
-          "base64"
-        ),
-
+        buffer.toString("base64"),
       mimeType,
     };
   } catch (error) {
@@ -675,8 +877,7 @@ async function getGoogleNews(): Promise<
   const xml =
     await response.text();
 
-  const items: TrendingNews[] =
-    [];
+  const items: TrendingNews[] = [];
 
   const blocks =
     xml.match(
@@ -684,10 +885,7 @@ async function getGoogleNews(): Promise<
     ) || [];
 
   for (
-    const block of blocks.slice(
-      0,
-      30
-    )
+    const block of blocks.slice(0, 30)
   ) {
     const title =
       block.match(
@@ -714,16 +912,10 @@ async function getGoogleNews(): Promise<
     }
 
     items.push({
-      title:
-        cleanText(title),
-
-      link:
-        link.trim(),
-
+      title: cleanText(title),
+      link: link.trim(),
       pubDate,
-
-      source:
-        cleanText(source),
+      source: cleanText(source),
     });
   }
 
@@ -808,10 +1000,386 @@ async function getTrendingNews() {
       }
     );
 
-  return filtered.slice(
-    0,
-    10
+  return filtered.slice(0, 10);
+}
+
+// ============================================================
+// MULTI-PROVIDER AI ENGINE
+// ============================================================
+
+const ARTICLE_SCHEMA = {
+  title: "string",
+  seoTitle: "string",
+  seoDescription: "string",
+  shortDescription: "string",
+  content: "string",
+  suggestedCategory: "string",
+  keywords: ["string"],
+  imagePrompt: "string",
+};
+
+function extractJsonObject(text: string): any {
+  let cleaned = String(text || "")
+    .trim()
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/i, "")
+    .trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {}
+
+  const first = cleaned.indexOf("{");
+  const last = cleaned.lastIndexOf("}");
+
+  if (first >= 0 && last > first) {
+    try {
+      return JSON.parse(cleaned.slice(first, last + 1));
+    } catch {}
+  }
+
+  throw new Error("AI returned invalid JSON");
+}
+
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs = AI_TIMEOUT_MS
+) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function callGroq(prompt: string): Promise<any> {
+  if (!GROQ_API_KEY) throw new Error("GROQ_API_KEY is missing");
+
+  const response = await fetchWithTimeout(
+    "https://api.groq.com/openai/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a professional Indian digital newsroom editor. Return only valid JSON. Never invent facts.",
+          },
+          { role: "user", content: prompt },
+        ],
+        temperature: 0.25,
+        response_format: { type: "json_object" },
+      }),
+    }
   );
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data?.error?.message || `Groq HTTP ${response.status}`);
+  }
+
+  const text = data?.choices?.[0]?.message?.content;
+  if (!text) throw new Error("Groq returned an empty response");
+
+  return extractJsonObject(text);
+}
+
+async function callOpenRouter(prompt: string): Promise<any> {
+  if (!OPENROUTER_API_KEY) {
+    throw new Error("OPENROUTER_API_KEY is missing");
+  }
+
+  const response = await fetchWithTimeout(
+    "https://openrouter.ai/api/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+        "HTTP-Referer": "https://infiniabharatnews.vercel.app",
+        "X-Title": "Infinia Bharat News",
+      },
+      body: JSON.stringify({
+        model: OPENROUTER_MODEL,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a professional Indian digital newsroom editor. Return only valid JSON. Never invent facts.",
+          },
+          { role: "user", content: prompt },
+        ],
+        temperature: 0.25,
+        response_format: { type: "json_object" },
+      }),
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(
+      data?.error?.message || `OpenRouter HTTP ${response.status}`
+    );
+  }
+
+  const text = data?.choices?.[0]?.message?.content;
+  if (!text) throw new Error("OpenRouter returned an empty response");
+
+  return extractJsonObject(text);
+}
+
+async function callGemini(
+  prompt: string,
+  useWebSearch = false
+): Promise<any> {
+  if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is missing");
+
+  const body: any = {
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: prompt }],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.25,
+      responseMimeType: "application/json",
+    },
+  };
+
+  if (useWebSearch) {
+    body.tools = [{ google_search: {} }];
+  }
+
+  const response = await fetchWithTimeout(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": GEMINI_API_KEY,
+      },
+      body: JSON.stringify(body),
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(
+      data?.error?.message || `Gemini HTTP ${response.status}`
+    );
+  }
+
+  const text = data?.candidates?.[0]?.content?.parts
+    ?.map((part: any) => part?.text || "")
+    .join("")
+    .trim();
+
+  if (!text) throw new Error("Gemini returned an empty response");
+
+  return extractJsonObject(text);
+}
+
+async function callWriterWithFallback(prompt: string): Promise<any> {
+  const providers = [
+    ["Groq", () => callGroq(prompt)],
+    ["Gemini", () => callGemini(prompt, false)],
+    ["OpenRouter", () => callOpenRouter(prompt)],
+  ] as const;
+
+  const errors: string[] = [];
+
+  for (const [name, fn] of providers) {
+    try {
+      const result = await fn();
+      console.log(`AI writer provider succeeded: ${name}`);
+      return result;
+    } catch (error: any) {
+      const message = error?.message || String(error);
+      errors.push(`${name}: ${message}`);
+      console.warn(`AI writer provider failed: ${name}`, message);
+    }
+  }
+
+  throw new Error(`All AI providers failed. ${errors.join(" | ")}`);
+}
+
+async function getGoogleNewsResearch(topic: string) {
+  const query = encodeURIComponent(topic.trim());
+  const url = `https://news.google.com/rss/search?q=${query}&hl=en-IN&gl=IN&ceid=IN:en`;
+
+  try {
+    const response = await fetchWithTimeout(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; InfiniaBharatNews/1.0)",
+      },
+    }, 15_000);
+
+    if (!response.ok) return [];
+
+    const xml = await response.text();
+    const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/gi)]
+      .slice(0, MAX_RESEARCH_SOURCES)
+      .map((match) => match[1])
+      .map((item) => ({
+        title: cleanText(item.match(/<title>([\s\S]*?)<\/title>/i)?.[1] || ""),
+        link: item.match(/<link>([\s\S]*?)<\/link>/i)?.[1]?.trim() || "",
+        source: cleanText(
+          item.match(/<source[^>]*>([\s\S]*?)<\/source>/i)?.[1] || ""
+        ),
+        pubDate: cleanText(
+          item.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1] || ""
+        ),
+      }))
+      .filter((item) => item.title && item.link);
+
+    return items;
+  } catch (error) {
+    console.warn("Google News research fetch failed:", error);
+    return [];
+  }
+}
+
+async function buildResearchPacket(
+  topic: string,
+  source?: string,
+  sourceUrl?: string,
+  sourceArticleText?: string
+) {
+  const newsItems = await getGoogleNewsResearch(topic);
+  const pages: string[] = [];
+
+  const urls = [
+    sourceUrl,
+    ...newsItems.map((item: any) => item.link),
+  ].filter(Boolean) as string[];
+
+  const uniqueUrls = [...new Set(urls)].slice(0, MAX_RESEARCH_SOURCES + 1);
+
+  for (const url of uniqueUrls) {
+    try {
+      const html = await fetchPage(url);
+      const text = extractArticleText(html).slice(0, MAX_SOURCE_CHARS);
+      if (text) {
+        pages.push(`SOURCE URL: ${url}\nSOURCE TEXT:\n${text}`);
+      }
+    } catch (error) {
+      console.warn("Research source fetch failed:", url);
+    }
+  }
+
+  return {
+    topic,
+    initialSource: source || "Google News",
+    initialSourceUrl: sourceUrl || "",
+    initialLead: sourceArticleText || "",
+    googleNewsResults: newsItems,
+    fetchedSources: pages,
+  };
+}
+
+async function researchWithFallback(
+  topic: string,
+  researchPacket: any
+): Promise<any> {
+  const researchPrompt = `
+You are the RESEARCH EDITOR of INFINIA BHARAT NEWS.
+
+Research the current news development below. This is NOT the final article.
+Create a factual dossier for a separate writer.
+
+TOPIC:
+${topic}
+
+INITIAL SOURCE:
+${researchPacket.initialSource}
+
+INITIAL SOURCE URL:
+${researchPacket.initialSourceUrl || "Not available"}
+
+You may use fresh web search if available. When using web search, prioritize:
+1. Government of India / PIB / ministries / departments
+2. Supreme Court / High Courts / official orders
+3. Police / district administration / regulators
+4. Official company or organization statements and filings
+5. Credible established news organizations
+
+Cross-check important claims. Separate confirmed facts from allegations, claims and speculation.
+Never invent names, dates, figures, quotations, locations, legal developments or events.
+Do not rewrite the source article.
+
+SERVER-GATHERED MATERIAL:
+${JSON.stringify(researchPacket, null, 2)}
+
+Return JSON with these fields:
+{
+  "centralDevelopment":"",
+  "verifiedFacts":[],
+  "officialSources":[],
+  "secondarySources":[],
+  "latestDevelopment":"",
+  "background":[],
+  "timeline":[],
+  "importantPeople":[],
+  "importantDates":[],
+  "importantNumbers":[],
+  "legalContext":[],
+  "whyItMatters":[],
+  "whatHappensNext":[],
+  "sourceNotes":[]
+}
+
+Be thorough enough for a 700-1200 word professional Hindi news article when the facts support it.
+Return ONLY JSON.
+`;
+
+  // Best research route: Gemini gets actual Google Search grounding for free-tier usage.
+  if (GEMINI_API_KEY) {
+    try {
+      const result = await callGemini(researchPrompt, true);
+      console.log("AI research provider succeeded: Gemini + Google Search");
+      return result;
+    } catch (error: any) {
+      console.warn("Gemini research failed:", error?.message || error);
+    }
+  }
+
+  const fallbackPrompt = researchPrompt + `
+IMPORTANT: No live AI web-search tool is available in this fallback call.
+Use ONLY the server-gathered material above. Do not claim a source was checked unless it appears there.
+`;
+
+  const providers = [
+    ["Groq", () => callGroq(fallbackPrompt)],
+    ["OpenRouter", () => callOpenRouter(fallbackPrompt)],
+  ] as const;
+
+  const errors: string[] = [];
+  for (const [name, fn] of providers) {
+    try {
+      const result = await fn();
+      console.log(`AI research provider succeeded: ${name}`);
+      return result;
+    } catch (error: any) {
+      errors.push(`${name}: ${error?.message || String(error)}`);
+      console.warn(`AI research provider failed: ${name}`, error);
+    }
+  }
+
+  throw new Error(`All research providers failed. ${errors.join(" | ")}`);
 }
 
 // ============================================================
@@ -823,854 +1391,224 @@ async function generateArticle(
   source?: string,
   sourceUrl?: string
 ) {
-  if (!GEMINI_API_KEY) {
-    throw new Error(
-      "GEMINI_API_KEY is missing"
-    );
+  const categories = await getCategories();
+
+  if (categories.length === 0) {
+    throw new Error("No active categories found in Firestore");
   }
 
-  // ----------------------------------------------------------
-  // LOAD CATEGORIES
-  // ----------------------------------------------------------
+  const categoryList = categories
+    .map(
+      (category) =>
+        `- ${category.name} | Hindi: ${category.nameHi} | slug: ${category.slug}`
+    )
+    .join("\n");
 
-  const categories =
-    await getCategories();
+  let originalImageUrl = "";
+  let sourceArticleText = "";
 
-  if (
-    categories.length === 0
-  ) {
-    throw new Error(
-      "No active categories found in Firestore"
-    );
+  if (sourceUrl) {
+    try {
+      const sourceHtml = await fetchPage(sourceUrl);
+      sourceArticleText = extractArticleText(sourceHtml);
+      originalImageUrl = extractImageFromHtml(sourceHtml, sourceUrl);
+      console.log("Initial lead text length:", sourceArticleText.length);
+      console.log("Original image URL:", originalImageUrl);
+    } catch (error) {
+      console.error("Source page extraction failed:", error);
+    }
   }
 
-  // ----------------------------------------------------------
-  // CATEGORY LIST
-  // ----------------------------------------------------------
-
-  const categoryList =
-    categories
-      .map(
-        (category) =>
-          `- ${category.name} | Hindi: ${category.nameHi} | slug: ${category.slug}`
-      )
-      .join("\n");
-
-  // ----------------------------------------------------------
-  // ORIGINAL IMAGE
-  // ----------------------------------------------------------
-let originalImageUrl = "";
-let sourceArticleText = "";
-
-if (sourceUrl) {
-  try {
-    const sourceHtml =
-      await fetchPage(
-        sourceUrl
-      );
-
-    // Extract article text from the same HTML
-    sourceArticleText =
-      extractArticleText(
-        sourceHtml
-      );
-
-    // Extract original image from the same HTML
-    originalImageUrl =
-      extractImageFromHtml(
-        sourceHtml,
-        sourceUrl
-      );
-
-    console.log(
-      "Source article text length:",
-      sourceArticleText.length
-    );
-
-    console.log(
-      "Original image URL:",
-      originalImageUrl
-    );
-  } catch (error) {
-    console.error(
-      "Source page extraction failed:",
-      error
-    );
-  }
-}
-
-  console.log(
-    "Selected news:",
-    topic
+  const originalImage = await downloadImageAsBase64(originalImageUrl);
+  const researchPacket = await buildResearchPacket(
+    topic,
+    source,
+    sourceUrl,
+    sourceArticleText
   );
 
-  console.log(
-    "Source URL:",
-    sourceUrl
-  );
+  const research = await researchWithFallback(topic, researchPacket);
 
-  console.log(
-    "Original image URL:",
-    originalImageUrl
-  );
+  console.log("Research completed:", {
+    facts: research?.verifiedFacts?.length || 0,
+    officialSources: research?.officialSources?.length || 0,
+    secondarySources: research?.secondarySources?.length || 0,
+  });
 
-  // ----------------------------------------------------------
-  // DOWNLOAD IMAGE
-  // ----------------------------------------------------------
+  const imageInstruction = originalImage
+    ? `A source news image is attached separately. Use it only as visual reference. Do not copy it. Do not infer unsupported facts from it. Create a new editorial thumbnail concept.`
+    : `No source image is available. Create the imagePrompt only from verified research facts and the final title.`;
 
-  const originalImage =
-    await downloadImageAsBase64(
-      originalImageUrl
-    );
+  const writerPrompt = `
+You are the SENIOR DIGITAL EDITOR of INFINIA BHARAT NEWS, a professional Indian Hindi digital newsroom.
 
-  const hasImage =
-    !!originalImage;
+Write the FINAL publication-ready article from the VERIFIED RESEARCH DOSSIER below.
+This is NOT rewriting, paraphrasing, translation or synonym substitution.
+Write an independently structured story with your own headline, lead, section order, explanations and editorial flow.
 
-  // ----------------------------------------------------------
-  // IMAGE ANALYSIS
-  // ----------------------------------------------------------
-
-  const imageAnalysisInstruction =
-    hasImage
-      ? `
-IMPORTANT ORIGINAL NEWS IMAGE:
-
-The following image is the actual image associated with the selected source article.
-
-Inspect this image carefully.
-
-Use it only as visual reference.
-
-Analyze:
-
-1. Primary subject
-2. Visible people
-3. Visible objects
-4. Environment/location
-5. Visually supported context
-6. Camera perspective
-7. Subject positioning
-8. Lighting
-9. Dominant colors
-10. Background elements
-11. Genuine visual details
-
-Do not assume that every visual detail is factually connected to the news.
-
-Do not invent facts from the image.
-
-Create a NEW image concept inspired by the source image and news topic.
-
-Do not request an exact copy of the source image.
-
-Do not mention the source image URL in imagePrompt.
-`
-      : `
-No original source image could be retrieved.
-
-Create imagePrompt from the news topic and generated title only.
-
-Do not invent unsupported details.
-`;
-
-  // ----------------------------------------------------------
-  // GEMINI PROMPT
-  // ----------------------------------------------------------
-
-  const prompt = `
-You are the senior digital editor and SEO strategist of an Indian Hindi news website called "INFINIA BHARAT NEWS".
-
-Create a publication-ready Hindi news article from the selected trending topic.
-
-NEWS TOPIC:
+TOPIC:
 ${topic}
 
-SOURCE:
-${source || "Google News"}
-
-SOURCE URL:
-${sourceUrl || "Not available"}\
-
-SOURCE ARTICLE MATERIAL:
-
-${sourceArticleText || "No source article text could be extracted."}
-
-IMPORTANT:
-The source material above is provided only to establish facts and context.
-
-Use only information that can reasonably be supported by this material.
-
-Do not copy its wording.
-
-Do not translate it sentence-by-sentence.
-
-Do not preserve its paragraph structure.
-
-Do not reproduce distinctive phrases.
-
-Do not invent missing information.
-
-If the source material contains conflicting, unclear, or incomplete information, do not guess. Write only what can be safely established.
-
-============================================================
-CATEGORY
-============================================================
-
-You MUST select exactly ONE category from this list:
-
+ACTIVE CATEGORIES:
 ${categoryList}
 
-CATEGORY RULES:
-
-1. Do NOT create a new category.
-2. Do NOT invent a category.
-3. Do NOT return a category outside this list.
-4. Return the category using its EXACT slug.
-5. The slug MUST exactly match one supplied slug.
-6. Do not return the English display name.
-7. Do not return the Hindi display name.
-8. Do not return "News", "Latest News", "Political News", etc.
-9. Return only the slug.
-
-Example:
-
-"politics"
-
-NOT:
-
-"Politics"
-
-NOT:
-
-"राजनीति"
-
-NOT:
-
-"Political News"
-
-============================================================
-ARTICLE
-============================================================
-
-Write the article in natural, professional Hindi.
-
-The writing must sound like a real Indian digital newsroom.
-
-Do NOT copy the source article.
-
-Do NOT invent:
-
-- facts
-- statistics
-- names
-- quotes
-- government statements
-- dates
-- locations
-- events
-
-If available information is limited, write only what can reasonably be established.
-
-Never pretend to know information that is not available.
-
-Do not use:
-
-"इस खबर के अनुसार"
-"AI के अनुसार"
-"यह आर्टिकल"
-"हमने पाया"
-"ChatGPT"
-"Gemini"
-
-Avoid unnecessary keyword repetition.
-
-Write for Google search intent and Google Discover-style readability.
-
-The source is REFERENCE MATERIAL only. NEVER rewrite, synonymize, translate, lightly paraphrase, or structurally mirror the source article.
-
-Do not reproduce the source wording, sentence order, paragraph order, headline formula, or distinctive phrasing.
-
-First identify the verified facts and the actual news development, then write an independently structured article in your own newsroom language.
-
-If the available information is insufficient for a genuinely useful article, keep the article concise rather than padding it with invented or generic material.
-
-Avoid clickbait.
-
-Title must be informative and strong without misleading readers.
-
-Use Hindi naturally while retaining official names, organizations, places and technical terms where appropriate.
-
-// ============================================================
-// SEO
-// ============================================================
-
-Create exactly these fields:
-
-- title
-- seoTitle
-- seoDescription
-- shortDescription
-- suggestedCategory
-- keywords
-- content
-- imagePrompt
-
-
-============================================================
-ARTICLE KEYWORDS
-============================================================
-
-Generate 8-15 highly relevant, article-specific SEO keywords and search phrases in the "keywords" array.
-
-KEYWORD RULES:
-
-1. Every keyword must directly describe THIS article.
-2. Include important people, organizations, places, events, schemes, products, laws, issues or entities actually present in the story.
-3. Include realistic Hindi search phrases.
-4. Include commonly searched official English names or terms where relevant.
-5. Prefer 2-5 word search phrases when they better match search intent.
-6. Use semantic variations only when genuinely useful.
-7. Do NOT invent names, entities, places, statistics or events.
-8. Do NOT use unrelated high-volume keywords.
-9. Do NOT keyword-stuff.
-10. Do NOT use hashtags.
-11. Do NOT use complete sentences.
-12. Do NOT add "INFINIA BHARAT NEWS" unless the story is specifically about the publication.
-13. Avoid generic keywords such as "latest news", "breaking news", "today news" unless genuinely relevant to the exact story.
-14. Do not repeat the same keyword with trivial spelling or case variations.
-15. Return keywords only as a JSON array of strings.
-
-Example:
-
-"keywords": [
-  "दिल्ली भारी बारिश",
-  "दिल्ली जलभराव",
-  "Delhi heavy rain",
-  "Delhi waterlogging"
-]
-
-IMPORTANT:
-
-The field "seoTitle" is NOT a normal Hindi SEO title.
-
-In this application, "seoTitle" is stored in Firebase and is used as the
-ARTICLE URL SLUG.
-
-Therefore:
-
-seoTitle = ENGLISH URL SLUG ONLY.
-
-Do NOT write a Hindi SEO title in seoTitle.
-
-Do NOT write a Hindi sentence in seoTitle.
-
-Do NOT write Devanagari characters in seoTitle.
-
-Do NOT write a human-readable SEO title in seoTitle.
-
-The article title "title" MUST remain in natural Hindi.
-
-The "seoTitle" MUST be a short, SEO-friendly English URL slug describing
-the main news topic.
-
-STRICT seoTitle RULES:
-
-1. ONLY lowercase English ASCII letters a-z.
-2. Numbers 0-9 are allowed.
-3. Hyphens "-" are allowed.
-4. NO spaces.
-5. NO Hindi characters.
-6. NO Devanagari.
-7. NO Unicode characters.
-8. NO punctuation.
-9. NO slash "/".
-10. NO backslash "\\".
-11. NO underscores "_".
-12. NO colon ":".
-13. NO brackets.
-14. NO quotes.
-15. NO question marks.
-16. NO emojis.
-17. NEVER URL-encode the value.
-18. NEVER transliterate Hindi text character-by-character.
-19. Translate the important meaning of the Hindi news into concise English.
-20. Use the most important searchable English keywords.
-21. Keep it short, normally 3-8 words.
-22. Do not add unnecessary words such as "latest", "today", "breaking",
-    "news" unless they are genuinely useful.
-23. The final value must already be ready to use directly inside an URL.
-24. The seoTitle MUST NOT contain a date or timestamp.
-25. The seoTitle MUST NOT contain the website name.
-26. The seoTitle MUST NOT contain the category name unless it is an important
-    part of the actual news topic.
-
-Examples:
-
-Hindi title:
-"झारखंड में परीक्षाओं में देरी और रिश्वत के आरोपों पर प्रदर्शन"
-
-Correct seoTitle:
-"jharkhand-exam-delay-bribery-protests"
-
-Hindi title:
-"एयर इंडिया की फ्लाइट में बड़ी तकनीकी खराबी"
-
-Correct seoTitle:
-"air-india-flight-technical-fault"
-
-Hindi title:
-"दिल्ली में भारी बारिश से कई इलाकों में जलभराव"
-
-Correct seoTitle:
-"delhi-heavy-rain-waterlogging"
-
-Hindi title:
-"भारत ने पाकिस्तान के खिलाफ बड़ी जीत दर्ज की"
-
-Correct seoTitle:
-"india-defeats-pakistan-major-win"
-
-WRONG seoTitle examples:
-
-"एयर इंडिया की फ्लाइट में बड़ी तकनीकी खराबी"
-"Air India की फ्लाइट में तकनीकी खराबी"
-"Air India Flight Technical Problem"
-"Air India Flight Technical Problem - Latest News"
-"air india flight technical problem?"
-"air_india_flight_technical_problem"
-
-The ONLY acceptable format is:
-
-"air-india-flight-technical-fault"
-
-IMPORTANT:
-
-Do not confuse "title" and "seoTitle".
-
-"title":
-Natural Hindi news headline.
-
-"seoTitle":
-English URL slug.
-
-For example:
-
-{
-  "title": "एयर इंडिया की फ्लाइट में बड़ी तकनीकी खराबी",
-  "seoTitle": "air-india-flight-technical-fault"
-}
-============================================================
-CONTENT HTML
-============================================================
-
-The content field MUST contain valid HTML.
-
-Use <strong> only for genuinely important facts.
-
-Use <ul><li>...</li></ul> only when a list improves readability.
-
-Use headings only when genuinely useful.
-
-Do not create unnecessary headings.
-
-The opening paragraph must immediately explain the most important part of the news.
-
-Normally target approximately 700-1000 words only when the available facts support that length.
-
-Do NOT invent information just to increase word count.
-
-Suggested structure:
-
-1. Strong opening paragraph
-2. Main development
-3. Important details/context
-4. What this means for readers/public
-5. Relevant background
-6. What happens next, only if supported
-7. Concise conclusion
-
-============================================================
-IMAGE
-============================================================
-
-${imageAnalysisInstruction}
-
-The generated article TITLE is extremely important for imagePrompt.
-
-After generating the article title, use the title together with:
-
-- original news topic
-- source context
-- original image visual information, when available
-
-to create a new professional thumbnail prompt.
-
-The imagePrompt must specifically represent the actual news.
-
-The imagePrompt must identify:
-
-1. Primary visual subject
-2. Secondary visual elements
-3. Relevant location/environment
-4. Supported context
-5. Camera composition
-6. Lighting
-7. Depth
-8. Editorial hierarchy
-
-If the original image contains a recognizable public figure, use that person mention in the article.
-
-If the original image shows a building, location or object, only describe it specifically when the visual evidence supports it.
-
-Create a premium Indian digital-news editorial photograph.
-
-Style:
-
-- high reach
-- high seo
-- high ctr
--exact title suited 
-- 16:9 landscape
-- photorealistic 4K quality
-
-
-The imagePrompt MUST be ONE detailed paragraph.
-
-============================================================
-JSON
-============================================================
-
-Return ONLY valid JSON.
-
-Do not use markdown fences.
-
-Use exactly:
-
-{
-  "title": "",
-  "seoTitle": "",
-  "seoDescription": "",
-  "shortDescription": "",
-  "content": "",
-  "suggestedCategory": "",
-  "keywords": [],
-  "imagePrompt": ""
-}
-
-IMPORTANT:
-
-"seoTitle" is the article URL slug.
-
-"seoTitle" MUST contain ONLY lowercase ASCII English characters,
-numbers and hyphens.
-
-"seoTitle" MUST NEVER contain Hindi or Devanagari characters.
-
-Do not return a separate "slug" field.
+VERIFIED RESEARCH DOSSIER:
+${JSON.stringify(research, null, 2)}
+
+EDITORIAL STYLE
+- Natural professional Hindi used by a serious Indian digital newsroom.
+- Use standard English terms where Indian journalism normally uses them.
+- Authoritative, neutral, factual, polished and reader-focused.
+- No AI filler, no generic opening, no mention of AI/ChatGPT/Gemini.
+- No clickbait.
+- Do not force a "निष्कर्ष" section.
+
+FACTUAL SAFETY
+- Use ONLY information supported by the research dossier.
+- Never invent names, quotations, dates, statistics, locations, court observations, government statements, financial figures, legal proceedings, causes or events.
+- Clearly attribute allegations/claims where applicable.
+- If a fact is uncertain or unsupported, leave it out.
+
+DEPTH
+- Do not return a tiny summary when sufficient facts exist.
+- Normal story: about 700-1000 words.
+- Substantial political, legal, government, business or national story: about 800-1200 words when facts support it.
+- Never pad for length.
+- Where supported, naturally cover the main development, key details, context, why it matters, and what happens next.
+- Use 2-4 meaningful <h2> sections when useful.
+- Use <h3> only when genuinely useful.
+- Paragraphs should normally be 2-5 sentences.
+
+HTML HARD REQUIREMENT
+- content MUST be valid HTML.
+- Allowed: <p>, <h2>, <h3>, <strong>, <ul>, <ol>, <li>, <blockquote>, <table>, <thead>, <tbody>, <tr>, <th>, <td>.
+- No Markdown.
+- No code fences.
+- No plain-text article content.
+- No <h1> inside content.
+- Opening paragraph must immediately explain the central development.
+- Use <strong> selectively.
+- Use <blockquote> only for a verified quotation in the dossier.
+
+SEO / GOOGLE NEWS / DISCOVER
+- Title: strong, specific Hindi headline, accurate, search-intent clear, non-sensational.
+- seoDescription: concise natural Hindi summary.
+- shortDescription: concise newsroom/feed summary.
+- keywords: 8-15 genuinely relevant Hindi/English search phrases from the story, no hashtags.
+- seoTitle: URL slug only; lowercase English letters, numbers and hyphens, normally 3-8 meaningful words, no Hindi, spaces, underscores, punctuation, date or website name.
+
+IMAGE PROMPT
+${imageInstruction}
+Create one detailed paragraph for imagePrompt: photorealistic professional editorial photography, premium Indian digital-news aesthetic, cinematic realistic lighting, 16:9, 4K, high visual impact, Google Discover suitable. No headline text, captions, fake UI, watermark, logo or invented events/people.
+
+ORIGINALITY
+Do not copy or mirror any source wording, paragraph order, headline formula or distinctive phrasing. Understand the verified facts and produce an independently written INFINIA BHARAT NEWS story.
+
+Return ONLY this JSON object:
+${JSON.stringify(ARTICLE_SCHEMA, null, 2)}
 `;
 
-  // ----------------------------------------------------------
-  // GEMINI CONTENT
-  // ----------------------------------------------------------
+  const article = await callWriterWithFallback(writerPrompt);
 
-  const parts: any[] = [
-    {
-      text: prompt,
-    },
-  ];
-
-  // ----------------------------------------------------------
-  // ADD ORIGINAL IMAGE
-  // ----------------------------------------------------------
-
-  if (originalImage) {
-    parts.push({
-      inlineData: {
-        mimeType:
-          originalImage.mimeType,
-
-        data:
-          originalImage.data,
-      },
-    });
+  if (!article || typeof article !== "object") {
+    throw new Error("AI returned invalid article object");
   }
 
-  // ----------------------------------------------------------
-  // GEMINI REQUEST
-  // ----------------------------------------------------------
+  if (!article.title) throw new Error("AI returned empty article title");
+  if (!article.content) throw new Error("AI returned empty article content");
 
-  const response =
-    await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
-      {
-        method: "POST",
+  const suggestedCategory = String(article.suggestedCategory || "")
+    .trim()
+    .toLowerCase();
 
-        headers: {
-          "Content-Type":
-            "application/json",
+  let selectedCategory = categories.find(
+    (category) => category.slug.toLowerCase() === suggestedCategory
+  );
 
-          "x-goog-api-key":
-            GEMINI_API_KEY,
-        },
-
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts,
-            },
-          ],
-
-          generationConfig: {
-            temperature: 0.35,
-
-            responseMimeType:
-              "application/json",
-          },
-        }),
-      }
-    );
-
-  const data =
-    await response.json();
-
-  if (!response.ok) {
-    console.error(
-      "Gemini Error:",
-      data
-    );
-
-    throw new Error(
-      data?.error?.message ||
-        "AI generation failed"
+  if (!selectedCategory) {
+    selectedCategory = categories.find(
+      (category) => category.name.toLowerCase() === suggestedCategory
     );
   }
 
-  // ----------------------------------------------------------
-  // GEMINI TEXT
-  // ----------------------------------------------------------
-
-  const text =
-    data?.candidates?.[0]
-      ?.content?.parts?.find(
-        (part: any) =>
-          typeof part.text ===
-          "string"
-      )?.text;
-
-  if (!text) {
-    throw new Error(
-      "AI returned empty response"
+  if (!selectedCategory) {
+    selectedCategory = categories.find(
+      (category) => category.nameHi.toLowerCase() === suggestedCategory
     );
   }
 
-  // ----------------------------------------------------------
-  // PARSE JSON
-  // ----------------------------------------------------------
+  if (!selectedCategory) {
+    selectedCategory =
+      categories.find((category) => category.slug === "india") ||
+      categories[0];
+  }
 
-  let article: any;
+  const seoTitle = sanitizeEnglishSlug(article.seoTitle);
+  if (!seoTitle) {
+    throw new Error("AI generated an invalid English seoTitle slug");
+  }
 
-  try {
-    article =
-      JSON.parse(text);
-  } catch {
-    console.error(
-      "Invalid Gemini JSON:",
-      text
+  const keywords = Array.isArray(article.keywords)
+    ? article.keywords
+        .map((keyword: unknown) => String(keyword).trim())
+        .filter(Boolean)
+        .filter(
+          (keyword: string) =>
+            !keyword.startsWith("#") &&
+            keyword.length >= 2 &&
+            keyword.split(/\s+/).length <= 6
+        )
+        .filter(
+          (keyword: string, index: number, list: string[]) =>
+            list.findIndex(
+              (item) => item.toLowerCase() === keyword.toLowerCase()
+            ) === index
+        )
+        .slice(0, 15)
+    : [];
+
+  let content = cleanGeneratedHtml(String(article.content));
+  const validation = validateArticleHtml(content);
+
+  console.log("Multi-provider HTML validation:", validation);
+
+  if (!validation.valid) {
+    console.warn(
+      "AI content failed HTML validation. Applying safe HTML fallback:",
+      validation.reason
     );
 
-    try {
-      const cleaned =
-        text
-          .replace(
-            /^```json\s*/i,
-            ""
-          )
-          .replace(
-            /^```\s*/i,
-            ""
-          )
-          .replace(
-            /\s*```$/i,
-            ""
-          )
-          .trim();
+    const repaired = repairPlainArticle(
+      String(article.content),
+      String(article.title)
+    );
 
-      article =
-        JSON.parse(cleaned);
-    } catch {
+    const repairedValidation = validateArticleHtml(repaired);
+
+    if (repairedValidation.valid) {
+      content = repairedValidation.html;
+    } else {
       throw new Error(
-        "AI returned invalid JSON"
+        `AI generated poorly structured article content: ${validation.reason}`
       );
     }
   }
 
-  // ==========================================================
-  // NORMALIZE CATEGORY
-  // ==========================================================
-
-  const suggestedCategory =
-    String(
-      article.suggestedCategory ||
-        ""
-    )
-      .trim()
-      .toLowerCase();
-
-  // ==========================================================
-  // FIND CATEGORY BY SLUG
-  // ==========================================================
-
-  let selectedCategory =
-    categories.find(
-      (category) =>
-        category.slug
-          .toLowerCase() ===
-        suggestedCategory
-    );
-
-  // ==========================================================
-  // FALLBACK BY ENGLISH NAME
-  // ==========================================================
-
-  if (!selectedCategory) {
-    selectedCategory =
-      categories.find(
-        (category) =>
-          category.name
-            .toLowerCase() ===
-          suggestedCategory
-      );
-  }
-
-  // ==========================================================
-  // FALLBACK BY HINDI NAME
-  // ==========================================================
-
-  if (!selectedCategory) {
-    selectedCategory =
-      categories.find(
-        (category) =>
-          category.nameHi
-            .toLowerCase() ===
-          suggestedCategory
-      );
-  }
-
-  // ==========================================================
-  // FINAL CATEGORY FALLBACK
-  // ==========================================================
-
-  if (!selectedCategory) {
-    selectedCategory =
-      categories.find(
-        (category) =>
-          category.slug ===
-          "india"
-      ) ||
-      categories[0];
-  }
-
-  // ==========================================================
-// SANITIZE SEO TITLE AS URL SLUG
-// ==========================================================
-
-const seoTitle =
-  sanitizeEnglishSlug(
-    article.seoTitle
-  );
-
-const keywords = Array.isArray(article.keywords)
-  ? article.keywords
-      .map((keyword: unknown) =>
-        String(keyword).trim()
-      )
-      .filter(Boolean)
-      .filter(
-        (keyword: string) =>
-          !keyword.startsWith("#") &&
-          keyword.length >= 2 &&
-          keyword.split(/\s+/).length <= 6
-      )
-      .filter(
-        (keyword: string, index: number, list: string[]) =>
-          list.findIndex(
-            (item) =>
-              item.toLowerCase() ===
-              keyword.toLowerCase()
-          ) === index
-      )
-      .slice(0, 15)
-  : [];
-
-// ----------------------------------------------------------
-// VALIDATE SEO TITLE
-// ----------------------------------------------------------
-
-if (!seoTitle) {
-  throw new Error(
-    "AI generated an invalid English seoTitle slug"
-  );
-}
-
-console.log(
-  "Generated English SEO URL slug:",
-  seoTitle
-);
-  // ==========================================================
-  // FINAL RESULT
-  // ==========================================================
-
   return {
-  title:
-    String(
-      article.title || ""
-    ),
-
-  seoTitle,
-
-  seoDescription:
-    String(
-      article.seoDescription ||
-        ""
-    ),
-
-  shortDescription:
-    String(
-      article.shortDescription ||
-        ""
-    ),
-  
-  keywords,
-  content:
-    String(
-      article.content || ""
-    ),
-
-  suggestedCategory:
-    selectedCategory.slug,
-
-  categoryId:
-    selectedCategory.id,
-
-  categoryName:
-    selectedCategory.name,
-
-  categoryNameHi:
-    selectedCategory.nameHi,
-
-  categorySlug:
-    selectedCategory.slug,
-
-  imagePrompt:
-    String(
-      article.imagePrompt ||
-        ""
-    ),
-
-  sourceImageUrl:
-    originalImageUrl || "",
-};
+    title: String(article.title || "").trim(),
+    seoTitle,
+    seoDescription: String(article.seoDescription || "").trim(),
+    shortDescription: String(article.shortDescription || "").trim(),
+    keywords,
+    content,
+    suggestedCategory: selectedCategory.slug,
+    categoryId: selectedCategory.id,
+    categoryName: selectedCategory.name,
+    categoryNameHi: selectedCategory.nameHi,
+    categorySlug: selectedCategory.slug,
+    imagePrompt: String(article.imagePrompt || "").trim(),
+    sourceImageUrl: originalImageUrl || "",
+  };
 }
 
 // ============================================================
@@ -1763,4 +1701,3 @@ export async function POST(
     );
   }
 }
-
