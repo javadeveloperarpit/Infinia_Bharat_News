@@ -654,23 +654,22 @@ const organizationSchema = {
           space-y-20
         "
       >
-        {categoryData.map(
-          (category) => (
-            <CategorySection
-              key={category.id}
-              name={category.name}
-              nameHi={category.nameHi}
-              slug={category.slug}
-              articles={category.articles}
-              videos={category.videos}
-              nativeAds={nativeAdsPlain}
-            />
-          )
-        )}
+        {categoryData.map((category, index) => (
+  <div key={category.id}>
+    <CategorySection
+      name={category.name}
+      nameHi={category.nameHi}
+      slug={category.slug}
+      articles={category.articles}
+      videos={category.videos}
+      nativeAds={nativeAdsPlain}
+    />
 
-        <ShortsSection
-          shorts={shorts}
-        />
+    {index === 0 && (
+      <ShortsSection shorts={shorts} />
+    )}
+  </div>
+))}
        
       </div>
       
