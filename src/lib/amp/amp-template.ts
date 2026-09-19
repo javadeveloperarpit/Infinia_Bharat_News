@@ -610,6 +610,8 @@ export function renderAmpArticle({
   src="https://cdn.ampproject.org/v0.js">
 </script>
 
+<!-- AMP Analytics --><script async custom-element="amp-analytics" src="https://cdn.ampproject.org/v0/amp-analytics-0.1.js"></script>
+
 <title>${escapeAttr(title)}</title>
 
 <!-- PRIMARY CANONICAL REMAINS NORMAL ARTICLE URL -->
@@ -830,6 +832,8 @@ ${safeJsonLd(articleSchema)}
 <script type="application/ld+json">
 ${safeJsonLd(breadcrumbSchema)}
 </script>
+
+<amp-analytics config="https://www.googletagmanager.com/amp.json?id=GTM-5HDHQ4BM&gtm.url=SOURCE_URL" data-credentials="include"></amp-analytics>
 
 <style amp-custom>
 
