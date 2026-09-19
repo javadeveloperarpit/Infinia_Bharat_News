@@ -51,7 +51,7 @@ import {
   getActiveBreakingNews,
 } from "@/services/public/breaking.public.service";
 
-import LeadersOnX from "@/components/home/leaders-on-x";
+
 
 import {
   getEnglishArticles,
@@ -671,7 +671,7 @@ const organizationSchema = {
         <ShortsSection
           shorts={shorts}
         />
-        <LeadersOnX />
+       
       </div>
       
       
