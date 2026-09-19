@@ -1084,7 +1084,7 @@ const splitContent = useMemo(() => {
   /* IMPORTANT:
      page ki height natural rahegi,
      sirf visual clipping hogi */
-  max-height: 320px;
+  max-height: 650px;
 
   overflow: hidden;
 }
