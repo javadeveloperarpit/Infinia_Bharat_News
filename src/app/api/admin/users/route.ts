@@ -10,7 +10,9 @@ import {
 import {
   FieldValue,
 } from "firebase-admin/firestore";
-
+import {
+  syncAuthorsFromFirebase,
+} from "@/lib/github/author-github-sync";
 // ==========================================
 // CREATE SLUG
 // ==========================================
@@ -1140,7 +1142,47 @@ export async function PATCH(
         authError
       );
     }
+await userRef.update(
+  updateData
+);
 
+// Firebase Auth profile bhi update
+try {
+  await adminAuth.updateUser(
+    uid,
+    {
+      displayName: name,
+      photoURL: photo,
+      disabled:
+        status === "inactive",
+    }
+  );
+} catch (authError) {
+  console.error(
+    "AUTH PROFILE UPDATE ERROR:",
+    authError
+  );
+}
+
+// Firebase -> GitHub sync
+await syncAuthorsFromFirebase();
+
+return NextResponse.json(
+  {
+    success: true,
+
+    message:
+      "User updated and synced successfully",
+
+    user: {
+      uid,
+      ...updateData,
+    },
+  },
+  {
+    status: 200,
+  }
+);
     return NextResponse.json(
       {
         success: true,
