@@ -1183,22 +1183,7 @@ return NextResponse.json(
     status: 200,
   }
 );
-    return NextResponse.json(
-      {
-        success: true,
-
-        message:
-          "User updated successfully",
-
-        user: {
-          uid,
-          ...updateData,
-        },
-      },
-      {
-        status: 200,
-      }
-    );
+    
 
   } catch (error: any) {
 
