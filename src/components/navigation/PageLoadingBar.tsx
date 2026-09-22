@@ -6,31 +6,63 @@ import { usePathname } from "next/navigation";
 
 export default function PageLoadingBar() {
   const pathname = usePathname();
-
-  // IMPORTANT:
-  // Initial page load par loader render NAHI hoga.
   const [loading, setLoading] = useState(false);
 
-  // ==========================================
+  // =========================================================
   // ROUTE CHANGE COMPLETE
-  // ==========================================
+  // =========================================================
 
   useEffect(() => {
-    // Jaise hi new pathname React ko milta hai,
-    // loader immediately remove.
+    // pathname change hote hi loader hata do
     setLoading(false);
   }, [pathname]);
 
-  // ==========================================
+  // =========================================================
+  // BROWSER / PHONE BACK-FORWARD NAVIGATION
+  // =========================================================
+
+  useEffect(() => {
+    const handlePopState = () => {
+      // Browser back/forward par loader kabhi stuck na rahe
+      setLoading(false);
+    };
+
+    const handlePageShow = () => {
+      // BFCache se page restore hone par bhi loader remove
+      setLoading(false);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        setLoading(false);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("pageshow", handlePageShow);
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibilityChange
+    );
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("pageshow", handlePageShow);
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibilityChange
+      );
+    };
+  }, []);
+
+  // =========================================================
   // INTERNAL NAVIGATION
-  // ==========================================
+  // =========================================================
 
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
-      // Only normal left click
       if (event.button !== 0) return;
 
-      // Ctrl / Cmd / Shift / Alt
       if (
         event.ctrlKey ||
         event.metaKey ||
@@ -52,10 +84,7 @@ export default function PageLoadingBar() {
 
       if (!href) return;
 
-      // ------------------------------------------
       // External links
-      // ------------------------------------------
-
       if (
         href.startsWith("http://") ||
         href.startsWith("https://") ||
@@ -65,48 +94,54 @@ export default function PageLoadingBar() {
         return;
       }
 
-      // ------------------------------------------
-      // Hash links
-      // ------------------------------------------
-
+      // Hash
       if (href.startsWith("#")) {
         return;
       }
 
-      // ------------------------------------------
-      // Download links
-      // ------------------------------------------
-
+      // Downloads
       if (link.hasAttribute("download")) {
         return;
       }
 
-      // ------------------------------------------
       // New tab
-      // ------------------------------------------
-
       if (link.target === "_blank") {
         return;
       }
 
-      // ------------------------------------------
-      // Same page
-      // ------------------------------------------
+      // =====================================================
+      // RESOLVE TARGET URL
+      // =====================================================
 
-      const currentPath =
-        window.location.pathname +
-        window.location.search;
+      let targetUrl: URL;
 
-      if (
-        href === currentPath ||
-        href === window.location.pathname
-      ) {
+      try {
+        targetUrl = new URL(href, window.location.href);
+      } catch {
         return;
       }
 
-      // ==========================================
+      // Different origin
+      if (targetUrl.origin !== window.location.origin) {
+        return;
+      }
+
+      const currentUrl =
+        window.location.pathname +
+        window.location.search;
+
+      const targetPath =
+        targetUrl.pathname +
+        targetUrl.search;
+
+      // Same page
+      if (targetPath === currentUrl) {
+        return;
+      }
+
+      // =====================================================
       // SHOW LOADER
-      // ==========================================
+      // =====================================================
 
       setLoading(true);
     };
@@ -118,17 +153,31 @@ export default function PageLoadingBar() {
     };
   }, []);
 
-  // ==========================================
-  // IMPORTANT
-  // ==========================================
+  // =========================================================
+  // SAFETY TIMEOUT
+  // =========================================================
+  // Agar kisi unusual browser state mein navigation complete
+  // event miss ho jaye, loader permanently stuck nahi hoga.
+
+  useEffect(() => {
+    if (!loading) return;
+
+    const timeout = window.setTimeout(() => {
+      setLoading(false);
+    }, 15000);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [loading]);
+
+  // =========================================================
+  // LOADER
+  // =========================================================
 
   if (!loading) {
     return null;
   }
-
-  // ==========================================
-  // LOADER
-  // ==========================================
 
   return (
     <div
@@ -155,7 +204,6 @@ export default function PageLoadingBar() {
         "
       >
         {/* SOFT GLOW */}
-
         <div
           className="
             absolute
@@ -168,7 +216,6 @@ export default function PageLoadingBar() {
         />
 
         {/* CRYSTAL RING */}
-
         <div
           className="
             absolute
@@ -189,7 +236,6 @@ export default function PageLoadingBar() {
         />
 
         {/* LOGO */}
-
         <div
           className="
             relative
@@ -236,7 +282,6 @@ export default function PageLoadingBar() {
           />
 
           {/* CRYSTAL SHINE */}
-
           <div
             className="
               pointer-events-none
@@ -260,4 +305,3 @@ export default function PageLoadingBar() {
     </div>
   );
 }
-
