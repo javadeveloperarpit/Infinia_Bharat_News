@@ -350,7 +350,6 @@
       "human resources homicide",
       "crime news India"
     ],
-    "featured": true,
     "breaking": true,
     "status": "published",
     "slug": "gurdon-hr-murder-car-body-20260918-060923206",
@@ -364,8 +363,8 @@
       "bio": "Shubhi Mishra\n\nEditor, Infinia Bharat News | Video Editor | Graphic Designer | Digital Media Creative\n\nShubhi Mishra is an Editor at Infinia Bharat News, a skilled video editor, and a creative graphic designer with a strong interest in digital journalism, visual storytelling, and modern media.\n\nAt Infinia Bharat News, she contributes to the editorial and creative workflow, working across news content, video editing, graphic design, digital creatives, and visual presentation. Her ability to combine editorial understanding with creative skills helps transform news stories into engaging and visually compelling digital content.\n\nAs a video editing professional, Shubhi specializes in creating impactful news videos, short-form content, reels, and digital media productions. Her graphic design expertise includes creating news graphics, social media creatives, thumbnails, promotional visuals, and branded content.\n\nShe is passionate about the evolving world of digital media and believes that strong storytelling, thoughtful design, and responsible journalism can work together to create meaningful content for today's audience.\n\nThrough her work at Infinia Bharat News, Shubhi contributes to building a modern, creative, and audience-focused digital news platform where journalism meets technology and visual storytelling."
     },
     "createdAt": "2026-09-18T06:09:23.386Z",
-    "priority": 4,
-    "updatedAt": "2026-09-22T11:31:02.657Z"
+    "featured": false,
+    "updatedAt": "2026-09-29T04:28:32.908Z"
   },
   {
     "id": "4W32E4k72OnE3Rswsg9i",
@@ -1141,9 +1140,7 @@
     "seoTitle": "yudh-abhyas-2026-sergio-gor-india-us-defence-partnership",
     "seoDescription": "Yudh Abhyas 2026 में अमेरिकी राजदूत सर्जियो गोर ने राजस्थान के महाजन फील्ड फायरिंग रेंज में भारत-अमेरिका संयुक्त सैन्य अभ्यास देखा। जानें अभ्यास, सैनिकों की संख्या और प्रमुख फोकस।",
     "keywords": [],
-    "featured": false,
     "breaking": false,
-    "priority": 0,
     "status": "published",
     "slug": "yudh-abhyas-2026-sergio-gor-india-us-defence-partnership-20260924-143705722",
     "author": {
@@ -1156,7 +1153,9 @@
       "bio": "Arpit Mishra\nFounder & Owner | Editor-in-Chief of Infinia Bharat News | Computer Science Engineering Student | Technology & Digital Media Enthusiast**\n\nArpit Mishra is a Computer Science Engineering student, technology enthusiast, and the Editor-in-Chief of Infinia Bharat News, with a keen interest in digital journalism, technology, current affairs, and emerging media platforms.\n\nAlongside his academic journey in Computer Science Engineering, he is actively involved in building and developing a modern digital news platform, focusing on news content, editorial presentation, digital media, technology, and audience engagement.\n\nAs Editor-in-Chief of Infinia Bharat News, Arpit is involved in shaping the publication's editorial direction, content strategy, digital presence, and overall newsroom vision. He believes in presenting news in a clear, engaging, and responsible manner while adapting journalism to the rapidly evolving digital landscape.\n\nHis technical interests include software development, web technologies, artificial intelligence, cybersecurity, databases, and cloud-based applications. He combines his technical background with his interest in journalism to explore how technology can transform the way news is created, distributed, and consumed.\n\nArpit's long-term vision is to build expertise at the intersection of technology, entrepreneurship, and digital media, while creating meaningful and impactful technology-driven platforms."
     },
     "createdAt": "2026-09-24T14:37:05.930Z",
-    "updatedAt": "2026-09-24T14:37:05.930Z"
+    "featured": true,
+    "priority": 4,
+    "updatedAt": "2026-09-29T04:28:32.908Z"
   },
   {
     "id": "I1qn5AYiiJ9zvQv733TR",
@@ -2052,8 +2051,8 @@
     },
     "createdAt": "2026-09-22T18:00:12.414Z",
     "featured": true,
-    "priority": 5,
-    "updatedAt": "2026-09-22T18:02:59.307Z"
+    "priority": 3,
+    "updatedAt": "2026-09-29T04:28:32.908Z"
   },
   {
     "id": "RKo1XnFyV9CK7MKwUMMZ",
@@ -3278,9 +3277,7 @@
       "राजनीति",
       "भारत समाचार"
     ],
-    "featured": false,
     "breaking": false,
-    "priority": 0,
     "status": "published",
     "slug": "supreme-court-west-bengal-bypolls-hearing-20260929-042451711",
     "author": {
@@ -3293,7 +3290,9 @@
       "bio": "Arpit Mishra\nFounder & Owner | Editor-in-Chief of Infinia Bharat News | Computer Science Engineering Student | Technology & Digital Media Enthusiast**\n\nArpit Mishra is a Computer Science Engineering student, technology enthusiast, and the Editor-in-Chief of Infinia Bharat News, with a keen interest in digital journalism, technology, current affairs, and emerging media platforms.\n\nAlongside his academic journey in Computer Science Engineering, he is actively involved in building and developing a modern digital news platform, focusing on news content, editorial presentation, digital media, technology, and audience engagement.\n\nAs Editor-in-Chief of Infinia Bharat News, Arpit is involved in shaping the publication's editorial direction, content strategy, digital presence, and overall newsroom vision. He believes in presenting news in a clear, engaging, and responsible manner while adapting journalism to the rapidly evolving digital landscape.\n\nHis technical interests include software development, web technologies, artificial intelligence, cybersecurity, databases, and cloud-based applications. He combines his technical background with his interest in journalism to explore how technology can transform the way news is created, distributed, and consumed.\n\nArpit's long-term vision is to build expertise at the intersection of technology, entrepreneurship, and digital media, while creating meaningful and impactful technology-driven platforms."
     },
     "createdAt": "2026-09-29T04:24:51.893Z",
-    "updatedAt": "2026-09-29T04:24:51.893Z"
+    "featured": true,
+    "priority": 5,
+    "updatedAt": "2026-09-29T04:28:32.908Z"
   },
   {
     "id": "rddXNJqowLfjNppyDSnU",
@@ -3513,9 +3512,8 @@
       "bio": "Shubhi Mishra\n\nEditor, Infinia Bharat News | Video Editor | Graphic Designer | Digital Media Creative\n\nShubhi Mishra is an Editor at Infinia Bharat News, a skilled video editor, and a creative graphic designer with a strong interest in digital journalism, visual storytelling, and modern media.\n\nAt Infinia Bharat News, she contributes to the editorial and creative workflow, working across news content, video editing, graphic design, digital creatives, and visual presentation. Her ability to combine editorial understanding with creative skills helps transform news stories into engaging and visually compelling digital content.\n\nAs a video editing professional, Shubhi specializes in creating impactful news videos, short-form content, reels, and digital media productions. Her graphic design expertise includes creating news graphics, social media creatives, thumbnails, promotional visuals, and branded content.\n\nShe is passionate about the evolving world of digital media and believes that strong storytelling, thoughtful design, and responsible journalism can work together to create meaningful content for today's audience.\n\nThrough her work at Infinia Bharat News, Shubhi contributes to building a modern, creative, and audience-focused digital news platform where journalism meets technology and visual storytelling."
     },
     "createdAt": "2026-09-16T04:33:47.483Z",
-    "featured": true,
-    "priority": 3,
-    "updatedAt": "2026-09-22T11:31:02.657Z"
+    "featured": false,
+    "updatedAt": "2026-09-29T04:28:32.908Z"
   },
   {
     "id": "yo9kdHk7ktVqJBRP7CA7",
