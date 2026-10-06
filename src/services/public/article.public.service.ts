@@ -102,7 +102,7 @@ interface ArticleCategory {
 // ============================================================
 
 const ARPIT_MISHRA_PHOTO =
-  "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhleYE3u57u2LIBNwS0wcdK8_2DdClNs9NHzArdEt5_4F-FDCAQD0KYKW2rRzIQustLfKOdwKkCwI4an3JpMepTyCS71v11b0ab12389xMefgfY9B7sniXiZOSe3rf4d4hzQH6h31lNUmehFqJOHq35VqRCaEaWNyZ0mIoc0CBmhumWmEP_3Vy9835f1s9k/s1600/ArpitMishra.jpeg";
+  "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjh2fv6MTWG-FZK3ijqzhcJACSKmKwTBTQzv1TQXrSgtGW8ni8855vyxHq1mVkI2Pbs2HBFCqSlf4uSVR3wPlUyCd3k8H6Jjan_8Ych4gfgfLFftMVJVuUDlhGwDLDI05FuGQQqd00ky1eLznhmURACbOZHAUq1tI-VdBHInf67ZciIgoOGNlivROiCWFl8/s1600/ArpitMishra.jpeg";
 
 
 // ============================================================
