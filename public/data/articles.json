@@ -197,7 +197,6 @@
     "seoTitle": "monu-meturbala-12-jyotirlinga-yatra",
     "seoDescription": "बिहार के अररिया के 19 वर्षीय मोनू मेटुरबाला मां की सलामती के लिए लिए गए संकल्प को पूरा करने हेतु दौड़कर 12 ज्योतिर्लिंगों के दर्शन करने निकले हैं। रोज 50 किलोमीटर दौड़ और हजारों किलोमीटर का सफर तय कर रहे मोनू की भावुक कहानी जानिए।",
     "keywords": [],
-    "featured": false,
     "breaking": true,
     "priority": 5,
     "status": "published",
@@ -212,7 +211,8 @@
       "bio": "Shubhi Mishra\n\nEditor, Infinia Bharat News | Video Editor | Graphic Designer | Digital Media Creative\n\nShubhi Mishra is an Editor at Infinia Bharat News, a skilled video editor, and a creative graphic designer with a strong interest in digital journalism, visual storytelling, and modern media.\n\nAt Infinia Bharat News, she contributes to the editorial and creative workflow, working across news content, video editing, graphic design, digital creatives, and visual presentation. Her ability to combine editorial understanding with creative skills helps transform news stories into engaging and visually compelling digital content.\n\nAs a video editing professional, Shubhi specializes in creating impactful news videos, short-form content, reels, and digital media productions. Her graphic design expertise includes creating news graphics, social media creatives, thumbnails, promotional visuals, and branded content.\n\nShe is passionate about the evolving world of digital media and believes that strong storytelling, thoughtful design, and responsible journalism can work together to create meaningful content for today's audience.\n\nThrough her work at Infinia Bharat News, Shubhi contributes to building a modern, creative, and audience-focused digital news platform where journalism meets technology and visual storytelling."
     },
     "createdAt": "2026-10-23T08:40:04.262Z",
-    "updatedAt": "2026-10-23T08:40:04.262Z"
+    "featured": true,
+    "updatedAt": "2026-10-23T09:12:45.105Z"
   },
   {
     "id": "20OPNNeNgLlThe17ahnL",
@@ -1826,7 +1826,7 @@
     },
     "createdAt": "2026-10-20T17:02:31.105Z",
     "featured": false,
-    "updatedAt": "2026-10-23T09:11:45.923Z"
+    "updatedAt": "2026-10-23T09:12:45.105Z"
   },
   {
     "id": "O8g5TRYHD6gbhbpVrLUz",
