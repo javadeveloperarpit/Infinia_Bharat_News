@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import SafeBoundary from "@/components/Safeboundary";
 
 import {
   getArticleBySlug,
@@ -845,7 +846,7 @@ const youtubeVideos =
             article={article}
           />
 
-          
+          <SafeBoundary>
            <ArticleAudioPlayer
   title={article.title}
   content={article.content}
@@ -859,6 +860,7 @@ const youtubeVideos =
       : "hi-IN"
   }
 />
+          </SafeBoundary> 
           {/* ==================================================
               ARTICLE CONTENT
           ================================================== */}
