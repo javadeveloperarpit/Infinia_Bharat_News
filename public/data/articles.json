@@ -899,9 +899,7 @@
       "Badrinath News",
       "Helicopter Accident Today"
     ],
-    "featured": false,
     "breaking": true,
-    "priority": 0,
     "status": "published",
     "slug": "badrinath-helicopter-crash-chamoli-6-dead-hathi-parvat-20261031-051616066",
     "author": {
@@ -914,7 +912,9 @@
       "bio": "Shubhi Mishra\n\nEditor, Infinia Bharat News | Video Editor | Graphic Designer | Digital Media Creative\n\nShubhi Mishra is an Editor at Infinia Bharat News, a skilled video editor, and a creative graphic designer with a strong interest in digital journalism, visual storytelling, and modern media.\n\nAt Infinia Bharat News, she contributes to the editorial and creative workflow, working across news content, video editing, graphic design, digital creatives, and visual presentation. Her ability to combine editorial understanding with creative skills helps transform news stories into engaging and visually compelling digital content.\n\nAs a video editing professional, Shubhi specializes in creating impactful news videos, short-form content, reels, and digital media productions. Her graphic design expertise includes creating news graphics, social media creatives, thumbnails, promotional visuals, and branded content.\n\nShe is passionate about the evolving world of digital media and believes that strong storytelling, thoughtful design, and responsible journalism can work together to create meaningful content for today's audience.\n\nThrough her work at Infinia Bharat News, Shubhi contributes to building a modern, creative, and audience-focused digital news platform where journalism meets technology and visual storytelling."
     },
     "createdAt": "2026-10-31T05:16:16.240Z",
-    "updatedAt": "2026-10-31T05:16:16.240Z"
+    "featured": true,
+    "priority": 5,
+    "updatedAt": "2026-10-31T05:24:03.081Z"
   },
   {
     "id": "9wQjka5F1JqUjRA2mEwt",
@@ -1258,9 +1258,8 @@
       "bio": "Shubhi Mishra\n\nEditor, Infinia Bharat News | Video Editor | Graphic Designer | Digital Media Creative\n\nShubhi Mishra is an Editor at Infinia Bharat News, a skilled video editor, and a creative graphic designer with a strong interest in digital journalism, visual storytelling, and modern media.\n\nAt Infinia Bharat News, she contributes to the editorial and creative workflow, working across news content, video editing, graphic design, digital creatives, and visual presentation. Her ability to combine editorial understanding with creative skills helps transform news stories into engaging and visually compelling digital content.\n\nAs a video editing professional, Shubhi specializes in creating impactful news videos, short-form content, reels, and digital media productions. Her graphic design expertise includes creating news graphics, social media creatives, thumbnails, promotional visuals, and branded content.\n\nShe is passionate about the evolving world of digital media and believes that strong storytelling, thoughtful design, and responsible journalism can work together to create meaningful content for today's audience.\n\nThrough her work at Infinia Bharat News, Shubhi contributes to building a modern, creative, and audience-focused digital news platform where journalism meets technology and visual storytelling."
     },
     "createdAt": "2026-10-27T04:39:19.224Z",
-    "featured": true,
-    "priority": 2,
-    "updatedAt": "2026-10-27T05:20:49.182Z"
+    "featured": false,
+    "updatedAt": "2026-10-31T05:24:03.081Z"
   },
   {
     "id": "E3wuz2S4PwZQnVAHh0Yc",
@@ -1371,9 +1370,8 @@
       "bio": "Shubhi Mishra\n\nEditor, Infinia Bharat News | Video Editor | Graphic Designer | Digital Media Creative\n\nShubhi Mishra is an Editor at Infinia Bharat News, a skilled video editor, and a creative graphic designer with a strong interest in digital journalism, visual storytelling, and modern media.\n\nAt Infinia Bharat News, she contributes to the editorial and creative workflow, working across news content, video editing, graphic design, digital creatives, and visual presentation. Her ability to combine editorial understanding with creative skills helps transform news stories into engaging and visually compelling digital content.\n\nAs a video editing professional, Shubhi specializes in creating impactful news videos, short-form content, reels, and digital media productions. Her graphic design expertise includes creating news graphics, social media creatives, thumbnails, promotional visuals, and branded content.\n\nShe is passionate about the evolving world of digital media and believes that strong storytelling, thoughtful design, and responsible journalism can work together to create meaningful content for today's audience.\n\nThrough her work at Infinia Bharat News, Shubhi contributes to building a modern, creative, and audience-focused digital news platform where journalism meets technology and visual storytelling."
     },
     "createdAt": "2026-10-29T08:24:56.454Z",
-    "featured": true,
-    "priority": 4,
-    "updatedAt": "2026-10-29T10:00:45.702Z"
+    "featured": false,
+    "updatedAt": "2026-10-31T05:24:03.081Z"
   },
   {
     "id": "F9QtDVblNJvn92TDvE1W",
@@ -1577,9 +1575,7 @@
       "Andhra Pradesh Cyclone",
       "India Weather News"
     ],
-    "featured": false,
     "breaking": true,
-    "priority": 0,
     "status": "published",
     "slug": "cyclone-arnab-weather-alert-delhi-ncr-up-bihar-odisha-flood-20261030-052047057",
     "author": {
@@ -1592,7 +1588,9 @@
       "bio": "Shubhi Mishra\n\nEditor, Infinia Bharat News | Video Editor | Graphic Designer | Digital Media Creative\n\nShubhi Mishra is an Editor at Infinia Bharat News, a skilled video editor, and a creative graphic designer with a strong interest in digital journalism, visual storytelling, and modern media.\n\nAt Infinia Bharat News, she contributes to the editorial and creative workflow, working across news content, video editing, graphic design, digital creatives, and visual presentation. Her ability to combine editorial understanding with creative skills helps transform news stories into engaging and visually compelling digital content.\n\nAs a video editing professional, Shubhi specializes in creating impactful news videos, short-form content, reels, and digital media productions. Her graphic design expertise includes creating news graphics, social media creatives, thumbnails, promotional visuals, and branded content.\n\nShe is passionate about the evolving world of digital media and believes that strong storytelling, thoughtful design, and responsible journalism can work together to create meaningful content for today's audience.\n\nThrough her work at Infinia Bharat News, Shubhi contributes to building a modern, creative, and audience-focused digital news platform where journalism meets technology and visual storytelling."
     },
     "createdAt": "2026-10-30T05:20:47.269Z",
-    "updatedAt": "2026-10-30T05:20:47.269Z"
+    "featured": true,
+    "priority": 2,
+    "updatedAt": "2026-10-31T05:24:03.081Z"
   },
   {
     "id": "GMtvqrbiIJbAbkfuqB1G",
@@ -2109,9 +2107,7 @@
       "criminal cases government jobs",
       "Uttar Pradesh news."
     ],
-    "featured": false,
     "breaking": true,
-    "priority": 0,
     "status": "published",
     "slug": "up-government-recruitment-policy-character-verification-rules-yogi-adityanath-20261030-053033759",
     "author": {
@@ -2124,7 +2120,9 @@
       "bio": "Shubhi Mishra\n\nEditor, Infinia Bharat News | Video Editor | Graphic Designer | Digital Media Creative\n\nShubhi Mishra is an Editor at Infinia Bharat News, a skilled video editor, and a creative graphic designer with a strong interest in digital journalism, visual storytelling, and modern media.\n\nAt Infinia Bharat News, she contributes to the editorial and creative workflow, working across news content, video editing, graphic design, digital creatives, and visual presentation. Her ability to combine editorial understanding with creative skills helps transform news stories into engaging and visually compelling digital content.\n\nAs a video editing professional, Shubhi specializes in creating impactful news videos, short-form content, reels, and digital media productions. Her graphic design expertise includes creating news graphics, social media creatives, thumbnails, promotional visuals, and branded content.\n\nShe is passionate about the evolving world of digital media and believes that strong storytelling, thoughtful design, and responsible journalism can work together to create meaningful content for today's audience.\n\nThrough her work at Infinia Bharat News, Shubhi contributes to building a modern, creative, and audience-focused digital news platform where journalism meets technology and visual storytelling."
     },
     "createdAt": "2026-10-30T05:30:33.932Z",
-    "updatedAt": "2026-10-30T05:30:33.932Z"
+    "featured": true,
+    "priority": 3,
+    "updatedAt": "2026-10-31T05:24:03.081Z"
   },
   {
     "id": "NKi0hGBIIQHt3mbCvAmN",
@@ -2207,9 +2205,8 @@
       "bio": "Shubhi Mishra\n\nEditor, Infinia Bharat News | Video Editor | Graphic Designer | Digital Media Creative\n\nShubhi Mishra is an Editor at Infinia Bharat News, a skilled video editor, and a creative graphic designer with a strong interest in digital journalism, visual storytelling, and modern media.\n\nAt Infinia Bharat News, she contributes to the editorial and creative workflow, working across news content, video editing, graphic design, digital creatives, and visual presentation. Her ability to combine editorial understanding with creative skills helps transform news stories into engaging and visually compelling digital content.\n\nAs a video editing professional, Shubhi specializes in creating impactful news videos, short-form content, reels, and digital media productions. Her graphic design expertise includes creating news graphics, social media creatives, thumbnails, promotional visuals, and branded content.\n\nShe is passionate about the evolving world of digital media and believes that strong storytelling, thoughtful design, and responsible journalism can work together to create meaningful content for today's audience.\n\nThrough her work at Infinia Bharat News, Shubhi contributes to building a modern, creative, and audience-focused digital news platform where journalism meets technology and visual storytelling."
     },
     "createdAt": "2026-10-27T05:02:24.693Z",
-    "featured": true,
-    "priority": 3,
-    "updatedAt": "2026-10-27T05:20:49.182Z"
+    "featured": false,
+    "updatedAt": "2026-10-31T05:24:03.081Z"
   },
   {
     "id": "O8g5TRYHD6gbhbpVrLUz",
@@ -3170,9 +3167,8 @@
       "bio": "Shubhi Mishra\n\nEditor, Infinia Bharat News | Video Editor | Graphic Designer | Digital Media Creative\n\nShubhi Mishra is an Editor at Infinia Bharat News, a skilled video editor, and a creative graphic designer with a strong interest in digital journalism, visual storytelling, and modern media.\n\nAt Infinia Bharat News, she contributes to the editorial and creative workflow, working across news content, video editing, graphic design, digital creatives, and visual presentation. Her ability to combine editorial understanding with creative skills helps transform news stories into engaging and visually compelling digital content.\n\nAs a video editing professional, Shubhi specializes in creating impactful news videos, short-form content, reels, and digital media productions. Her graphic design expertise includes creating news graphics, social media creatives, thumbnails, promotional visuals, and branded content.\n\nShe is passionate about the evolving world of digital media and believes that strong storytelling, thoughtful design, and responsible journalism can work together to create meaningful content for today's audience.\n\nThrough her work at Infinia Bharat News, Shubhi contributes to building a modern, creative, and audience-focused digital news platform where journalism meets technology and visual storytelling."
     },
     "createdAt": "2026-10-29T08:40:07.436Z",
-    "featured": true,
-    "priority": 5,
-    "updatedAt": "2026-10-29T10:00:45.702Z"
+    "featured": false,
+    "updatedAt": "2026-10-31T05:24:03.081Z"
   },
   {
     "id": "ViF062QmJyKc1svTdPcy",
@@ -3734,9 +3730,8 @@
       "bio": "Shubhi Mishra\n\nEditor, Infinia Bharat News | Video Editor | Graphic Designer | Digital Media Creative\n\nShubhi Mishra is an Editor at Infinia Bharat News, a skilled video editor, and a creative graphic designer with a strong interest in digital journalism, visual storytelling, and modern media.\n\nAt Infinia Bharat News, she contributes to the editorial and creative workflow, working across news content, video editing, graphic design, digital creatives, and visual presentation. Her ability to combine editorial understanding with creative skills helps transform news stories into engaging and visually compelling digital content.\n\nAs a video editing professional, Shubhi specializes in creating impactful news videos, short-form content, reels, and digital media productions. Her graphic design expertise includes creating news graphics, social media creatives, thumbnails, promotional visuals, and branded content.\n\nShe is passionate about the evolving world of digital media and believes that strong storytelling, thoughtful design, and responsible journalism can work together to create meaningful content for today's audience.\n\nThrough her work at Infinia Bharat News, Shubhi contributes to building a modern, creative, and audience-focused digital news platform where journalism meets technology and visual storytelling."
     },
     "createdAt": "2026-10-22T10:57:22.680Z",
-    "featured": true,
-    "priority": 1,
-    "updatedAt": "2026-10-27T05:20:49.182Z"
+    "featured": false,
+    "updatedAt": "2026-10-31T05:24:03.081Z"
   },
   {
     "id": "e89837pp2jEwW8UP7i8d",
@@ -3974,9 +3969,7 @@
       "Bay of Bengal",
       "Disaster management"
     ],
-    "featured": false,
     "breaking": true,
-    "priority": 0,
     "status": "published",
     "slug": "cyclone-arnab-low-pressure-andhra-pradesh-20261030-124840099",
     "author": {
@@ -3989,7 +3982,9 @@
       "bio": "Arpit Mishra\nFounder & Owner | Editor-in-Chief of Infinia Bharat News | Computer Science Engineering Student | Technology & Digital Media Enthusiast**\n\nArpit Mishra is a Computer Science Engineering student, technology enthusiast, and the Editor-in-Chief of Infinia Bharat News, with a keen interest in digital journalism, technology, current affairs, and emerging media platforms.\n\nAlongside his academic journey in Computer Science Engineering, he is actively involved in building and developing a modern digital news platform, focusing on news content, editorial presentation, digital media, technology, and audience engagement.\n\nAs Editor-in-Chief of Infinia Bharat News, Arpit is involved in shaping the publication's editorial direction, content strategy, digital presence, and overall newsroom vision. He believes in presenting news in a clear, engaging, and responsible manner while adapting journalism to the rapidly evolving digital landscape.\n\nHis technical interests include software development, web technologies, artificial intelligence, cybersecurity, databases, and cloud-based applications. He combines his technical background with his interest in journalism to explore how technology can transform the way news is created, distributed, and consumed.\n\nArpit's long-term vision is to build expertise at the intersection of technology, entrepreneurship, and digital media, while creating meaningful and impactful technology-driven platforms."
     },
     "createdAt": "2026-10-30T12:48:40.608Z",
-    "updatedAt": "2026-10-30T12:48:40.608Z"
+    "featured": true,
+    "priority": 4,
+    "updatedAt": "2026-10-31T05:24:03.081Z"
   },
   {
     "id": "jgp1uQTJdOSpkI6Mm3vF",
@@ -4880,9 +4875,7 @@
       "टीवी रियलिटी शो",
       "एंटरटेनमेंट न्यूज"
     ],
-    "featured": false,
     "breaking": true,
-    "priority": 0,
     "status": "published",
     "slug": "rise-and-fall-season-2-priyanka-sehwag-tehseen-poonawalla-entry-20261029-113634128",
     "author": {
@@ -4895,7 +4888,9 @@
       "bio": "Shubhi Mishra\n\nEditor, Infinia Bharat News | Video Editor | Graphic Designer | Digital Media Creative\n\nShubhi Mishra is an Editor at Infinia Bharat News, a skilled video editor, and a creative graphic designer with a strong interest in digital journalism, visual storytelling, and modern media.\n\nAt Infinia Bharat News, she contributes to the editorial and creative workflow, working across news content, video editing, graphic design, digital creatives, and visual presentation. Her ability to combine editorial understanding with creative skills helps transform news stories into engaging and visually compelling digital content.\n\nAs a video editing professional, Shubhi specializes in creating impactful news videos, short-form content, reels, and digital media productions. Her graphic design expertise includes creating news graphics, social media creatives, thumbnails, promotional visuals, and branded content.\n\nShe is passionate about the evolving world of digital media and believes that strong storytelling, thoughtful design, and responsible journalism can work together to create meaningful content for today's audience.\n\nThrough her work at Infinia Bharat News, Shubhi contributes to building a modern, creative, and audience-focused digital news platform where journalism meets technology and visual storytelling."
     },
     "createdAt": "2026-10-29T11:36:34.316Z",
-    "updatedAt": "2026-10-29T11:36:34.316Z"
+    "featured": true,
+    "priority": 1,
+    "updatedAt": "2026-10-31T05:24:03.081Z"
   },
   {
     "id": "zoaW8NYb61PaS9zfITYf",
