@@ -16,25 +16,56 @@ import RelatedVideos from "@/components/video/related-videos";
 // YOUTUBE VIDEO ID
 // ==========================================================
 
-function getYouTubeVideoId(youtubeUrl: string) {
-  try {
-    const parsed = new URL(youtubeUrl);
 
-    if (parsed.hostname.includes("youtu.be")) {
-      return parsed.pathname
-        .replace("/", "")
-        .split("?")[0];
-    }
-
-    if (parsed.hostname.includes("youtube.com")) {
-      return parsed.searchParams.get("v");
-    }
-
+function getYouTubeVideoId(youtubeUrl: string): string | null {
+  if (!youtubeUrl || typeof youtubeUrl !== "string") {
     return null;
+  }
+
+  try {
+    const input = youtubeUrl.trim();
+    const parsed = new URL(
+      /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(input)
+        ? input
+        : `https://${input}`
+    );
+
+    const hostname = parsed.hostname.toLowerCase();
+
+    const isYouTube =
+      hostname === "youtu.be" ||
+      hostname === "youtube.com" ||
+      hostname.endsWith(".youtube.com") ||
+      hostname === "youtube-nocookie.com" ||
+      hostname.endsWith(".youtube-nocookie.com");
+
+    if (!isYouTube) return null;
+
+    let videoId: string | null = null;
+
+    if (hostname === "youtu.be") {
+      videoId = parsed.pathname.split("/").filter(Boolean)[0] ?? null;
+    } else {
+      const segments = parsed.pathname.split("/").filter(Boolean);
+
+      if (parsed.pathname === "/watch") {
+        videoId = parsed.searchParams.get("v");
+      } else if (
+        ["shorts", "live", "embed", "v", "live_stream"].includes(segments[0])
+      ) {
+        videoId = segments[1] ?? null;
+      }
+    }
+
+    // YouTube video IDs are 11 characters.
+    return videoId && /^[a-zA-Z0-9_-]{11}$/.test(videoId)
+      ? videoId
+      : null;
   } catch {
     return null;
   }
 }
+
 
 // ==========================================================
 // METADATA
