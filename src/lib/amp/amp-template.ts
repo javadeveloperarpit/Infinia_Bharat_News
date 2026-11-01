@@ -834,7 +834,6 @@ ${safeJsonLd(articleSchema)}
 ${safeJsonLd(breadcrumbSchema)}
 </script>
 
-<amp-analytics config="https://www.googletagmanager.com/amp.json?id=GTM-5HDHQ4BM&gtm.url=SOURCE_URL" data-credentials="include"></amp-analytics>
 
 <style amp-custom>
 
@@ -2848,6 +2847,8 @@ h1.title {
 </head>
 
 <body>
+
+<amp-analytics config="https://www.googletagmanager.com/amp.json?id=GTM-5HDHQ4BM&gtm.url=SOURCE_URL" data-credentials="include"></amp-analytics>
 
 <!-- ==========================================================
      AMP ARTICLE READER STATE
